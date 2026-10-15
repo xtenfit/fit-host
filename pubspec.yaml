@@ -77,6 +77,8 @@ flutter:
     - assets/images/nutrition/
     - assets/images/categories/
     - assets/images/profile/
+    - assets/images/branding/
+    - assets/images/anatomy/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

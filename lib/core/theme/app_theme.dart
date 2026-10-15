@@ -5,19 +5,19 @@ class AppTheme {
   static ThemeData get darkTheme {
     final colorScheme = ColorScheme(
       brightness: Brightness.dark,
-      primary: AppColors.limeGreen,
-      onPrimary: Colors.black,
-      primaryContainer: const Color(0xFF0F3822),
-      onPrimaryContainer: AppColors.limeGreen,
-      secondary: AppColors.electricCyan,
+      primary: AppColors.electricBlue,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.electricBlueSurface,
+      onPrimaryContainer: AppColors.electricBlueLight,
+      secondary: AppColors.limeGreen,
       onSecondary: Colors.black,
-      secondaryContainer: const Color(0xFF083344),
-      onSecondaryContainer: AppColors.electricCyan,
+      secondaryContainer: const Color(0xFF0F3822),
+      onSecondaryContainer: AppColors.limeGreen,
       surface: AppColors.darkSurface,
       onSurface: AppColors.darkTextPrimary,
       surfaceContainerHighest: AppColors.darkSurfaceElevated,
       error: AppColors.error,
-      onError: Colors.black,
+      onError: Colors.white,
       outline: AppColors.darkSurfaceBorder,
       outlineVariant: const Color(0xFF384352),
     );
@@ -31,7 +31,7 @@ class AppTheme {
         color: AppColors.darkSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           side: const BorderSide(color: AppColors.darkSurfaceBorder, width: 1),
         ),
         margin: EdgeInsets.zero,
@@ -44,24 +44,24 @@ class AppTheme {
         scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           letterSpacing: -0.5,
           color: AppColors.darkTextPrimary,
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
-        selectedItemColor: AppColors.limeGreen,
+        selectedItemColor: AppColors.electricBlue,
         unselectedItemColor: AppColors.darkTextSecondary,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.darkSurface,
-        indicatorColor: AppColors.limeGreen.withValues(alpha: 0.18),
+        indicatorColor: AppColors.electricBlue.withValues(alpha: 0.18),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.limeGreen);
+            return const IconThemeData(color: AppColors.electricBlue);
           }
           return const IconThemeData(color: AppColors.darkTextSecondary);
         }),
@@ -69,8 +69,8 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.limeGreen,
+              fontWeight: FontWeight.w700,
+              color: AppColors.electricBlue,
             );
           }
           return const TextStyle(
@@ -82,12 +82,12 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.limeGreen,
-          foregroundColor: Colors.black,
+          backgroundColor: AppColors.electricBlue,
+          foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -98,15 +98,15 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.limeGreen,
-          side: const BorderSide(color: AppColors.limeGreen, width: 1.2),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          foregroundColor: AppColors.electricBlueLight,
+          side: const BorderSide(color: AppColors.electricBlue, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -114,16 +114,16 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.darkSurfaceElevated,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.darkSurfaceBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.darkSurfaceBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.limeGreen, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.electricBlue, width: 1.8),
         ),
         hintStyle: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -134,14 +134,14 @@ class AppTheme {
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme(
       brightness: Brightness.light,
-      primary: AppColors.limeGreenLight,
+      primary: AppColors.electricBlue,
       onPrimary: Colors.white,
-      primaryContainer: const Color(0xFFD1FAE5),
-      onPrimaryContainer: const Color(0xFF065F46),
-      secondary: const Color(0xFF0284C7),
+      primaryContainer: AppColors.electricBlueSurfaceLight,
+      onPrimaryContainer: AppColors.electricBlueDark,
+      secondary: AppColors.limeGreenDark,
       onSecondary: Colors.white,
-      secondaryContainer: const Color(0xFFE0F2FE),
-      onSecondaryContainer: const Color(0xFF075985),
+      secondaryContainer: const Color(0xFFD1FAE5),
+      onSecondaryContainer: const Color(0xFF065F46),
       surface: AppColors.lightSurface,
       onSurface: AppColors.lightTextPrimary,
       surfaceContainerHighest: AppColors.lightSurfaceElevated,
@@ -160,7 +160,7 @@ class AppTheme {
         color: AppColors.lightSurface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           side: const BorderSide(color: AppColors.lightSurfaceBorder, width: 1),
         ),
         margin: EdgeInsets.zero,
@@ -173,17 +173,24 @@ class AppTheme {
         scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
           letterSpacing: -0.5,
           color: AppColors.lightTextPrimary,
         ),
       ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.lightSurface,
+        selectedItemColor: AppColors.electricBlue,
+        unselectedItemColor: AppColors.lightTextSecondary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.lightSurface,
-        indicatorColor: AppColors.limeGreenLight.withValues(alpha: 0.15),
+        indicatorColor: AppColors.electricBlue.withValues(alpha: 0.12),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.limeGreenLight);
+            return const IconThemeData(color: AppColors.electricBlue);
           }
           return const IconThemeData(color: AppColors.lightTextSecondary);
         }),
@@ -191,8 +198,8 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.limeGreenLight,
+              fontWeight: FontWeight.w700,
+              color: AppColors.electricBlue,
             );
           }
           return const TextStyle(
@@ -204,12 +211,12 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.limeGreenLight,
+          backgroundColor: AppColors.electricBlue,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -218,20 +225,34 @@ class AppTheme {
           ),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.electricBlue,
+          side: const BorderSide(color: AppColors.electricBlue, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.lightSurfaceElevated,
+        fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.lightSurfaceBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.lightSurfaceBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.limeGreenLight, width: 1.5),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.electricBlue, width: 1.8),
         ),
         hintStyle: const TextStyle(color: AppColors.lightTextTertiary, fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

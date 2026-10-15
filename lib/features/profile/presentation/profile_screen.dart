@@ -251,9 +251,9 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.explore_outlined, color: AppColors.limeGreen),
-                  title: const Text('Fit Host Onboarding'),
-                  subtitle: const Text('View intro tour and offline-first principles'),
+                  leading: const Icon(Icons.explore_outlined, color: AppColors.electricBlue),
+                  title: const Text('Personalized Onboarding & Goals'),
+                  subtitle: const Text('Reconfigure goals, focus areas, and diet preferences'),
                   trailing: const Icon(Icons.chevron_right_rounded),
                   onTap: () => context.push('/onboarding'),
                 ),
