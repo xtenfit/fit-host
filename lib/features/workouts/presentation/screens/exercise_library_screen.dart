@@ -108,20 +108,41 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                           child: Row(
                             children: [
                               Container(
-                                width: 44,
-                                height: 44,
+                                width: 52,
+                                height: 52,
                                 decoration: BoxDecoration(
-                                  color: AppColors.limeGreen.withValues(alpha: 0.15),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    _getCategoryIcon(ex.category),
+                                  border: Border.all(
                                     color: isDark
-                                        ? AppColors.limeGreen
-                                        : AppColors.limeGreenLight,
-                                    size: 22,
+                                        ? AppColors.darkSurfaceBorder
+                                        : AppColors.lightSurfaceBorder,
                                   ),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(9),
+                                  child: ex.imageAsset != null
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(4.0),
+                                          child: Image.asset(
+                                            ex.imageAsset!,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, _, _) => Center(
+                                              child: Icon(
+                                                _getCategoryIcon(ex.category),
+                                                color: AppColors.limeGreenDark,
+                                                size: 24,
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Icon(
+                                            _getCategoryIcon(ex.category),
+                                            color: AppColors.limeGreenDark,
+                                            size: 24,
+                                          ),
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -236,6 +257,84 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                 ),
               ],
             ),
+            if (exercise.imageAsset != null || exercise.anatomyAsset != null) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  if (exercise.imageAsset != null)
+                    Expanded(
+                      child: Container(
+                        height: 110,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.darkSurfaceBorder
+                                : AppColors.lightSurfaceBorder,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Exercise Form',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Expanded(
+                              child: Image.asset(
+                                exercise.imageAsset!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (exercise.imageAsset != null &&
+                      exercise.anatomyAsset != null)
+                    const SizedBox(width: 10),
+                  if (exercise.anatomyAsset != null)
+                    Expanded(
+                      child: Container(
+                        height: 110,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.limeGreen.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Target Anatomy',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.limeGreen,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Expanded(
+                              child: Image.asset(
+                                exercise.anatomyAsset!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             const Text(
               'Target Muscles',

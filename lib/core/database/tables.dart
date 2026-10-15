@@ -9,6 +9,8 @@ class Exercises extends Table {
   TextColumn get equipment => text()();
   BoolColumn get isCustom => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
+  TextColumn get imageAsset => text().nullable()();
+  TextColumn get anatomyAsset => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

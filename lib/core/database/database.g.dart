@@ -97,6 +97,28 @@ class $ExercisesTable extends Exercises
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imageAssetMeta = const VerificationMeta(
+    'imageAsset',
+  );
+  @override
+  late final GeneratedColumn<String> imageAsset = GeneratedColumn<String>(
+    'image_asset',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _anatomyAssetMeta = const VerificationMeta(
+    'anatomyAsset',
+  );
+  @override
+  late final GeneratedColumn<String> anatomyAsset = GeneratedColumn<String>(
+    'anatomy_asset',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -107,6 +129,8 @@ class $ExercisesTable extends Exercises
     equipment,
     isCustom,
     createdAt,
+    imageAsset,
+    anatomyAsset,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -185,6 +209,21 @@ class $ExercisesTable extends Exercises
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('image_asset')) {
+      context.handle(
+        _imageAssetMeta,
+        imageAsset.isAcceptableOrUnknown(data['image_asset']!, _imageAssetMeta),
+      );
+    }
+    if (data.containsKey('anatomy_asset')) {
+      context.handle(
+        _anatomyAssetMeta,
+        anatomyAsset.isAcceptableOrUnknown(
+          data['anatomy_asset']!,
+          _anatomyAssetMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -226,6 +265,14 @@ class $ExercisesTable extends Exercises
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      imageAsset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_asset'],
+      ),
+      anatomyAsset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}anatomy_asset'],
+      ),
     );
   }
 
@@ -244,6 +291,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
   final String equipment;
   final bool isCustom;
   final DateTime createdAt;
+  final String? imageAsset;
+  final String? anatomyAsset;
   const Exercise({
     required this.id,
     required this.name,
@@ -253,6 +302,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     required this.equipment,
     required this.isCustom,
     required this.createdAt,
+    this.imageAsset,
+    this.anatomyAsset,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -265,6 +316,12 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     map['equipment'] = Variable<String>(equipment);
     map['is_custom'] = Variable<bool>(isCustom);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || imageAsset != null) {
+      map['image_asset'] = Variable<String>(imageAsset);
+    }
+    if (!nullToAbsent || anatomyAsset != null) {
+      map['anatomy_asset'] = Variable<String>(anatomyAsset);
+    }
     return map;
   }
 
@@ -278,6 +335,12 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       equipment: Value(equipment),
       isCustom: Value(isCustom),
       createdAt: Value(createdAt),
+      imageAsset: imageAsset == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageAsset),
+      anatomyAsset: anatomyAsset == null && nullToAbsent
+          ? const Value.absent()
+          : Value(anatomyAsset),
     );
   }
 
@@ -295,6 +358,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       equipment: serializer.fromJson<String>(json['equipment']),
       isCustom: serializer.fromJson<bool>(json['isCustom']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      imageAsset: serializer.fromJson<String?>(json['imageAsset']),
+      anatomyAsset: serializer.fromJson<String?>(json['anatomyAsset']),
     );
   }
   @override
@@ -309,6 +374,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       'equipment': serializer.toJson<String>(equipment),
       'isCustom': serializer.toJson<bool>(isCustom),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'imageAsset': serializer.toJson<String?>(imageAsset),
+      'anatomyAsset': serializer.toJson<String?>(anatomyAsset),
     };
   }
 
@@ -321,6 +388,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     String? equipment,
     bool? isCustom,
     DateTime? createdAt,
+    Value<String?> imageAsset = const Value.absent(),
+    Value<String?> anatomyAsset = const Value.absent(),
   }) => Exercise(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -330,6 +399,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     equipment: equipment ?? this.equipment,
     isCustom: isCustom ?? this.isCustom,
     createdAt: createdAt ?? this.createdAt,
+    imageAsset: imageAsset.present ? imageAsset.value : this.imageAsset,
+    anatomyAsset: anatomyAsset.present ? anatomyAsset.value : this.anatomyAsset,
   );
   Exercise copyWithCompanion(ExercisesCompanion data) {
     return Exercise(
@@ -345,6 +416,12 @@ class Exercise extends DataClass implements Insertable<Exercise> {
       equipment: data.equipment.present ? data.equipment.value : this.equipment,
       isCustom: data.isCustom.present ? data.isCustom.value : this.isCustom,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      imageAsset: data.imageAsset.present
+          ? data.imageAsset.value
+          : this.imageAsset,
+      anatomyAsset: data.anatomyAsset.present
+          ? data.anatomyAsset.value
+          : this.anatomyAsset,
     );
   }
 
@@ -358,7 +435,9 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           ..write('instructions: $instructions, ')
           ..write('equipment: $equipment, ')
           ..write('isCustom: $isCustom, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('imageAsset: $imageAsset, ')
+          ..write('anatomyAsset: $anatomyAsset')
           ..write(')'))
         .toString();
   }
@@ -373,6 +452,8 @@ class Exercise extends DataClass implements Insertable<Exercise> {
     equipment,
     isCustom,
     createdAt,
+    imageAsset,
+    anatomyAsset,
   );
   @override
   bool operator ==(Object other) =>
@@ -385,7 +466,9 @@ class Exercise extends DataClass implements Insertable<Exercise> {
           other.instructions == this.instructions &&
           other.equipment == this.equipment &&
           other.isCustom == this.isCustom &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.imageAsset == this.imageAsset &&
+          other.anatomyAsset == this.anatomyAsset);
 }
 
 class ExercisesCompanion extends UpdateCompanion<Exercise> {
@@ -397,6 +480,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
   final Value<String> equipment;
   final Value<bool> isCustom;
   final Value<DateTime> createdAt;
+  final Value<String?> imageAsset;
+  final Value<String?> anatomyAsset;
   final Value<int> rowid;
   const ExercisesCompanion({
     this.id = const Value.absent(),
@@ -407,6 +492,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     this.equipment = const Value.absent(),
     this.isCustom = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.imageAsset = const Value.absent(),
+    this.anatomyAsset = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExercisesCompanion.insert({
@@ -418,6 +505,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     required String equipment,
     this.isCustom = const Value.absent(),
     required DateTime createdAt,
+    this.imageAsset = const Value.absent(),
+    this.anatomyAsset = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
@@ -435,6 +524,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Expression<String>? equipment,
     Expression<bool>? isCustom,
     Expression<DateTime>? createdAt,
+    Expression<String>? imageAsset,
+    Expression<String>? anatomyAsset,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -446,6 +537,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       if (equipment != null) 'equipment': equipment,
       if (isCustom != null) 'is_custom': isCustom,
       if (createdAt != null) 'created_at': createdAt,
+      if (imageAsset != null) 'image_asset': imageAsset,
+      if (anatomyAsset != null) 'anatomy_asset': anatomyAsset,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -459,6 +552,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     Value<String>? equipment,
     Value<bool>? isCustom,
     Value<DateTime>? createdAt,
+    Value<String?>? imageAsset,
+    Value<String?>? anatomyAsset,
     Value<int>? rowid,
   }) {
     return ExercisesCompanion(
@@ -470,6 +565,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
       equipment: equipment ?? this.equipment,
       isCustom: isCustom ?? this.isCustom,
       createdAt: createdAt ?? this.createdAt,
+      imageAsset: imageAsset ?? this.imageAsset,
+      anatomyAsset: anatomyAsset ?? this.anatomyAsset,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -501,6 +598,12 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (imageAsset.present) {
+      map['image_asset'] = Variable<String>(imageAsset.value);
+    }
+    if (anatomyAsset.present) {
+      map['anatomy_asset'] = Variable<String>(anatomyAsset.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -518,6 +621,8 @@ class ExercisesCompanion extends UpdateCompanion<Exercise> {
           ..write('equipment: $equipment, ')
           ..write('isCustom: $isCustom, ')
           ..write('createdAt: $createdAt, ')
+          ..write('imageAsset: $imageAsset, ')
+          ..write('anatomyAsset: $anatomyAsset, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2537,6 +2642,8 @@ typedef $$ExercisesTableCreateCompanionBuilder =
       required String equipment,
       Value<bool> isCustom,
       required DateTime createdAt,
+      Value<String?> imageAsset,
+      Value<String?> anatomyAsset,
       Value<int> rowid,
     });
 typedef $$ExercisesTableUpdateCompanionBuilder =
@@ -2549,6 +2656,8 @@ typedef $$ExercisesTableUpdateCompanionBuilder =
       Value<String> equipment,
       Value<bool> isCustom,
       Value<DateTime> createdAt,
+      Value<String?> imageAsset,
+      Value<String?> anatomyAsset,
       Value<int> rowid,
     });
 
@@ -2626,6 +2735,16 @@ class $$ExercisesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get imageAsset => $composableBuilder(
+    column: $table.imageAsset,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get anatomyAsset => $composableBuilder(
+    column: $table.anatomyAsset,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> workoutExercisesRefs(
     Expression<bool> Function($$WorkoutExercisesTableFilterComposer f) f,
   ) {
@@ -2700,6 +2819,16 @@ class $$ExercisesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get imageAsset => $composableBuilder(
+    column: $table.imageAsset,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get anatomyAsset => $composableBuilder(
+    column: $table.anatomyAsset,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExercisesTableAnnotationComposer
@@ -2738,6 +2867,16 @@ class $$ExercisesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get imageAsset => $composableBuilder(
+    column: $table.imageAsset,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get anatomyAsset => $composableBuilder(
+    column: $table.anatomyAsset,
+    builder: (column) => column,
+  );
 
   Expression<T> workoutExercisesRefs<T extends Object>(
     Expression<T> Function($$WorkoutExercisesTableAnnotationComposer a) f,
@@ -2801,6 +2940,8 @@ class $$ExercisesTableTableManager
                 Value<String> equipment = const Value.absent(),
                 Value<bool> isCustom = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> imageAsset = const Value.absent(),
+                Value<String?> anatomyAsset = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesCompanion(
                 id: id,
@@ -2811,6 +2952,8 @@ class $$ExercisesTableTableManager
                 equipment: equipment,
                 isCustom: isCustom,
                 createdAt: createdAt,
+                imageAsset: imageAsset,
+                anatomyAsset: anatomyAsset,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2823,6 +2966,8 @@ class $$ExercisesTableTableManager
                 required String equipment,
                 Value<bool> isCustom = const Value.absent(),
                 required DateTime createdAt,
+                Value<String?> imageAsset = const Value.absent(),
+                Value<String?> anatomyAsset = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ExercisesCompanion.insert(
                 id: id,
@@ -2833,6 +2978,8 @@ class $$ExercisesTableTableManager
                 equipment: equipment,
                 isCustom: isCustom,
                 createdAt: createdAt,
+                imageAsset: imageAsset,
+                anatomyAsset: anatomyAsset,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

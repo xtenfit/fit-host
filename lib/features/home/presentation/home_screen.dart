@@ -78,9 +78,8 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // Hero Start Workout Card
+            // Hero Start Workout Card with Cropped Photographic Banner
             Container(
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -97,70 +96,89 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Ready to Train?',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppColors.limeGreen.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.limeGreen.withValues(alpha: 0.3),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Image.asset(
-                          'assets/images/fit_host_icon.png',
-                          height: 32,
-                          width: 32,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Log your sets, reps, and track your progressive overload seamlessly offline.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(19)),
+                    child: Image.asset(
+                      'assets/images/workouts/strength_hero.jpg',
+                      height: 140,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      icon: Icon(
-                        activeState.isActive ? Icons.play_arrow_rounded : Icons.add_rounded,
-                        color: Colors.black,
-                      ),
-                      label: Text(
-                        activeState.isActive ? 'Resume Active Workout' : 'Start Quick Workout',
-                        style: const TextStyle(color: Colors.black, fontSize: 16),
-                      ),
-                      onPressed: () {
-                        if (!activeState.isActive) {
-                          ref.read(activeWorkoutProvider.notifier).startNewWorkout(
-                                title: 'Workout ${DateFormat('EEE, MMM d').format(DateTime.now())}',
-                              );
-                        }
-                        context.push('/active-workout');
-                      },
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Ready to Train?',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: AppColors.limeGreen.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.limeGreen.withValues(alpha: 0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Image.asset(
+                                'assets/images/fit_host_icon.png',
+                                height: 32,
+                                width: 32,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Log your sets, reps, and track your progressive overload seamlessly offline.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            icon: Icon(
+                              activeState.isActive ? Icons.play_arrow_rounded : Icons.add_rounded,
+                              color: Colors.black,
+                            ),
+                            label: Text(
+                              activeState.isActive ? 'Resume Active Workout' : 'Start Quick Workout',
+                              style: const TextStyle(color: Colors.black, fontSize: 16),
+                            ),
+                            onPressed: () {
+                              if (!activeState.isActive) {
+                                ref.read(activeWorkoutProvider.notifier).startNewWorkout(
+                                      title: 'Workout ${DateFormat('EEE, MMM d').format(DateTime.now())}',
+                                    );
+                              }
+                              context.push('/active-workout');
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -219,6 +237,73 @@ class HomeScreen extends ConsumerWidget {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 24),
+
+            // Workout Categories Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Workout Categories',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/workouts'),
+                  child: const Text('All Routines'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 155,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _CategoryCard(
+                    title: 'Strength',
+                    subtitle: 'Build muscle',
+                    imageAsset: 'assets/images/categories/strength.jpg',
+                    isDark: isDark,
+                    onTap: () => context.go('/workouts'),
+                  ),
+                  const SizedBox(width: 12),
+                  _CategoryCard(
+                    title: 'Bodyweight',
+                    subtitle: 'No equipment',
+                    imageAsset: 'assets/images/categories/bodyweight.jpg',
+                    isDark: isDark,
+                    onTap: () => context.go('/workouts'),
+                  ),
+                  const SizedBox(width: 12),
+                  _CategoryCard(
+                    title: 'Gym Workout',
+                    subtitle: 'Full body plans',
+                    imageAsset: 'assets/images/categories/gym_workout.jpg',
+                    isDark: isDark,
+                    onTap: () => context.go('/workouts'),
+                  ),
+                  const SizedBox(width: 12),
+                  _CategoryCard(
+                    title: 'Cardio',
+                    subtitle: 'Burn calories',
+                    imageAsset: 'assets/images/categories/cardio.jpg',
+                    isDark: isDark,
+                    onTap: () => context.go('/workouts'),
+                  ),
+                  const SizedBox(width: 12),
+                  _CategoryCard(
+                    title: 'Yoga',
+                    subtitle: 'Flexibility & calm',
+                    imageAsset: 'assets/images/categories/yoga.jpg',
+                    isDark: isDark,
+                    onTap: () => context.go('/workouts'),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -487,3 +572,78 @@ class _InfoBadge extends StatelessWidget {
     );
   }
 }
+
+class _CategoryCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String imageAsset;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _CategoryCard({
+    required this.title,
+    required this.subtitle,
+    required this.imageAsset,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 135,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Image.asset(
+              imageAsset,
+              height: 90,
+              width: 135,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 90,
+                color: isDark ? Colors.white10 : Colors.black12,
+                child: const Center(child: Icon(Icons.fitness_center_rounded)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

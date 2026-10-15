@@ -2,8 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  int _currentBannerIndex = 0;
+  final List<String> _banners = const [
+    'assets/images/onboarding/banner_stronger.jpg',
+    'assets/images/onboarding/banner_habits.jpg',
+    'assets/images/onboarding/banner_anytime.jpg',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +55,13 @@ class OnboardingScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(26),
                           child: Image.asset(
                             'assets/images/fit_host_app_icon.jpg',
-                            width: 110,
-                            height: 110,
+                            width: 100,
+                            height: 100,
                             fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       // Official Wordmark Banner
                       ClipRRect(
@@ -62,7 +74,7 @@ class OnboardingScreen extends StatelessWidget {
                           color: Colors.black,
                           child: Image.asset(
                             'assets/images/fit_host_wordmark.jpg',
-                            height: 36,
+                            height: 32,
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -80,7 +92,52 @@ class OnboardingScreen extends StatelessWidget {
                           height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+
+                      // Inspiration Banner Carousel
+                      SizedBox(
+                        height: 110,
+                        child: PageView.builder(
+                          itemCount: _banners.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentBannerIndex = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.asset(
+                                  _banners[index],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_banners.length, (index) {
+                          final isSelected = index == _currentBannerIndex;
+                          return Container(
+                            width: isSelected ? 18 : 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.limeGreen
+                                  : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          );
+                        }),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Value Pillars
                       _ValuePillar(

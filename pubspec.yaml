@@ -71,6 +71,11 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/onboarding/
+    - assets/images/workouts/
+    - assets/images/exercises/
+    - assets/images/nutrition/
+    - assets/images/categories/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

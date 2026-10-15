@@ -247,6 +247,7 @@ class WorkoutsScreen extends ConsumerWidget {
                   description:
                       'Bench Press, Incline DB Press, Overhead Press, Cable Pushdowns',
                   exerciseCount: 4,
+                  imageAsset: 'assets/images/workouts/strength.jpg',
                   isDark: isDark,
                   onStart: () {
                     _startRoutine(
@@ -268,6 +269,7 @@ class WorkoutsScreen extends ConsumerWidget {
                   description:
                       'Conventional Deadlift, Pull-Ups, Barbell Row, Bicep Curls',
                   exerciseCount: 4,
+                  imageAsset: 'assets/images/workouts/gym_workout.jpg',
                   isDark: isDark,
                   onStart: () {
                     _startRoutine(
@@ -289,6 +291,7 @@ class WorkoutsScreen extends ConsumerWidget {
                   description:
                       'Barbell Squat, Romanian Deadlift, Core Plank',
                   exerciseCount: 3,
+                  imageAsset: 'assets/images/workouts/bodyweight.jpg',
                   isDark: isDark,
                   onStart: () {
                     _startRoutine(
@@ -374,6 +377,7 @@ class _RoutineCard extends StatelessWidget {
   final String title;
   final String description;
   final int exerciseCount;
+  final String imageAsset;
   final bool isDark;
   final VoidCallback onStart;
 
@@ -381,6 +385,7 @@ class _RoutineCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.exerciseCount,
+    required this.imageAsset,
     required this.isDark,
     required this.onStart,
   });
@@ -388,62 +393,85 @@ class _RoutineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Image.asset(
+              imageAsset,
+              height: 140,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const SizedBox(
+                  height: 140,
+                  child: Center(
+                    child: Icon(Icons.fitness_center),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.limeGreen.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$exerciseCount exercises',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.limeGreen.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    '$exerciseCount exercises',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.play_arrow_rounded, color: Colors.black),
+                    label: const Text(
+                      'Start Routine',
+                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                     ),
+                    onPressed: onStart,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 13,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.play_arrow_rounded, color: Colors.black),
-                label: const Text(
-                  'Start Routine',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                ),
-                onPressed: onStart,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -163,6 +163,8 @@ class ExerciseEntity {
   final String equipment;
   final bool isCustom;
   final DateTime createdAt;
+  final String? imageAsset;
+  final String? anatomyAsset;
 
   const ExerciseEntity({
     required this.id,
@@ -173,5 +175,7 @@ class ExerciseEntity {
     required this.equipment,
     this.isCustom = false,
     required this.createdAt,
+    this.imageAsset,
+    this.anatomyAsset,
   });
 }

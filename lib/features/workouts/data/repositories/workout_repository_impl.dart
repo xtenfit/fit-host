@@ -27,6 +27,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
               equipment: e.equipment,
               isCustom: Value(e.isCustom),
               createdAt: e.createdAt,
+              imageAsset: Value(e.imageAsset),
+              anatomyAsset: Value(e.anatomyAsset),
             ),
           ),
         );
@@ -67,6 +69,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
             equipment: r.equipment,
             isCustom: r.isCustom,
             createdAt: r.createdAt,
+            imageAsset: r.imageAsset,
+            anatomyAsset: r.anatomyAsset,
           ),
         )
         .toList();
@@ -86,6 +90,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       equipment: row.equipment,
       isCustom: row.isCustom,
       createdAt: row.createdAt,
+      imageAsset: row.imageAsset,
+      anatomyAsset: row.anatomyAsset,
     );
   }
 

@@ -9,6 +9,20 @@ final defaultExercisesList = [
     instructions:
         'Lie flat on the bench. Grip the barbell slightly wider than shoulder-width. Lower the bar smoothly to your mid-chest, then press upward explosively until arms are extended.',
     equipment: 'Barbell & Bench',
+    imageAsset: 'assets/images/exercises/push_ups.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-pushup',
+    name: 'Standard Push-Up',
+    category: 'Chest',
+    targetMuscle: 'Pectoralis Major, Anterior Deltoids, Core',
+    instructions:
+        'Place hands shoulder-width apart on the floor. Maintain a straight plank from heels to crown. Lower chest until elbows reach 90 degrees, then drive through palms.',
+    equipment: 'Bodyweight',
+    imageAsset: 'assets/images/exercises/push_ups.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -19,6 +33,7 @@ final defaultExercisesList = [
     instructions:
         'Set bench to 30-45 degrees. Hold dumbbells at shoulder level with palms facing forward. Press up until arms are fully extended, then lower with control.',
     equipment: 'Dumbbells & Incline Bench',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -29,6 +44,20 @@ final defaultExercisesList = [
     instructions:
         'Rest bar across upper back. Stand with feet shoulder-width apart. Hinge at hips and knees to lower until thighs are parallel to the floor. Drive up through midfoot.',
     equipment: 'Barbell & Squat Rack',
+    imageAsset: 'assets/images/exercises/squats.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-lunges',
+    name: 'Walking Dumbbell Lunges',
+    category: 'Legs',
+    targetMuscle: 'Quadriceps, Hamstrings, Glutes',
+    instructions:
+        'Step forward with one leg and lower hips until both knees are bent at approximately 90 degrees. Keep torso upright. Push off front heel to return or step forward.',
+    equipment: 'Dumbbells or Bodyweight',
+    imageAsset: 'assets/images/exercises/lunges.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -39,6 +68,8 @@ final defaultExercisesList = [
     instructions:
         'Hold bar at hip height. Keep slight bend in knees, push hips back, and lower bar along shins while maintaining a flat back. Squeeze glutes to return upright.',
     equipment: 'Barbell',
+    imageAsset: 'assets/images/exercises/deadlift.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -49,6 +80,8 @@ final defaultExercisesList = [
     instructions:
         'Stand with feet hip-width under bar. Grip bar just outside legs. Flatten spine, engage lats, and pull through the floor until hips and knees lock out.',
     equipment: 'Barbell & Plates',
+    imageAsset: 'assets/images/exercises/deadlift.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_back.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -59,6 +92,8 @@ final defaultExercisesList = [
     instructions:
         'Grip bar with hands wider than shoulders, palms facing away. Pull your chest toward the bar by driving elbows down and back. Lower with control.',
     equipment: 'Pull-Up Bar',
+    imageAsset: 'assets/images/exercises/pull_ups.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_back.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -69,6 +104,7 @@ final defaultExercisesList = [
     instructions:
         'Hinge forward at 45 degrees with flat spine. Pull bar towards lower abdomen, pinching shoulder blades together at top. Lower under control.',
     equipment: 'Barbell',
+    anatomyAsset: 'assets/images/exercises/anatomy_back.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -79,6 +115,8 @@ final defaultExercisesList = [
     instructions:
         'Stand with core braced and glutes squeezed. Press barbell from collarbone straight overhead until elbows lock out. Lower back smoothly to upper chest.',
     equipment: 'Barbell',
+    imageAsset: 'assets/images/exercises/shoulder_press.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -89,6 +127,7 @@ final defaultExercisesList = [
     instructions:
         'Stand tall holding dumbbells at sides. Raise arms out to the side until parallel with floor, leading with elbows. Pause briefly and lower with control.',
     equipment: 'Dumbbells',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -99,6 +138,8 @@ final defaultExercisesList = [
     instructions:
         'Keep elbows glued to sides. Curl weights upward while supinating wrists. Squeeze biceps at peak contraction and lower slowly.',
     equipment: 'Dumbbells',
+    imageAsset: 'assets/images/exercises/bicep_curl.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -109,6 +150,7 @@ final defaultExercisesList = [
     instructions:
         'Grip cable rope or straight bar at chest height. Keep upper arms stationary against torso and push downward until elbows fully extend. Return slowly.',
     equipment: 'Cable Machine',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -119,6 +161,7 @@ final defaultExercisesList = [
     instructions:
         'Hold push-up position on forearms. Form a straight line from crown of head to heels. Brace core, engage glutes, and breathe steadily.',
     equipment: 'Bodyweight',
+    imageAsset: 'assets/images/exercises/plank.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
 ];
