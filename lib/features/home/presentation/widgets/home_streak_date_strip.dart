@@ -116,7 +116,7 @@ class HomeStreakDateStrip extends ConsumerWidget {
 
         // Mini Horizontal Date Selector
         SizedBox(
-          height: 74,
+          height: 80,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: days.length,

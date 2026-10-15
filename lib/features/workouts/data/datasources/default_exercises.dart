@@ -9,7 +9,7 @@ final defaultExercisesList = [
     instructions:
         'Lie flat on the bench. Grip the barbell slightly wider than shoulder-width. Lower the bar smoothly to your mid-chest, then press upward explosively until arms are extended.',
     equipment: 'Barbell & Bench',
-    imageAsset: 'assets/images/exercises/push_ups.png',
+    imageAsset: 'assets/images/exercises/bench_press.png',
     anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
@@ -33,6 +33,7 @@ final defaultExercisesList = [
     instructions:
         'Set bench to 30-45 degrees. Hold dumbbells at shoulder level with palms facing forward. Press up until arms are fully extended, then lower with control.',
     equipment: 'Dumbbells & Incline Bench',
+    imageAsset: 'assets/images/exercises/bench_press_top.png',
     anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
@@ -104,6 +105,7 @@ final defaultExercisesList = [
     instructions:
         'Hinge forward at 45 degrees with flat spine. Pull bar towards lower abdomen, pinching shoulder blades together at top. Lower under control.',
     equipment: 'Barbell',
+    imageAsset: 'assets/images/exercises/dumbbell_row.png',
     anatomyAsset: 'assets/images/exercises/anatomy_back.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
@@ -127,6 +129,7 @@ final defaultExercisesList = [
     instructions:
         'Stand tall holding dumbbells at sides. Raise arms out to the side until parallel with floor, leading with elbows. Pause briefly and lower with control.',
     equipment: 'Dumbbells',
+    imageAsset: 'assets/images/exercises/shoulder_press_start.png',
     anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
@@ -139,7 +142,7 @@ final defaultExercisesList = [
         'Keep elbows glued to sides. Curl weights upward while supinating wrists. Squeeze biceps at peak contraction and lower slowly.',
     equipment: 'Dumbbells',
     imageAsset: 'assets/images/exercises/bicep_curl.png',
-    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_biceps.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -150,7 +153,8 @@ final defaultExercisesList = [
     instructions:
         'Grip cable rope or straight bar at chest height. Keep upper arms stationary against torso and push downward until elbows fully extend. Return slowly.',
     equipment: 'Cable Machine',
-    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    imageAsset: 'assets/images/exercises/bench_press_bottom.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -162,6 +166,7 @@ final defaultExercisesList = [
         'Hold push-up position on forearms. Form a straight line from crown of head to heels. Brace core, engage glutes, and breathe steadily.',
     equipment: 'Bodyweight',
     imageAsset: 'assets/images/exercises/plank.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_core.png',
     createdAt: DateTime.utc(2025, 1, 1),
   ),
 ];
