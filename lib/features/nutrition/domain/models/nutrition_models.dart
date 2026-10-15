@@ -100,6 +100,11 @@ class DailyNutritionState {
   double get totalFatGained =>
       loggedMeals.fold<double>(0.0, (sum, m) => sum + m.fatGrams);
 
+  int get targetFats => targetFat;
+  double get totalProtein => totalProteinGained;
+  double get totalCarbs => totalCarbsGained;
+  double get totalFats => totalFatGained;
+
   DailyNutritionState copyWith({
     int? targetCalories,
     int? targetProtein,
