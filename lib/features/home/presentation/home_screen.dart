@@ -19,22 +19,19 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.limeGreen, AppColors.electricCyan],
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'FIT HOST',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                  letterSpacing: 1.2,
-                ),
+            Image.asset(
+              'assets/images/fit_host_icon.png',
+              height: 28,
+              width: 28,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'FIT HOST',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+                letterSpacing: 0.8,
               ),
             ),
             const SizedBox(width: 8),
@@ -115,15 +112,20 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: AppColors.limeGreen.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.limeGreen.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.bolt_rounded,
-                          color: AppColors.limeGreen,
-                          size: 20,
+                        child: Image.asset(
+                          'assets/images/fit_host_icon.png',
+                          height: 32,
+                          width: 32,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ],

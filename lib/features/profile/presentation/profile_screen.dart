@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/core/theme/theme_provider.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
@@ -35,13 +36,25 @@ class ProfileScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.limeGreen.withValues(alpha: 0.2),
-                  child: const Icon(
-                    Icons.person_rounded,
-                    color: AppColors.limeGreen,
-                    size: 32,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppColors.limeGreen.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        'assets/images/fit_host_app_icon.jpg',
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -208,17 +221,41 @@ class ProfileScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Card(
             child: Column(
-              children: const [
-                ListTile(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      color: Colors.black,
+                      child: Image.asset(
+                        'assets/images/fit_host_wordmark.jpg',
+                        height: 36,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ),
+                const Divider(height: 1),
+                const ListTile(
                   leading: Icon(Icons.info_outline_rounded),
                   title: Text('Version'),
                   subtitle: Text('1.0.0 (Production Release Candidate)'),
                 ),
-                Divider(height: 1),
-                ListTile(
+                const Divider(height: 1),
+                const ListTile(
                   leading: Icon(Icons.code_rounded),
                   title: Text('Architecture'),
                   subtitle: Text('Flutter • Riverpod • Drift SQLite • GoRouter'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.explore_outlined, color: AppColors.limeGreen),
+                  title: const Text('Fit Host Onboarding'),
+                  subtitle: const Text('View intro tour and offline-first principles'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/onboarding'),
                 ),
               ],
             ),

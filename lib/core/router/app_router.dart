@@ -8,6 +8,7 @@ import 'package:fit_host/features/workouts/presentation/screens/exercise_library
 import 'package:fit_host/features/progress/presentation/progress_screen.dart';
 import 'package:fit_host/features/nutrition/presentation/nutrition_screen.dart';
 import 'package:fit_host/features/profile/presentation/profile_screen.dart';
+import 'package:fit_host/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:fit_host/features/shell/main_navigation_shell.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -74,6 +75,11 @@ final appRouter = GoRouter(
       path: '/exercises',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ExerciseLibraryScreen(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const OnboardingScreen(),
     ),
   ],
 );
