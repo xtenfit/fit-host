@@ -26,9 +26,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Verify Brand Title & Offline badge
-    expect(find.text('FIT HOST'), findsOneWidget);
-    expect(find.text('Offline First'), findsOneWidget);
+    // Verify Brand Logo Assets & ensure Offline First badge is removed from AppBar
+    expect(find.text('Offline First'), findsNothing);
+    expect(find.byType(Image), findsWidgets);
 
     // Verify Primary Navigation destinations (Home, Workouts, Progress, Nutrition, Profile)
     expect(find.widgetWithText(NavigationDestination, 'Home'), findsOneWidget);
