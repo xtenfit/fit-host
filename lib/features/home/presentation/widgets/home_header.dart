@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../nutrition/presentation/widgets/custom_meal_routine_sheet.dart';
 
 class HomeHeader extends StatelessWidget {
   final bool isDark;
@@ -21,7 +20,7 @@ class HomeHeader extends StatelessWidget {
       children: [
         // Squircle Grid Menu Button
         InkWell(
-          onTap: () => CustomMealRoutineSheet.show(context),
+          onTap: () => context.push('/more'),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             width: 44,
@@ -79,15 +78,7 @@ class HomeHeader extends StatelessWidget {
 
         // Notification Bell with Unread Dot
         InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('🔔 All workout reminders & macro targets are up to date!'),
-                duration: Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          },
+          onTap: () => context.push('/reminders'),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             width: 44,

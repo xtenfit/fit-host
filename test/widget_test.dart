@@ -30,34 +30,34 @@ void main() {
     expect(find.text('Offline First'), findsNothing);
     expect(find.byType(Image), findsWidgets);
 
-    // Verify Primary Navigation destinations (Home, Workouts, Progress, Nutrition, Profile)
-    expect(find.widgetWithText(NavigationDestination, 'Home'), findsOneWidget);
-    expect(find.widgetWithText(NavigationDestination, 'Workouts'), findsOneWidget);
-    expect(find.widgetWithText(NavigationDestination, 'Progress'), findsOneWidget);
-    expect(find.widgetWithText(NavigationDestination, 'Nutrition'), findsOneWidget);
-    expect(find.widgetWithText(NavigationDestination, 'Profile'), findsOneWidget);
+    // Verify Primary Navigation destinations (Home, Workouts, Activity, My Diary, Profile)
+    expect(find.text('Home'), findsWidgets);
+    expect(find.byIcon(Icons.fitness_center_outlined), findsWidgets);
+    expect(find.byIcon(Icons.show_chart_rounded), findsWidgets);
+    expect(find.byIcon(Icons.receipt_long_outlined), findsWidgets);
+    expect(find.byIcon(Icons.person_outline_rounded), findsWidgets);
 
-    // Verify Start Quick Workout button
-    expect(find.text('Start Quick Workout'), findsOneWidget);
+    // Verify Today's Workout section
+    expect(find.text("Today's Workout"), findsOneWidget);
 
-    // Navigate to Workouts tab via Navigation Destination
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Workouts'));
+    // Navigate to Workouts tab via custom dock
+    await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
     expect(find.text('History'), findsOneWidget);
     expect(find.text('Routines & Plans'), findsOneWidget);
 
-    // Navigate to Progress tab
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Progress'));
+    // Navigate to Activity/Progress tab
+    await tester.tap(find.byIcon(Icons.show_chart_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Progress & Analytics'), findsOneWidget);
 
-    // Navigate to Nutrition tab
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Nutrition'));
+    // Navigate to Nutrition/Diary tab
+    await tester.tap(find.byIcon(Icons.receipt_long_outlined));
     await tester.pumpAndSettle();
     expect(find.text('Nutrition & Fuel'), findsOneWidget);
 
     // Navigate to Profile tab
-    await tester.tap(find.widgetWithText(NavigationDestination, 'Profile'));
+    await tester.tap(find.byIcon(Icons.person_outline_rounded));
     await tester.pumpAndSettle();
     expect(find.text('Profile & Settings'), findsOneWidget);
     expect(find.text('Offline Athlete'), findsOneWidget);

@@ -71,3 +71,45 @@ class SyncQueue extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+class CalendarEvents extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get eventType => text()(); // 'workout', 'rest_day', 'meal', 'hydration', 'sleep', 'weigh_in', 'custom'
+  DateTimeColumn get scheduledDate => dateTime()();
+  DateTimeColumn get startTime => dateTime().nullable()();
+  DateTimeColumn get endTime => dateTime().nullable()();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+  BoolColumn get isMissed => boolean().withDefault(const Constant(false))();
+  TextColumn get recurrenceRule => text().withDefault(const Constant('none'))(); // 'none', 'daily', 'weekly', 'weekdays', 'monthly'
+  TextColumn get targetMetrics => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Reminders extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get category => text()(); // 'workout', 'meal', 'hydration', 'sleep', 'habit', 'custom'
+  TextColumn get timeOfDay => text()(); // 'HH:mm'
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+  TextColumn get recurrence => text().withDefault(const Constant('daily'))(); // 'once', 'daily', 'weekly', 'weekdays', 'monthly', 'custom'
+  TextColumn get repeatDays => text().nullable()(); // '1,2,3,4,5'
+  BoolColumn get soundEnabled => boolean().withDefault(const Constant(true))();
+  BoolColumn get vibrationEnabled => boolean().withDefault(const Constant(true))();
+  IntColumn get snoozeDurationMinutes => integer().withDefault(const Constant(10))();
+  DateTimeColumn get lastTriggeredAt => dateTime().nullable()();
+  DateTimeColumn get lastCompletedAt => dateTime().nullable()();
+  BoolColumn get isDismissed => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+

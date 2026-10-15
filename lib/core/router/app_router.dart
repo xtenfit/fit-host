@@ -10,6 +10,12 @@ import 'package:fit_host/features/nutrition/presentation/nutrition_screen.dart';
 import 'package:fit_host/features/profile/presentation/profile_screen.dart';
 import 'package:fit_host/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:fit_host/features/shell/main_navigation_shell.dart';
+import 'package:fit_host/features/calendar/presentation/screens/calendar_screen.dart';
+import 'package:fit_host/features/reminders/presentation/screens/reminders_screen.dart';
+import 'package:fit_host/features/planner/presentation/daily_planner_screen.dart';
+import 'package:fit_host/features/more/presentation/more_screen.dart';
+import 'package:fit_host/features/settings/presentation/notification_settings_screen.dart';
+import 'package:fit_host/features/settings/presentation/privacy_export_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -57,6 +63,36 @@ final appRouter = GoRouter(
           ),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/calendar',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const CalendarScreen(),
+    ),
+    GoRoute(
+      path: '/reminders',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const RemindersScreen(),
+    ),
+    GoRoute(
+      path: '/planner',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DailyPlannerScreen(),
+    ),
+    GoRoute(
+      path: '/more',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const MoreScreen(),
+    ),
+    GoRoute(
+      path: '/settings/notifications',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/privacy',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const PrivacyExportScreen(),
     ),
     GoRoute(
       path: '/active-workout',

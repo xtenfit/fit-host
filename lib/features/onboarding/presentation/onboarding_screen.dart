@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../domain/models/onboarding_models.dart';
 import 'controllers/onboarding_controller.dart';
@@ -884,7 +883,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       context: context,
                       initialTime: const TimeOfDay(hour: 12, minute: 0),
                     );
-                    if (time != null) {
+                    if (time != null && mounted) {
                       notifier.updateMealScheduleItem(index, item.name, time.format(context));
                     }
                   },
@@ -968,7 +967,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           title: const Text('Hydration Reminders', style: TextStyle(fontWeight: FontWeight.bold)),
           subtitle: const Text('Gentle local notifications during waking hours'),
           value: state.enableWaterReminders,
-          activeColor: AppColors.electricCyan,
+          activeTrackColor: AppColors.electricCyan,
           onChanged: (val) => notifier.setWaterReminders(val),
         ),
       ],

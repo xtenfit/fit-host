@@ -11,6 +11,8 @@ part 'database.g.dart';
     WorkoutExercises,
     WorkoutSets,
     SyncQueue,
+    CalendarEvents,
+    Reminders,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -27,12 +29,18 @@ class AppDatabase extends _$AppDatabase {
         );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(calendarEvents);
+            await m.createTable(reminders);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

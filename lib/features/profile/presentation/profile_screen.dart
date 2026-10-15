@@ -151,6 +151,57 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
           ),
+          // Tools & Features Section
+          const Text(
+            'Tools & Features',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.calendar_month_rounded, color: AppColors.electricBlue),
+                  title: const Text('Fitness Calendar'),
+                  subtitle: const Text('Month, week & daily workout schedule'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/calendar'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.alarm_rounded, color: Color(0xFFFF9E00)),
+                  title: const Text('Reminders & Alarms'),
+                  subtitle: const Text('Offline workout, meal & water timers'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/reminders'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.checklist_rounded, color: AppColors.limeGreen),
+                  title: const Text('Daily Planner'),
+                  subtitle: const Text('Check off daily routine targets'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/planner'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.notifications_active_rounded, color: Color(0xFF00B4D8)),
+                  title: const Text('Notification Channels'),
+                  subtitle: const Text('Configure sound, vibration & snoozes'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/settings/notifications'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.download_rounded, color: Colors.teal),
+                  title: const Text('Privacy & Offline Data Export'),
+                  subtitle: const Text('Download complete database as JSON'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/settings/privacy'),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 20),
 
           // Storage & Privacy

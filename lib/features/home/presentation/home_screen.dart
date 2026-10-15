@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/nutrition/presentation/controllers/nutrition_controller.dart';
-import 'package:fit_host/features/nutrition/presentation/widgets/custom_meal_routine_sheet.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_streak_date_strip.dart';
 import 'widgets/home_statistics_grid.dart';
