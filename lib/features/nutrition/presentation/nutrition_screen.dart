@@ -1,25 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
+import 'controllers/nutrition_controller.dart';
+import 'widgets/custom_meal_routine_sheet.dart';
 
-class NutritionScreen extends StatefulWidget {
+class NutritionScreen extends ConsumerStatefulWidget {
   const NutritionScreen({super.key});
 
   @override
-  State<NutritionScreen> createState() => _NutritionScreenState();
+  ConsumerState<NutritionScreen> createState() => _NutritionScreenState();
 }
 
-class _NutritionScreenState extends State<NutritionScreen> {
-  int _waterGlasses = 4;
-  final int _targetWater = 8;
-
+class _NutritionScreenState extends ConsumerState<NutritionScreen> {
   @override
   Widget build(BuildContext context) {
+    final nutrition = ref.watch(nutritionProvider);
+    final notifier = ref.read(nutritionProvider.notifier);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nutrition & Fuel'),
+        actions: [
+          IconButton(
+            tooltip: 'Custom Meal Routines',
+            icon: const Icon(Icons.restaurant_menu_rounded, color: AppColors.limeGreen),
+            onPressed: () => CustomMealRoutineSheet.show(context),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -103,37 +112,63 @@ class _NutritionScreenState extends State<NutritionScreen> {
                         children: [
                           _MacroIndicator(
                             label: 'Calories',
-                            current: 1850,
-                            target: 2400,
+                            current: nutrition.totalCaloriesGained > 0
+                                ? nutrition.totalCaloriesGained
+                                : 1850,
+                            target: nutrition.targetCalories,
                             unit: 'kcal',
                             color: AppColors.limeGreen,
                             isDark: isDark,
                           ),
                           _MacroIndicator(
                             label: 'Protein',
-                            current: 140,
-                            target: 180,
+                            current: nutrition.totalProteinGained > 0
+                                ? nutrition.totalProteinGained.toInt()
+                                : 140,
+                            target: nutrition.targetProtein,
                             unit: 'g',
                             color: AppColors.electricCyan,
                             isDark: isDark,
                           ),
                           _MacroIndicator(
                             label: 'Carbs',
-                            current: 190,
-                            target: 250,
+                            current: nutrition.totalCarbsGained > 0
+                                ? nutrition.totalCarbsGained.toInt()
+                                : 190,
+                            target: nutrition.targetCarbs,
                             unit: 'g',
                             color: const Color(0xFFF59E0B),
                             isDark: isDark,
                           ),
                           _MacroIndicator(
                             label: 'Fats',
-                            current: 55,
-                            target: 70,
+                            current: nutrition.totalFatGained > 0
+                                ? nutrition.totalFatGained.toInt()
+                                : 55,
+                            target: nutrition.targetFat,
                             unit: 'g',
                             color: const Color(0xFFA855F7),
                             isDark: isDark,
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isDark ? AppColors.darkSurface : AppColors.limeGreen,
+                            foregroundColor: isDark ? AppColors.limeGreen : Colors.black,
+                            side: BorderSide(color: AppColors.limeGreen.withValues(alpha: 0.5)),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          icon: const Icon(Icons.restaurant_menu_rounded, size: 18),
+                          label: const Text(
+                            'Custom Meal Routines (Vegan & Non-Veg)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          onPressed: () => CustomMealRoutineSheet.show(context),
+                        ),
                       ),
                     ],
                   ),
@@ -177,7 +212,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
-                            '$_waterGlasses / $_targetWater Glasses',
+                            '${nutrition.waterGlasses} / ${nutrition.targetWater} Glasses',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppColors.electricCyan,
@@ -188,14 +223,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(_targetWater, (index) {
-                          final isFilled = index < _waterGlasses;
+                        children: List.generate(nutrition.targetWater, (index) {
+                          final isFilled = index < nutrition.waterGlasses;
                           return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _waterGlasses = index + 1;
-                              });
-                            },
+                            onTap: () => notifier.setWater(index + 1),
                             child: Icon(
                               isFilled
                                   ? Icons.local_drink_rounded
@@ -217,16 +248,16 @@ class _NutritionScreenState extends State<NutritionScreen> {
                           TextButton.icon(
                             icon: const Icon(Icons.remove_rounded, size: 16),
                             label: const Text('Minus'),
-                            onPressed: _waterGlasses > 0
-                                ? () => setState(() => _waterGlasses--)
+                            onPressed: nutrition.waterGlasses > 0
+                                ? () => notifier.decrementWater()
                                 : null,
                           ),
                           const SizedBox(width: 8),
                           TextButton.icon(
                             icon: const Icon(Icons.add_rounded, size: 16),
                             label: const Text('Add Glass'),
-                            onPressed: _waterGlasses < _targetWater
-                                ? () => setState(() => _waterGlasses++)
+                            onPressed: nutrition.waterGlasses < nutrition.targetWater
+                                ? () => notifier.incrementWater()
                                 : null,
                           ),
                         ],

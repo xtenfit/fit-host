@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fit_host/features/nutrition/presentation/nutrition_screen.dart';
 
@@ -11,8 +12,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      const MaterialApp(
-        home: NutritionScreen(),
+      const ProviderScope(
+        child: MaterialApp(
+          home: NutritionScreen(),
+        ),
       ),
     );
 
