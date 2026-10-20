@@ -42,6 +42,8 @@ class RemindersController {
 
   Future<void> completeReminder(String id) => _repo.completeReminder(id);
 
+  Future<void> uncompleteReminder(String id) => _repo.uncompleteReminder(id);
+
   Future<void> dismissReminder(String id) => _repo.dismissReminder(id);
 
   Future<void> deleteReminder(String id) => _repo.deleteReminder(id);
@@ -56,6 +58,10 @@ class RemindersController {
 
   Future<void> updateReminder(Reminder reminder) =>
       _repo.updateReminder(reminder);
+
+  Future<void> cleanDemoReminders() => _repo.cleanDemoSeededReminders();
+
+  Future<void> clearAllReminders() => _repo.clearAllReminders();
 }
 
 final remindersControllerProvider = Provider<RemindersController>((ref) {

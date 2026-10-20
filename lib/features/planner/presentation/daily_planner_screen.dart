@@ -62,7 +62,7 @@ class DailyPlannerScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
           children: [
             // Date Switcher Header
             Container(

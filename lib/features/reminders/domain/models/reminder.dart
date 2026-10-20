@@ -145,21 +145,40 @@ class Reminder {
     }
   }
 
+  /// Returns true if this reminder was completed today (before or after the scheduled time).
+  bool get isCompletedToday {
+    if (lastCompletedAt == null) return false;
+    final now = DateTime.now();
+    return lastCompletedAt!.year == now.year &&
+        lastCompletedAt!.month == now.month &&
+        lastCompletedAt!.day == now.day;
+  }
+
   /// Calculates the next occurrence of this reminder strictly after [from].
-  DateTime nextOccurrence(DateTime from) {
-    DateTime candidate = DateTime(from.year, from.month, from.day, hour, minute);
+  /// If this reminder was already completed today and [ignoreCompletedToday] is false,
+  /// the search starts after today so today's completed alarm is not repeated.
+  DateTime nextOccurrence(DateTime from, {bool ignoreCompletedToday = false}) {
+    DateTime effectiveFrom = from;
+    if (isCompletedToday && !ignoreCompletedToday) {
+      final endOfToday = DateTime(from.year, from.month, from.day, 23, 59, 59);
+      if (endOfToday.isAfter(effectiveFrom)) {
+        effectiveFrom = endOfToday;
+      }
+    }
+
+    DateTime candidate = DateTime(effectiveFrom.year, effectiveFrom.month, effectiveFrom.day, hour, minute);
 
     switch (recurrence) {
       case ReminderRecurrence.once:
-        if (candidate.isAfter(from)) return candidate;
+        if (candidate.isAfter(effectiveFrom)) return candidate;
         return candidate.add(const Duration(days: 1));
 
       case ReminderRecurrence.daily:
-        if (candidate.isAfter(from)) return candidate;
+        if (candidate.isAfter(effectiveFrom)) return candidate;
         return candidate.add(const Duration(days: 1));
 
       case ReminderRecurrence.weekdays:
-        if (candidate.isAfter(from) && candidate.weekday >= DateTime.monday && candidate.weekday <= DateTime.friday) {
+        if (candidate.isAfter(effectiveFrom) && candidate.weekday >= DateTime.monday && candidate.weekday <= DateTime.friday) {
           return candidate;
         }
         do {
@@ -168,11 +187,11 @@ class Reminder {
         return candidate;
 
       case ReminderRecurrence.weekly:
-        if (candidate.isAfter(from)) return candidate;
+        if (candidate.isAfter(effectiveFrom)) return candidate;
         return candidate.add(const Duration(days: 7));
 
       case ReminderRecurrence.monthly:
-        if (candidate.isAfter(from)) return candidate;
+        if (candidate.isAfter(effectiveFrom)) return candidate;
         // next month same day, handling shorter month bounds
         int nextYear = candidate.year;
         int nextMonth = candidate.month + 1;
@@ -187,12 +206,12 @@ class Reminder {
 
       case ReminderRecurrence.custom:
         if (repeatDays.isEmpty) {
-          if (candidate.isAfter(from)) return candidate;
+          if (candidate.isAfter(effectiveFrom)) return candidate;
           return candidate.add(const Duration(days: 1));
         }
         for (int i = 0; i < 14; i++) {
           final testDate = candidate.add(Duration(days: i));
-          if (testDate.isAfter(from) && repeatDays.contains(testDate.weekday)) {
+          if (testDate.isAfter(effectiveFrom) && repeatDays.contains(testDate.weekday)) {
             return testDate;
           }
         }

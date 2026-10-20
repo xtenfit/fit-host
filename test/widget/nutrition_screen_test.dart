@@ -6,7 +6,7 @@ import 'package:fit_host/features/nutrition/presentation/nutrition_screen.dart';
 void main() {
   testWidgets('NutritionScreen renders macro targets, hydration tracker, and recovery tips',
       (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -24,7 +24,7 @@ void main() {
 
     // Verify Offline banner
     expect(
-      find.text('Fit Host core features run 100% offline. No paid subscription required.'),
+      find.text('Track daily nutrition, calories, and macros effortlessly with smart targets.'),
       findsOneWidget,
     );
 
@@ -37,23 +37,23 @@ void main() {
 
     // Verify Hydration Tracker
     expect(find.text('Hydration Tracker'), findsOneWidget);
-    expect(find.text('4 / 8 Glasses'), findsOneWidget);
+    expect(find.text('0 / 10 Glasses'), findsOneWidget);
 
     // Scroll and Tap Add Glass
     await tester.ensureVisible(find.text('Add Glass'));
     await tester.tap(find.text('Add Glass'));
     await tester.pumpAndSettle();
-    expect(find.text('5 / 8 Glasses'), findsOneWidget);
+    expect(find.text('1 / 10 Glasses'), findsOneWidget);
 
     // Scroll and Tap Minus
     await tester.ensureVisible(find.text('Minus'));
     await tester.tap(find.text('Minus'));
     await tester.pumpAndSettle();
-    expect(find.text('4 / 8 Glasses'), findsOneWidget);
+    expect(find.text('0 / 10 Glasses'), findsOneWidget);
 
     // Scroll to and Verify Whole Foods Card
-    await tester.ensureVisible(find.text('Whole Foods & Protein Synthesis'));
-    expect(find.text('Whole Foods & Protein Synthesis'), findsOneWidget);
+    await tester.ensureVisible(find.text('Whole Foods & Protein Synthesis').first);
+    expect(find.text('Whole Foods & Protein Synthesis'), findsWidgets);
 
     // Scroll to and Verify Rest & Recovery Card
     await tester.ensureVisible(find.text('Rest & Recovery Window'));

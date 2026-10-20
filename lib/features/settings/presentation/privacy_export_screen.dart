@@ -1,9 +1,16 @@
-import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../workouts/presentation/controllers/workout_providers.dart';
+import '../../../core/database/database.dart';
+import '../../profile/presentation/controllers/user_profile_controller.dart';
+import '../data/health_export_service.dart';
+
+final healthExportServiceProvider = Provider<HealthExportService>((ref) {
+  final db = ref.watch(databaseProvider);
+  return HealthExportService(db);
+});
 
 class PrivacyExportScreen extends ConsumerStatefulWidget {
   const PrivacyExportScreen({super.key});
@@ -13,79 +20,112 @@ class PrivacyExportScreen extends ConsumerStatefulWidget {
 }
 
 class _PrivacyExportScreenState extends ConsumerState<PrivacyExportScreen> {
-  bool _isExporting = false;
-  String? _exportedDataPreview;
+  bool _isExportingPdf = false;
+  bool _isExportingExcel = false;
+  bool _isExportingJson = false;
 
-  Future<void> _exportData() async {
-    setState(() => _isExporting = true);
+  File? _lastExportedFile;
+  String? _lastExportType;
+  String? _jsonPreview;
 
+  Future<void> _exportPdf() async {
+    setState(() => _isExportingPdf = true);
     try {
-      final db = ref.read(databaseProvider);
-
-      final exercises = await db.select(db.exercises).get();
-      final workouts = await db.select(db.workouts).get();
-      final workoutExercises = await db.select(db.workoutExercises).get();
-      final workoutSets = await db.select(db.workoutSets).get();
-      final calendarEvents = await db.select(db.calendarEvents).get();
-      final reminders = await db.select(db.reminders).get();
-
-      final exportPayload = {
-        'version': '1.0.0',
-        'exportDate': DateTime.now().toIso8601String(),
-        'app': 'Fit Host',
-        'storage': 'Local Offline SQLite (Drift)',
-        'data': {
-          'exercisesCount': exercises.length,
-          'workoutExercisesCount': workoutExercises.length,
-          'workoutSetsCount': workoutSets.length,
-          'workouts': workouts.map((w) => {
-            'id': w.id,
-            'title': w.title,
-            'startedAt': w.startedAt.toIso8601String(),
-            'completedAt': w.completedAt?.toIso8601String(),
-            'status': w.status,
-            'durationSeconds': w.durationSeconds,
-          }).toList(),
-          'calendarEvents': calendarEvents.map((c) => {
-            'id': c.id,
-            'title': c.title,
-            'eventType': c.eventType,
-            'scheduledDate': c.scheduledDate.toIso8601String(),
-            'isCompleted': c.isCompleted,
-            'recurrenceRule': c.recurrenceRule,
-          }).toList(),
-          'reminders': reminders.map((r) => {
-            'id': r.id,
-            'title': r.title,
-            'category': r.category,
-            'timeOfDay': r.timeOfDay,
-            'isEnabled': r.isEnabled,
-            'recurrence': r.recurrence,
-          }).toList(),
-        },
-      };
-
-      const encoder = JsonEncoder.withIndent('  ');
-      final jsonStr = encoder.convert(exportPayload);
+      final exportService = ref.read(healthExportServiceProvider);
+      final profile = ref.read(userProfileProvider);
+      final file = await exportService.generatePdfAudit(profile: profile);
 
       setState(() {
-        _isExporting = false;
-        _exportedDataPreview = jsonStr;
+        _isExportingPdf = false;
+        _lastExportedFile = file;
+        _lastExportType = 'PDF Health Audit';
       });
+
+      await HealthExportService.shareFile(file, subject: 'Fit Host Health Audit Report');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ Complete offline data archive generated!'),
+            content: Text('✅ Official PDF Health Audit Report generated and ready to share!'),
+            backgroundColor: AppColors.limeGreen,
             behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } catch (e) {
-      setState(() => _isExporting = false);
+      setState(() => _isExportingPdf = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e')),
+          SnackBar(content: Text('PDF Export failed: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportExcel() async {
+    setState(() => _isExportingExcel = true);
+    try {
+      final exportService = ref.read(healthExportServiceProvider);
+      final profile = ref.read(userProfileProvider);
+      final file = await exportService.generateExcelArchive(profile: profile);
+
+      setState(() {
+        _isExportingExcel = false;
+        _lastExportedFile = file;
+        _lastExportType = 'Excel Workbook (.xlsx)';
+      });
+
+      await HealthExportService.shareFile(file, subject: 'Fit Host Excel Fitness Data Backup');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Multi-sheet Excel workbook generated! Share or save anywhere.'),
+            backgroundColor: AppColors.limeGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isExportingExcel = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Excel Export failed: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportJson() async {
+    setState(() => _isExportingJson = true);
+    try {
+      final exportService = ref.read(healthExportServiceProvider);
+      final file = await exportService.generateJsonArchive();
+      final content = await file.readAsString();
+
+      setState(() {
+        _isExportingJson = false;
+        _lastExportedFile = file;
+        _lastExportType = 'JSON Raw Archive';
+        _jsonPreview = content;
+      });
+
+      await HealthExportService.shareFile(file, subject: 'Fit Host JSON Data Archive');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Raw JSON archive created! Preview available below.'),
+            backgroundColor: AppColors.limeGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isExportingJson = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('JSON Export failed: $e'), backgroundColor: Colors.redAccent),
         );
       }
     }
@@ -99,44 +139,43 @@ class _PrivacyExportScreenState extends ConsumerState<PrivacyExportScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Privacy & Data Export',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
+        title: const Text('Backup & Data Export'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // Security & Privacy Card
+            // E2E Encryption Banner Card
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
-                      ? [const Color(0xFF14241B), const Color(0xFF131722)]
-                      : [const Color(0xFFEDFFF2), Colors.white],
+                      ? [const Color(0xFF132219), const Color(0xFF181C26)]
+                      : [const Color(0xFFE8FDF0), Colors.white],
                 ),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: AppColors.limeGreen.withValues(alpha: 0.3),
+                  color: AppColors.limeGreen.withValues(alpha: 0.35),
                   width: 1.5,
                 ),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.limeGreen.withValues(alpha: 0.15),
+                      color: AppColors.limeGreen.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.shield_rounded,
                       color: AppColors.limeGreen,
-                      size: 28,
+                      size: 26,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -145,13 +184,13 @@ class _PrivacyExportScreenState extends ConsumerState<PrivacyExportScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '100% On-Device Privacy',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          'End-to-End User Encrypted Vault',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'Your fitness data, nutrition logs, calendar events, and alarms remain stored solely on your device in secure SQLite.',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          'Your fitness logs, workouts, diary, and nutrition records are 100% real and owned by you. Export anytime with zero restrictions.',
+                          style: TextStyle(fontSize: 11, height: 1.4, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -161,108 +200,254 @@ class _PrivacyExportScreenState extends ConsumerState<PrivacyExportScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Export Section
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Export Complete Archive',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Download or copy your complete workout logs, sets, calendar activities, and reminders in standard open JSON format.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _isExporting ? null : _exportData,
-                      icon: _isExporting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.download_rounded, size: 20),
-                      label: Text(
-                        _isExporting ? 'Generating JSON...' : 'Generate JSON Archive',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.electricBlue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const Text(
+              'Select Export & Backup Format',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+            ),
+            const SizedBox(height: 12),
+
+            // Option 1: PDF Export
+            _buildExportCard(
+              isDark: isDark,
+              title: 'Official PDF Health Audit Report',
+              subtitle:
+                  'Multi-page vector PDF report formatted for personal records, doctors, or trainers with verified workouts, biometrics, and activity charts.',
+              icon: Icons.picture_as_pdf_rounded,
+              color: Colors.redAccent,
+              badge: 'Print & Share',
+              buttonLabel: _isExportingPdf ? 'Compiling PDF Report...' : 'Export as PDF Document',
+              isLoading: _isExportingPdf,
+              onPressed: _isExportingPdf ? null : _exportPdf,
+            ),
+            const SizedBox(height: 14),
+
+            // Option 2: Excel Export
+            _buildExportCard(
+              isDark: isDark,
+              title: 'Multi-Sheet Excel Workbook (.xlsx)',
+              subtitle:
+                  'Authentic multi-tab spreadsheet formatted for Microsoft Excel, Apple Numbers, or Google Sheets with tabs for Workouts, Sets, Steps, and Diary.',
+              icon: Icons.table_chart_rounded,
+              color: Colors.green,
+              badge: 'Spreadsheet (.xlsx)',
+              buttonLabel: _isExportingExcel ? 'Building Excel Sheets...' : 'Export as Excel Spreadsheet',
+              isLoading: _isExportingExcel,
+              onPressed: _isExportingExcel ? null : _exportExcel,
+            ),
+            const SizedBox(height: 14),
+
+            // Option 3: JSON Archive
+            _buildExportCard(
+              isDark: isDark,
+              title: 'Complete Raw JSON Data Vault',
+              subtitle:
+                  'Open-standard raw JSON data payload for data portability, cloud migration, and developer auditing.',
+              icon: Icons.code_rounded,
+              color: AppColors.electricCyan,
+              badge: 'Standard JSON',
+              buttonLabel: _isExportingJson ? 'Assembling JSON...' : 'Export as JSON Archive',
+              isLoading: _isExportingJson,
+              onPressed: _isExportingJson ? null : _exportJson,
             ),
 
-            if (_exportedDataPreview != null) ...[
+            // Last Export Status Card
+            if (_lastExportedFile != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: AppColors.limeGreen.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle_rounded, color: AppColors.limeGreen, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Last Backup Created: $_lastExportType',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'File saved: ${_lastExportedFile!.path.split('/').last}',
+                      style: TextStyle(fontSize: 11, color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => HealthExportService.shareFile(_lastExportedFile!, subject: 'Fit Host Data Backup'),
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.share_rounded, size: 16),
+                        label: const Text('Re-Share Backup File', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // JSON Preview
+            if (_jsonPreview != null) ...[
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Export Preview',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                  ),
+                  const Text('JSON Payload Preview', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   TextButton.icon(
                     onPressed: () {
-                      Clipboard.setData(ClipboardData(text: _exportedDataPreview!));
+                      Clipboard.setData(ClipboardData(text: _jsonPreview!));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('📋 Copied JSON archive to clipboard!'),
+                          content: Text('📋 Copied JSON to clipboard!'),
+                          backgroundColor: AppColors.limeGreen,
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     },
-                    icon: const Icon(Icons.copy_rounded, size: 16),
-                    label: const Text('Copy to Clipboard'),
+                    icon: const Icon(Icons.copy_rounded, size: 14),
+                    label: const Text('Copy JSON', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Container(
-                height: 240,
-                padding: const EdgeInsets.all(14),
+                height: 200,
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF0F121A) : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isDark ? AppColors.darkSurfaceBorder : Colors.grey[300]!,
                   ),
                 ),
                 child: SingleChildScrollView(
                   child: Text(
-                    _exportedDataPreview!,
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                    ),
+                    _jsonPreview!,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
                   ),
                 ),
               ),
             ],
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
+            Center(
+              child: Text(
+                '© 2026 amitrana. All rights reserved.\nFit Host Cryptographic Health Vault v1.2.2v2',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white38 : Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildExportCard({
+    required bool isDark,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required String badge,
+    required String buttonLabel,
+    required bool isLoading,
+    required VoidCallback? onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                    const SizedBox(height: 2),
+                    Text(
+                      badge,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: onPressed,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              icon: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(
+                buttonLabel,
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

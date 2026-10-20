@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class HomeDashboardState {
   final DateTime selectedDate;
   final int streakDays;
-  final int stepsCount;
-  final int heartRateBpm;
   final String activeDietRoutine;
   final bool isFavoriteWorkout;
   final String selectedActivityFilter;
@@ -13,21 +11,17 @@ class HomeDashboardState {
 
   const HomeDashboardState({
     required this.selectedDate,
-    this.streakDays = 21,
-    this.stepsCount = 9560,
-    this.heartRateBpm = 73,
-    this.activeDietRoutine = 'Mediterranean Diet',
+    this.streakDays = 1,
+    this.activeDietRoutine = 'Balanced Nutrition',
     this.isFavoriteWorkout = true,
     this.selectedActivityFilter = 'Today',
-    this.walkSteps = 6432,
-    this.sleepHours = 7.40,
+    this.walkSteps = 0,
+    this.sleepHours = 7.5,
   });
 
   HomeDashboardState copyWith({
     DateTime? selectedDate,
     int? streakDays,
-    int? stepsCount,
-    int? heartRateBpm,
     String? activeDietRoutine,
     bool? isFavoriteWorkout,
     String? selectedActivityFilter,
@@ -37,8 +31,6 @@ class HomeDashboardState {
     return HomeDashboardState(
       selectedDate: selectedDate ?? this.selectedDate,
       streakDays: streakDays ?? this.streakDays,
-      stepsCount: stepsCount ?? this.stepsCount,
-      heartRateBpm: heartRateBpm ?? this.heartRateBpm,
       activeDietRoutine: activeDietRoutine ?? this.activeDietRoutine,
       isFavoriteWorkout: isFavoriteWorkout ?? this.isFavoriteWorkout,
       selectedActivityFilter:
@@ -71,16 +63,12 @@ class HomeDashboardNotifier extends Notifier<HomeDashboardState> {
     state = state.copyWith(selectedActivityFilter: filter);
   }
 
-  void addSteps(int steps) {
-    state = state.copyWith(
-      stepsCount: state.stepsCount + steps,
-      walkSteps: state.walkSteps + steps,
-    );
+  void logSteps(int steps) {
+    state = state.copyWith(walkSteps: state.walkSteps + steps);
   }
 
-  void pulseHeartRate() {
-    final nextBpm = state.heartRateBpm == 73 ? 76 : (state.heartRateBpm == 76 ? 71 : 73);
-    state = state.copyWith(heartRateBpm: nextBpm);
+  void setSleepHours(double hours) {
+    state = state.copyWith(sleepHours: hours);
   }
 }
 

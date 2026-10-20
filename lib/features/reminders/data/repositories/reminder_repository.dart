@@ -1,9 +1,7 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import '../../../../core/database/database.dart' as db;
+import '../../../../core/database/database.dart' as db hide Reminder;
 import '../../../../core/services/notification_service.dart';
-import '../../../workouts/presentation/controllers/workout_providers.dart';
 import '../../domain/models/reminder.dart';
 
 abstract class ReminderRepository {
@@ -17,16 +15,19 @@ abstract class ReminderRepository {
   Future<void> toggleEnabled(String id, bool isEnabled);
   Future<void> snoozeReminder(String id, int minutes);
   Future<void> completeReminder(String id);
+  Future<void> uncompleteReminder(String id);
   Future<void> dismissReminder(String id);
-  Future<void> seedInitialReminders();
+  Future<void> cleanDemoSeededReminders();
+  Future<void> clearAllReminders();
 }
 
 class ReminderRepositoryImpl implements ReminderRepository {
   final db.AppDatabase _db;
   final NotificationService _notificationService;
-  final _uuid = const Uuid();
 
-  ReminderRepositoryImpl(this._db, this._notificationService);
+  ReminderRepositoryImpl(this._db, this._notificationService) {
+    cleanDemoSeededReminders();
+  }
 
   @override
   Stream<List<Reminder>> watchAllReminders() {
@@ -91,13 +92,15 @@ class ReminderRepositoryImpl implements ReminderRepository {
     final now = DateTime.now();
     final nextTime = reminder.nextOccurrence(now);
 
-    await _notificationService.scheduleNotification(
+    // Schedule high-priority fullscreen alarm with category & payload for lock-screen popup
+    await _notificationService.scheduleAlarm(
       id: reminder.id,
       title: reminder.title,
       body: 'Time for ${reminder.title} (${reminder.category.label})',
       scheduledTime: nextTime,
       channel: _channelForCategory(reminder.category),
-      payload: '/reminders',
+      payload:
+          '/alarm?id=${Uri.encodeComponent(reminder.id)}&title=${Uri.encodeComponent(reminder.title)}&body=${Uri.encodeComponent(reminder.category.label)}&channel=${_channelForCategory(reminder.category).name}&snoozeMinutes=${reminder.snoozeDurationMinutes}',
       sound: reminder.soundEnabled,
       vibration: reminder.vibrationEnabled,
     );
@@ -161,6 +164,7 @@ class ReminderRepositoryImpl implements ReminderRepository {
 
   @override
   Future<void> completeReminder(String id) async {
+    // 1. Mark completed in database
     await (_db.update(_db.reminders)..where((t) => t.id.equals(id))).write(
       db.RemindersCompanion(
         lastCompletedAt: drift.Value(DateTime.now()),
@@ -169,10 +173,30 @@ class ReminderRepositoryImpl implements ReminderRepository {
       ),
     );
 
+    // 2. Cancel today's active/pending alarm immediately so it stops ringing or does not fire later today
+    await _notificationService.cancelNotification(id);
+
+    // 3. For recurring reminders, schedule next occurrence (which automatically advances past today)
     final rem = await getReminder(id);
     if (rem != null && rem.recurrence == ReminderRecurrence.once) {
       await toggleEnabled(id, false);
-    } else if (rem != null) {
+    } else if (rem != null && rem.isEnabled) {
+      await _scheduleNotificationForReminder(rem);
+    }
+  }
+
+  @override
+  Future<void> uncompleteReminder(String id) async {
+    await (_db.update(_db.reminders)..where((t) => t.id.equals(id))).write(
+      db.RemindersCompanion(
+        lastCompletedAt: const drift.Value(null),
+        isDismissed: const drift.Value(false),
+        updatedAt: drift.Value(DateTime.now()),
+      ),
+    );
+
+    final rem = await getReminder(id);
+    if (rem != null && rem.isEnabled) {
       await _scheduleNotificationForReminder(rem);
     }
   }
@@ -189,96 +213,28 @@ class ReminderRepositoryImpl implements ReminderRepository {
   }
 
   @override
-  Future<void> seedInitialReminders() async {
-    final count = await _db.customSelect(
-      'SELECT COUNT(*) as c FROM reminders',
-      readsFrom: {_db.reminders},
-    ).getSingle();
+  Future<void> cleanDemoSeededReminders() async {
+    try {
+      await _db.customStatement(
+        "DELETE FROM reminders WHERE title IN ('Morning Electrolyte Water', 'Mid-Day High-Protein Lunch', 'Afternoon Workout Session', 'Evening Hydration Check', 'Sleep Wind-Down & Dim Screens')",
+      );
+    } catch (_) {}
+  }
 
-    final total = count.read<int>('c');
-    if (total > 0) return;
-
-    final now = DateTime.now();
-
-    final initial = [
-      Reminder(
-        id: _uuid.v4(),
-        title: 'Morning Electrolyte Water',
-        category: ReminderCategory.hydration,
-        timeOfDay: '07:30',
-        isEnabled: true,
-        recurrence: ReminderRecurrence.daily,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        snoozeDurationMinutes: 10,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      Reminder(
-        id: _uuid.v4(),
-        title: 'Mid-Day High-Protein Lunch',
-        category: ReminderCategory.meal,
-        timeOfDay: '12:30',
-        isEnabled: true,
-        recurrence: ReminderRecurrence.daily,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        snoozeDurationMinutes: 15,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      Reminder(
-        id: _uuid.v4(),
-        title: 'Afternoon Workout Session',
-        category: ReminderCategory.workout,
-        timeOfDay: '17:30',
-        isEnabled: true,
-        recurrence: ReminderRecurrence.weekdays,
-        repeatDays: [1, 2, 3, 4, 5],
-        soundEnabled: true,
-        vibrationEnabled: true,
-        snoozeDurationMinutes: 15,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      Reminder(
-        id: _uuid.v4(),
-        title: 'Evening Hydration Check',
-        category: ReminderCategory.hydration,
-        timeOfDay: '19:45',
-        isEnabled: true,
-        recurrence: ReminderRecurrence.daily,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        snoozeDurationMinutes: 10,
-        createdAt: now,
-        updatedAt: now,
-      ),
-      Reminder(
-        id: _uuid.v4(),
-        title: 'Sleep Wind-Down & Dim Screens',
-        category: ReminderCategory.sleep,
-        timeOfDay: '22:15',
-        isEnabled: true,
-        recurrence: ReminderRecurrence.daily,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        snoozeDurationMinutes: 30,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    ];
-
-    for (final r in initial) {
-      await createReminder(r);
-    }
+  @override
+  Future<void> clearAllReminders() async {
+    try {
+      final all = await getAllReminders();
+      for (final r in all) {
+        await _notificationService.cancelNotification(r.id);
+      }
+      await _db.delete(_db.reminders).go();
+    } catch (_) {}
   }
 }
 
 final reminderRepositoryProvider = Provider<ReminderRepository>((ref) {
-  final dbInstance = ref.watch(databaseProvider);
+  final dbInstance = ref.watch(db.databaseProvider);
   final notif = ref.watch(notificationServiceProvider);
-  final repo = ReminderRepositoryImpl(dbInstance, notif);
-  repo.seedInitialReminders();
-  return repo;
+  return ReminderRepositoryImpl(dbInstance, notif);
 });

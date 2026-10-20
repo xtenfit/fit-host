@@ -7,18 +7,15 @@ import 'package:fit_host/features/workouts/data/datasources/default_exercises.da
 
 class WorkoutRepositoryImpl implements WorkoutRepository {
   final AppDatabase db;
+  final String userId;
 
-  WorkoutRepositoryImpl(this.db);
+  WorkoutRepositoryImpl(this.db, {this.userId = 'guest'});
 
   @override
   Future<void> seedDefaultExercises() async {
-    final existing = await (db.select(db.exercises)..limit(1)).getSingleOrNull();
-    if (existing == null) {
-      await db.batch((batch) {
-        batch.insertAll(
-          db.exercises,
-          defaultExercisesList.map(
-            (e) => ExercisesCompanion.insert(
+    for (final e in defaultExercisesList) {
+      await db.into(db.exercises).insertOnConflictUpdate(
+            ExercisesCompanion.insert(
               id: e.id,
               name: e.name,
               category: e.category,
@@ -29,10 +26,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
               createdAt: e.createdAt,
               imageAsset: Value(e.imageAsset),
               anatomyAsset: Value(e.anatomyAsset),
+              recommendedFor: Value(e.recommendedFor.join(',')),
             ),
-          ),
-        );
-      });
+          );
     }
   }
 
@@ -40,11 +36,31 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   Future<List<ExerciseEntity>> getExercises({
     String? query,
     String? category,
+    String? genderFilter,
   }) async {
     await seedDefaultExercises();
     final q = db.select(db.exercises);
     if (category != null && category.isNotEmpty && category != 'All') {
       q.where((t) => t.category.equals(category));
+    }
+    if (genderFilter != null &&
+        genderFilter.isNotEmpty &&
+        genderFilter.toLowerCase() != 'all') {
+      final isFemale = genderFilter.toLowerCase().contains('female');
+      final isMale = !isFemale && genderFilter.toLowerCase().contains('male');
+      if (isFemale) {
+        q.where((t) =>
+            t.recommendedFor.like('%female%') | t.recommendedFor.like('%all%'));
+      } else if (isMale) {
+        q.where((t) =>
+            (t.recommendedFor.like('%male%') &
+                t.recommendedFor.like('%female%').not()) |
+            t.recommendedFor.like('%all%'));
+      } else {
+        final clean = genderFilter.toLowerCase();
+        q.where((t) =>
+            t.recommendedFor.like('%$clean%') | t.recommendedFor.like('%all%'));
+      }
     }
     if (query != null && query.trim().isNotEmpty) {
       final pattern = '%${query.trim().toLowerCase()}%';
@@ -71,6 +87,11 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
             createdAt: r.createdAt,
             imageAsset: r.imageAsset,
             anatomyAsset: r.anatomyAsset,
+            recommendedFor: r.recommendedFor
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
           ),
         )
         .toList();
@@ -92,21 +113,35 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       createdAt: row.createdAt,
       imageAsset: row.imageAsset,
       anatomyAsset: row.anatomyAsset,
+      recommendedFor: row.recommendedFor
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList(),
     );
   }
 
   @override
   Future<void> saveWorkout(WorkoutEntity workout) async {
+    final computedCalories = workout.caloriesBurned ??
+        WorkoutEntity.computeCalories(
+          category: workout.category ?? workout.title,
+          weightKg: 70.0,
+          durationSeconds: workout.durationSeconds,
+        );
+
     await db.transaction(() async {
       await db.into(db.workouts).insertOnConflictUpdate(
             WorkoutsCompanion.insert(
               id: workout.id,
+              userId: Value(userId),
               title: workout.title,
               note: Value(workout.note),
               startedAt: workout.startedAt,
               completedAt: Value(workout.completedAt),
               status: Value(workout.status),
               durationSeconds: Value(workout.durationSeconds),
+              caloriesBurned: Value(computedCalories),
               syncStatus: Value(workout.syncStatus),
               updatedAt: workout.updatedAt,
             ),
@@ -133,6 +168,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
                 id: we.id,
                 workoutId: workout.id,
                 exerciseId: we.exerciseId,
+                userId: Value(userId),
                 orderIndex: Value(i),
                 notes: Value(we.notes),
               ),
@@ -144,6 +180,7 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
                 WorkoutSetsCompanion.insert(
                   id: s.id,
                   workoutExerciseId: we.id,
+                  userId: Value(userId),
                   setNumber: sIdx + 1,
                   reps: Value(s.reps),
                   weightKg: Value(s.weightKg),
@@ -156,23 +193,29 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       }
 
       // Add to sync queue for eventual cloud synchronization
+      final nowUtc = DateTime.now().toUtc();
       await db.into(db.syncQueue).insertOnConflictUpdate(
             SyncQueueCompanion.insert(
               id: 'sync-workout-${workout.id}',
+              userId: Value(userId),
               entityType: 'workout',
               entityId: workout.id,
               operation: 'upsert',
               payload: jsonEncode({
                 'id': workout.id,
+                'user_id': userId,
                 'title': workout.title,
                 'note': workout.note,
-                'startedAt': workout.startedAt.toIso8601String(),
-                'completedAt': workout.completedAt?.toIso8601String(),
+                'started_at': workout.startedAt.toIso8601String(),
+                'completed_at': workout.completedAt?.toIso8601String(),
                 'status': workout.status,
-                'durationSeconds': workout.durationSeconds,
-                'updatedAt': workout.updatedAt.toIso8601String(),
+                'duration_seconds': workout.durationSeconds,
+                'calories_burned': computedCalories,
+                'updated_at': workout.updatedAt.toIso8601String(),
               }),
-              createdAt: DateTime.now().toUtc(),
+              createdAt: nowUtc,
+              clientTimestamp: Value(nowUtc),
+              status: const Value('queued'),
             ),
           );
     });
@@ -192,14 +235,17 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       await (db.delete(db.workoutExercises)
             ..where((t) => t.workoutId.equals(id)))
           .go();
-      await (db.delete(db.workouts)..where((w) => w.id.equals(id))).go();
+      await (db.delete(db.workouts)
+            ..where((w) => w.id.equals(id) & w.userId.equals(userId)))
+          .go();
       await db.into(db.syncQueue).insertOnConflictUpdate(
             SyncQueueCompanion.insert(
               id: 'sync-delete-$id',
+              userId: Value(userId),
               entityType: 'workout',
               entityId: id,
               operation: 'delete',
-              payload: jsonEncode({'id': id}),
+              payload: jsonEncode({'id': id, 'user_id': userId}),
               createdAt: DateTime.now().toUtc(),
             ),
           );
@@ -208,7 +254,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
 
   @override
   Future<WorkoutEntity?> getWorkoutById(String id) async {
-    final wRow = await (db.select(db.workouts)..where((t) => t.id.equals(id)))
+    final wRow = await (db.select(db.workouts)
+          ..where((t) => t.id.equals(id) & t.userId.equals(userId)))
         .getSingleOrNull();
     if (wRow == null) return null;
 
@@ -265,7 +312,8 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
       completedAt: wRow.completedAt,
       status: wRow.status,
       durationSeconds: wRow.durationSeconds,
-      syncStatus: wRow.syncStatus,
+      caloriesBurned: wRow.caloriesBurned,
+      syncStatus: wRow.syncStatus ?? 'synced',
       updatedAt: wRow.updatedAt,
       exercises: exercises,
     );
@@ -274,6 +322,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   @override
   Future<List<WorkoutEntity>> getWorkouts() async {
     final wRows = await (db.select(db.workouts)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              (t.isDeleted.isNull() | t.isDeleted.equals(false)))
           ..orderBy([
             (t) => OrderingTerm(
                   expression: t.startedAt,
@@ -295,6 +346,9 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
   @override
   Stream<List<WorkoutEntity>> watchWorkouts() {
     return (db.select(db.workouts)
+          ..where((t) =>
+              t.userId.equals(userId) &
+              (t.isDeleted.isNull() | t.isDeleted.equals(false)))
           ..orderBy([
             (t) => OrderingTerm(
                   expression: t.startedAt,

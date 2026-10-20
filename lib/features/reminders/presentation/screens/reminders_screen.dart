@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/services/permission_service.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../domain/models/reminder.dart';
 import '../controllers/reminders_controller.dart';
 import '../widgets/reminder_card.dart';
@@ -30,7 +33,14 @@ class RemindersScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () {
+            tooltip: 'Alarm & Reminder Sounds',
+            icon: const Icon(Icons.volume_up_rounded),
+            onPressed: () => context.push('/settings/sound-settings'),
+          ),
+          IconButton(
+            onPressed: () async {
+              await PermissionService.instance.requestReminderPermissions(context);
+              if (!context.mounted) return;
               AddEditReminderDialog.show(
                 context,
                 onSave: (reminder) => controller.saveReminder(reminder),
@@ -45,12 +55,119 @@ class RemindersScreen extends ConsumerWidget {
               child: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
             ),
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (val) async {
+              if (val == 'test_5_sec') {
+                await NotificationService.instance.scheduleAlarm(
+                  id: 'test_5_sec_alarm',
+                  title: '🔔 Fit Host 5-Sec Test Alarm',
+                  body: 'Lockscreen alarm popup is active and ringing!',
+                  scheduledTime: DateTime.now().add(const Duration(seconds: 5)),
+                  channel: NotificationChannelType.workouts,
+                  payload:
+                      '/alarm?id=test_5_sec&title=${Uri.encodeComponent('Fit Host Test Alarm')}&body=${Uri.encodeComponent('Your reminder alarm is firing now!')}&channel=workouts&snoozeMinutes=5',
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test alarm scheduled in 5s! Lock phone or minimize app now.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } else if (val == 'test_1_min') {
+                await PermissionService.instance.requestReminderPermissions(context);
+                await NotificationService.instance.testOneMinuteTimer();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Test alarm scheduled: firing in 1 minute with ringing popup.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } else if (val == 'permissions') {
+                context.push('/permission-settings');
+              } else if (val == 'clear_all') {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Clear All Alarms'),
+                    content: const Text('Delete all scheduled reminders and alarms?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Clear All', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await controller.clearAllReminders();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('All alarms cleared.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'test_5_sec',
+                child: Row(
+                  children: [
+                    Icon(Icons.flash_on_rounded, size: 18, color: AppColors.limeGreen),
+                    SizedBox(width: 10),
+                    Text('Test 5-Sec Popup Alarm'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'test_1_min',
+                child: Row(
+                  children: [
+                    Icon(Icons.timer_outlined, size: 18, color: AppColors.electricBlue),
+                    SizedBox(width: 10),
+                    Text('Test 1-Min Notification'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'permissions',
+                child: Row(
+                  children: [
+                    Icon(Icons.security_rounded, size: 18, color: Color(0xFF00E676)),
+                    SizedBox(width: 10),
+                    Text('Permission Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded, size: 18, color: Colors.redAccent),
+                    SizedBox(width: 10),
+                    Text('Clear All Alarms', style: TextStyle(color: Colors.redAccent)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
           children: [
             // 1. Top Summary Banner
             activeRemindersAsync.when(
@@ -259,13 +376,82 @@ class RemindersScreen extends ConsumerWidget {
                             );
                           },
                           onComplete: () {
-                            controller.completeReminder(rem.id);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('🎉 Completed: "${rem.title}"! Keep the streak alive!'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            if (rem.isCompletedToday) {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: isDark ? const Color(0xFF161A22) : Colors.white,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                ),
+                                builder: (ctx) => SafeArea(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded, color: AppColors.limeGreen, size: 48),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'Completed for today: ${rem.title}',
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Today\'s alarm is completed and turned off. The next alert will ring on ${rem.nextOccurrence(DateTime.now()).day == DateTime.now().day + 1 ? 'tomorrow' : 'the next scheduled day'} at ${rem.formattedTime}.',
+                                          style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.4),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: OutlinedButton(
+                                                onPressed: () {
+                                                  controller.uncompleteReminder(rem.id);
+                                                  Navigator.pop(ctx);
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Marked "${rem.title}" as pending for today.'),
+                                                      behavior: SnackBarBehavior.floating,
+                                                    ),
+                                                  );
+                                                },
+                                                child: const Text('Mark as Pending'),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: ElevatedButton(
+                                                onPressed: () => Navigator.pop(ctx),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.limeGreen,
+                                                  foregroundColor: Colors.black,
+                                                ),
+                                                child: const Text('Keep Completed'),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            } else {
+                              controller.completeReminder(rem.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('🎉 Completed for today: "${rem.title}"! Next alarm is scheduled for tomorrow.'),
+                                  behavior: SnackBarBehavior.floating,
+                                  action: SnackBarAction(
+                                    label: 'UNDO',
+                                    textColor: AppColors.limeGreen,
+                                    onPressed: () => controller.uncompleteReminder(rem.id),
+                                  ),
+                                ),
+                              );
+                            }
                           },
                           onDismiss: () => controller.dismissReminder(rem.id),
                           onEdit: () {
@@ -320,7 +506,7 @@ class RemindersScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 100),
           ],
         ),
       ),

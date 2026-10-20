@@ -4,11 +4,15 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/calendar_event.dart';
 import '../controllers/calendar_controller.dart';
+import '../controllers/calendar_range_controller.dart';
 import '../widgets/month_view_grid.dart';
 import '../widgets/week_view_strip.dart';
 import '../widgets/day_view_timeline.dart';
 import '../widgets/calendar_event_card.dart';
 import '../widgets/add_edit_event_dialog.dart';
+import '../widgets/range_aggregation_card.dart';
+import '../../../auth/presentation/dialogs/feature_upsell_sheet.dart';
+import '../../../../core/services/supabase_service.dart';
 
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
@@ -24,6 +28,8 @@ class CalendarScreen extends ConsumerWidget {
     final selectedDateEventsAsync = ref.watch(calendarEventsForSelectedDateProvider);
     final monthEventsAsync = ref.watch(calendarEventsForMonthProvider);
     final allEventsAsync = ref.watch(allCalendarEventsProvider);
+    final monthSummariesAsync = ref.watch(monthSummariesMapProvider(calendarState.focusedMonth));
+    final daySummaries = monthSummariesAsync.value ?? {};
 
     final formattedPeriod = calendarState.viewMode == CalendarViewMode.day
         ? DateFormat('EEEE, MMM d, yyyy').format(calendarState.selectedDate)
@@ -41,7 +47,10 @@ class CalendarScreen extends ConsumerWidget {
         actions: [
           // "Today" shortcut button
           TextButton.icon(
-            onPressed: () => calendarNotifier.jumpToToday(),
+            onPressed: () {
+              calendarNotifier.jumpToToday();
+              ref.read(calendarRangeProvider.notifier).setFocusedDate(DateTime.now());
+            },
             icon: const Icon(Icons.today_rounded, size: 18),
             label: const Text('Today', style: TextStyle(fontWeight: FontWeight.bold)),
             style: TextButton.styleFrom(
@@ -65,13 +74,64 @@ class CalendarScreen extends ConsumerWidget {
               child: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
             ),
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            onSelected: (val) async {
+              if (val == 'clear_all') {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Clear All Events'),
+                    content: const Text('Delete all scheduled activities and events from your calendar?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Clear All', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await calendarNotifier.clearAllEvents();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('All calendar events cleared.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded, size: 18, color: Colors.redAccent),
+                    SizedBox(width: 10),
+                    Text('Clear All Events', style: TextStyle(color: Colors.redAccent)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
           children: [
+            // 0. Range Aggregation Panel (Today / Week / Month / Custom)
+            const RangeAggregationCard(),
+            const SizedBox(height: 18),
+            const Divider(height: 1),
+            const SizedBox(height: 14),
+
             // 1. Period Navigator Row (< Month/Year > & View Switcher)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -105,10 +165,25 @@ class CalendarScreen extends ConsumerWidget {
               ),
               child: Row(
                 children: CalendarViewMode.values.map((mode) {
+                  final auth = ref.watch(authProvider);
                   final isSelected = calendarState.viewMode == mode;
+                  final isLocked = mode == CalendarViewMode.month && auth.isGuest;
+
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () => calendarNotifier.setViewMode(mode),
+                      onTap: () {
+                        if (isLocked) {
+                          FeatureUpsellSheet.show(
+                            context,
+                            title: 'Month Calendar View',
+                            description:
+                                'Track your entire month of workouts, nutrition logs, and streaks in one unified grid with a free Fit Host account.',
+                            icon: Icons.calendar_month_rounded,
+                          );
+                          return;
+                        }
+                        calendarNotifier.setViewMode(mode);
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -128,17 +203,26 @@ class CalendarScreen extends ConsumerWidget {
                               : null,
                         ),
                         child: Center(
-                          child: Text(
-                            mode.label,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                              color: isSelected
-                                  ? AppColors.electricBlue
-                                  : (isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                mode.label,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                  color: isSelected
+                                      ? AppColors.electricBlue
+                                      : (isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary),
+                                ),
+                              ),
+                              if (isLocked) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.lock_rounded, size: 11, color: Colors.amber),
+                              ],
+                            ],
                           ),
                         ),
                       ),
@@ -208,7 +292,13 @@ class CalendarScreen extends ConsumerWidget {
                   focusedMonth: calendarState.focusedMonth,
                   selectedDate: calendarState.selectedDate,
                   monthEvents: events,
-                  onSelectDate: (date) => calendarNotifier.selectDate(date),
+                  daySummaries: daySummaries,
+                  onSelectDate: (date) {
+                    calendarNotifier.selectDate(date);
+                    ref.read(calendarRangeProvider.notifier).setFocusedDate(date);
+                  },
+                  onSwipeLeft: () => calendarNotifier.nextPeriod(),
+                  onSwipeRight: () => calendarNotifier.previousPeriod(),
                 ),
                 loading: () => const Center(
                   child: Padding(
@@ -223,7 +313,13 @@ class CalendarScreen extends ConsumerWidget {
                 data: (events) => WeekViewStrip(
                   selectedDate: calendarState.selectedDate,
                   allEvents: events,
-                  onSelectDate: (date) => calendarNotifier.selectDate(date),
+                  daySummaries: daySummaries,
+                  onSelectDate: (date) {
+                    calendarNotifier.selectDate(date);
+                    ref.read(calendarRangeProvider.notifier).setFocusedDate(date);
+                  },
+                  onSwipeLeft: () => calendarNotifier.nextPeriod(),
+                  onSwipeRight: () => calendarNotifier.previousPeriod(),
                 ),
                 loading: () => const Center(
                   child: Padding(
@@ -391,7 +487,7 @@ class CalendarScreen extends ConsumerWidget {
               ),
             ],
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 100),
           ],
         ),
       ),

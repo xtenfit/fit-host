@@ -20,20 +20,20 @@ void main() {
     );
 
     // Verify presence of Value Pillars on Step 1
-    expect(find.text('Free Core Forever'), findsOneWidget);
-    expect(find.text('100% Offline SQLite'), findsOneWidget);
-    expect(find.text('Progressive Overload'), findsOneWidget);
+    expect(find.text('Sync Across Devices'), findsOneWidget);
+    expect(find.text('Progressive Overload Tracking'), findsOneWidget);
+    expect(find.text('Private by Default'), findsOneWidget);
 
     // Verify Primary Action
-    expect(find.text('Start Personalization'), findsOneWidget);
-    expect(find.text('Continue as Guest (Skip to Dashboard)'), findsOneWidget);
+    expect(find.text('Start Personalization →'), findsOneWidget);
+    expect(find.text('Continue as Guest'), findsOneWidget);
 
     // Tap Start Personalization to move to Step 2 (Gender)
-    await tester.tap(find.text('Start Personalization'));
+    await tester.tap(find.text('Start Personalization →'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Step 2 of 12'), findsOneWidget);
-    expect(find.text('What is your gender?'), findsOneWidget);
+    expect(find.text('Step 2 of 16'), findsOneWidget);
+    expect(find.text("What's your gender?"), findsOneWidget);
     expect(find.text('Male'), findsOneWidget);
     expect(find.text('Female'), findsOneWidget);
     expect(find.text('Prefer not to say'), findsOneWidget);
@@ -42,22 +42,20 @@ void main() {
     await tester.tap(find.text('Male'));
     await tester.pumpAndSettle();
 
-    // Tap Continue to move to Step 3 (Focus Areas)
-    await tester.tap(find.text('Continue'));
+    // Tap Continue to move to Step 3 (Age)
+    await tester.tap(find.text('Continue →'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Step 3 of 12'), findsOneWidget);
-    expect(find.text('What are your focus areas?'), findsOneWidget);
-    expect(find.text('Full Body'), findsOneWidget);
-    expect(find.text('Chest & Pecs'), findsOneWidget);
+    expect(find.text('Step 3 of 16'), findsOneWidget);
+    expect(find.text('How old are you?'), findsOneWidget);
 
     // Tap Back button to return to Step 2
-    final backButton = find.byIcon(Icons.arrow_back_ios_new_rounded);
+    final backButton = find.byIcon(Icons.arrow_back_rounded);
     expect(backButton, findsOneWidget);
     await tester.tap(backButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Step 2 of 12'), findsOneWidget);
-    expect(find.text('What is your gender?'), findsOneWidget);
+    expect(find.text('Step 2 of 16'), findsOneWidget);
+    expect(find.text("What's your gender?"), findsOneWidget);
   });
 }

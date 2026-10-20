@@ -1,9 +1,88 @@
 import '../../domain/models/workout_models.dart';
 
 final defaultExercisesList = [
+  // --- MALE FOCUS EXERCISES ---
+  ExerciseEntity(
+    id: 'ex-incline-barbell-press',
+    name: 'Incline Barbell Press',
+    category: 'Chest',
+    targetMuscle: 'Upper Chest, Anterior Deltoids',
+    instructions:
+        'Set bench to 30-45 degrees. Grip barbell slightly wider than shoulder-width. Lower smoothly to upper chest, then press upward explosively.',
+    equipment: 'Barbell & Incline Bench',
+    imageAsset: 'assets/images/exercises/bench_press_top.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    recommendedFor: ['male', 'upper_chest'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-dumbbell-pullover',
+    name: 'Dumbbell Pullover',
+    category: 'Back',
+    targetMuscle: 'Latissimus Dorsi, Sternal Pectoralis, Serratus',
+    instructions:
+        'Lie across bench with shoulders supported. Hold single dumbbell overhead with diamond grip. Lower dumbbell backward behind head feeling lat stretch, pull back over chest.',
+    equipment: 'Dumbbell & Bench',
+    imageAsset: 'assets/images/exercises/dumbbell_row.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_back.png',
+    recommendedFor: ['male', 'back_thickness'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-lateral-raise-db',
+    name: 'Lateral Raise (Dumbbell)',
+    category: 'Shoulders',
+    targetMuscle: 'Lateral Deltoids',
+    instructions:
+        'Stand tall with slight forward lean. Raise dumbbells out to sides leading with elbows until parallel with floor. Lower with control.',
+    equipment: 'Dumbbells',
+    imageAsset: 'assets/images/exercises/shoulder_press_start.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    recommendedFor: ['male', 'shoulder_width'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-arnold-press',
+    name: 'Arnold Press',
+    category: 'Shoulders',
+    targetMuscle: 'Anterior & Lateral Deltoids',
+    instructions:
+        'Hold dumbbells at collarbone with palms facing chest. As you press overhead, rotate palms outward so they face forward at lockout. Reverse smoothly on descent.',
+    equipment: 'Dumbbells & Bench',
+    imageAsset: 'assets/images/exercises/shoulder_press.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    recommendedFor: ['male', 'shoulder_width'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-cable-crossover',
+    name: 'Cable Crossover',
+    category: 'Chest',
+    targetMuscle: 'Upper Chest, Sternal Pectorals',
+    instructions:
+        'Stand centered between pulleys. Lean forward slightly with staggered stance. Bring cables together in an arcing motion until hands meet in front of chest.',
+    equipment: 'Cable Machine',
+    imageAsset: 'assets/images/exercises/bench_press.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    recommendedFor: ['male', 'upper_chest'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-weighted-pullup',
+    name: 'Weighted Pull-up',
+    category: 'Back',
+    targetMuscle: 'Latissimus Dorsi, Biceps, Rhomboids',
+    instructions:
+        'Attach weight plate to dipping belt. Grip bar wider than shoulders. Drive elbows down and back to chest level, then lower under full control.',
+    equipment: 'Pull-Up Bar & Weight Belt',
+    imageAsset: 'assets/images/exercises/pull_ups.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_back.png',
+    recommendedFor: ['male', 'back_thickness'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
   ExerciseEntity(
     id: 'ex-bench-press',
-    name: 'Barbell Bench Press',
+    name: 'Bench Press (Barbell)',
     category: 'Chest',
     targetMuscle: 'Pectoralis Major, Triceps',
     instructions:
@@ -11,8 +90,117 @@ final defaultExercisesList = [
     equipment: 'Barbell & Bench',
     imageAsset: 'assets/images/exercises/bench_press.png',
     anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    recommendedFor: ['male', 'upper_chest'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
+
+  // --- FEMALE FOCUS EXERCISES ---
+  ExerciseEntity(
+    id: 'ex-hip-thrust-barbell',
+    name: 'Hip Thrust (Barbell)',
+    category: 'Legs',
+    targetMuscle: 'Gluteus Maximus, Hamstrings',
+    instructions:
+        'Rest upper back across bench, padded barbell over hip crease. Drive through heels and extend hips until thighs and torso align. Squeeze glutes 2 seconds at apex.',
+    equipment: 'Barbell & Bench',
+    imageAsset: 'assets/images/exercises/squats.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'glute_focus'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-glute-bridge',
+    name: 'Glute Bridge',
+    category: 'Legs',
+    targetMuscle: 'Gluteus Maximus, Core',
+    instructions:
+        'Lie on back with knees bent and feet flat on floor. Drive hips up toward ceiling squeezing glutes. Hold at apex for 2 seconds before lowering.',
+    equipment: 'Mat & Dumbbell',
+    imageAsset: 'assets/images/exercises/squats.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'glute_focus'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-bulgarian-split-squat',
+    name: 'Bulgarian Split Squat',
+    category: 'Legs',
+    targetMuscle: 'Quadriceps, Glutes, Adductors',
+    instructions:
+        'Place one foot elevated behind you on a bench. Lower hips until front thigh is nearly parallel to floor. Drive through front heel to return to top.',
+    equipment: 'Dumbbells & Bench',
+    imageAsset: 'assets/images/exercises/lunges.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'glute_focus'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-hip-abduction-machine',
+    name: 'Hip Abduction (Machine)',
+    category: 'Legs',
+    targetMuscle: 'Gluteus Medius, Tensor Fasciae Latae',
+    instructions:
+        'Sit with pads against outer knees. Push knees outward against resistance in a smooth controlled arc. Squeeze at full abduction and slowly return.',
+    equipment: 'Hip Abductor Machine',
+    imageAsset: 'assets/images/exercises/lunges.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'hip_curves'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-cable-kickback',
+    name: 'Cable Kickback',
+    category: 'Legs',
+    targetMuscle: 'Gluteus Medius, Gluteus Maximus',
+    instructions:
+        'Fasten ankle strap to low cable pulley. Keeping slight bend in standing knee, kick working leg back and up using glute contraction without overarching lower back.',
+    equipment: 'Cable Machine & Ankle Strap',
+    imageAsset: 'assets/images/exercises/lunges.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'glute_focus'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-step-ups',
+    name: 'Step-ups',
+    category: 'Legs',
+    targetMuscle: 'Gluteus Maximus, Quadriceps',
+    instructions:
+        'Stand before sturdy box or bench. Place whole foot on surface, drive through heel to stand tall. Step down with control and alternate sides.',
+    equipment: 'Dumbbells & Box/Bench',
+    imageAsset: 'assets/images/exercises/lunges.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['female', 'glute_focus'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-russian-twist',
+    name: 'Russian Twist',
+    category: 'Core',
+    targetMuscle: 'Internal & External Obliques, Rectus Abdominis',
+    instructions:
+        'Sit on floor with knees bent and feet elevated. Lean back slightly, rotate torso from side to side touching weights or hands to the floor beside hips.',
+    equipment: 'Bodyweight or Medicine Ball',
+    imageAsset: 'assets/images/exercises/plank.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_core.png',
+    recommendedFor: ['female', 'waist_definition'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+  ExerciseEntity(
+    id: 'ex-side-plank',
+    name: 'Side Plank',
+    category: 'Core',
+    targetMuscle: 'Obliques, Transverse Abdominis, Gluteus Medius',
+    instructions:
+        'Lie on side propped on forearm directly under shoulder. Elevate hips until body forms a straight diagonal line. Hold with braced midsection.',
+    equipment: 'Mat / Bodyweight',
+    imageAsset: 'assets/images/exercises/plank.png',
+    anatomyAsset: 'assets/images/exercises/anatomy_core.png',
+    recommendedFor: ['female', 'waist_definition'],
+    createdAt: DateTime.utc(2025, 1, 1),
+  ),
+
+  // --- GENERAL / ALL EXERCISES ---
   ExerciseEntity(
     id: 'ex-pushup',
     name: 'Standard Push-Up',
@@ -23,18 +211,7 @@ final defaultExercisesList = [
     equipment: 'Bodyweight',
     imageAsset: 'assets/images/exercises/push_ups.png',
     anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
-    createdAt: DateTime.utc(2025, 1, 1),
-  ),
-  ExerciseEntity(
-    id: 'ex-incline-db-press',
-    name: 'Incline Dumbbell Press',
-    category: 'Chest',
-    targetMuscle: 'Upper Chest, Anterior Deltoid',
-    instructions:
-        'Set bench to 30-45 degrees. Hold dumbbells at shoulder level with palms facing forward. Press up until arms are fully extended, then lower with control.',
-    equipment: 'Dumbbells & Incline Bench',
-    imageAsset: 'assets/images/exercises/bench_press_top.png',
-    anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -47,6 +224,7 @@ final defaultExercisesList = [
     equipment: 'Barbell & Squat Rack',
     imageAsset: 'assets/images/exercises/squats.png',
     anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -59,18 +237,7 @@ final defaultExercisesList = [
     equipment: 'Dumbbells or Bodyweight',
     imageAsset: 'assets/images/exercises/lunges.png',
     anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
-    createdAt: DateTime.utc(2025, 1, 1),
-  ),
-  ExerciseEntity(
-    id: 'ex-romanian-deadlift',
-    name: 'Romanian Deadlift',
-    category: 'Legs',
-    targetMuscle: 'Hamstrings, Glutes, Lower Back',
-    instructions:
-        'Hold bar at hip height. Keep slight bend in knees, push hips back, and lower bar along shins while maintaining a flat back. Squeeze glutes to return upright.',
-    equipment: 'Barbell',
-    imageAsset: 'assets/images/exercises/deadlift.png',
-    anatomyAsset: 'assets/images/exercises/anatomy_legs.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -83,6 +250,7 @@ final defaultExercisesList = [
     equipment: 'Barbell & Plates',
     imageAsset: 'assets/images/exercises/deadlift.png',
     anatomyAsset: 'assets/images/exercises/anatomy_back.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -95,6 +263,7 @@ final defaultExercisesList = [
     equipment: 'Pull-Up Bar',
     imageAsset: 'assets/images/exercises/pull_ups.png',
     anatomyAsset: 'assets/images/exercises/anatomy_back.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -107,18 +276,7 @@ final defaultExercisesList = [
     equipment: 'Barbell',
     imageAsset: 'assets/images/exercises/dumbbell_row.png',
     anatomyAsset: 'assets/images/exercises/anatomy_back.png',
-    createdAt: DateTime.utc(2025, 1, 1),
-  ),
-  ExerciseEntity(
-    id: 'ex-overhead-press',
-    name: 'Overhead Barbell Press',
-    category: 'Shoulders',
-    targetMuscle: 'Anterior & Lateral Deltoids, Triceps',
-    instructions:
-        'Stand with core braced and glutes squeezed. Press barbell from collarbone straight overhead until elbows lock out. Lower back smoothly to upper chest.',
-    equipment: 'Barbell',
-    imageAsset: 'assets/images/exercises/shoulder_press.png',
-    anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -131,6 +289,7 @@ final defaultExercisesList = [
     equipment: 'Dumbbells',
     imageAsset: 'assets/images/exercises/shoulder_press_start.png',
     anatomyAsset: 'assets/images/exercises/anatomy_shoulders.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -143,6 +302,7 @@ final defaultExercisesList = [
     equipment: 'Dumbbells',
     imageAsset: 'assets/images/exercises/bicep_curl.png',
     anatomyAsset: 'assets/images/exercises/anatomy_biceps.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -155,6 +315,7 @@ final defaultExercisesList = [
     equipment: 'Cable Machine',
     imageAsset: 'assets/images/exercises/bench_press_bottom.png',
     anatomyAsset: 'assets/images/exercises/anatomy_chest.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
   ExerciseEntity(
@@ -167,6 +328,7 @@ final defaultExercisesList = [
     equipment: 'Bodyweight',
     imageAsset: 'assets/images/exercises/plank.png',
     anatomyAsset: 'assets/images/exercises/anatomy_core.png',
+    recommendedFor: ['all'],
     createdAt: DateTime.utc(2025, 1, 1),
   ),
 ];

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
+import 'package:fit_host/features/profile/presentation/widgets/sync_status_indicator.dart';
+import 'package:fit_host/core/theme/app_motion.dart';
 
 class MainNavigationShell extends ConsumerWidget {
   final Widget child;
@@ -15,7 +17,6 @@ class MainNavigationShell extends ConsumerWidget {
     if (location.startsWith('/workouts')) return 1;
     if (location.startsWith('/progress')) return 2;
     if (location.startsWith('/nutrition')) return 3;
-    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -33,9 +34,6 @@ class MainNavigationShell extends ConsumerWidget {
       case 3:
         context.go('/nutrition');
         break;
-      case 4:
-        context.go('/profile');
-        break;
     }
   }
 
@@ -46,18 +44,41 @@ class MainNavigationShell extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // 4-item bottom navigation dock (Profile removed as requested; accessible via header / more menu)
     final navItems = [
       _NavItemData(icon: Icons.home_outlined, selectedIcon: Icons.home_rounded, label: 'Home'),
       _NavItemData(icon: Icons.fitness_center_outlined, selectedIcon: Icons.fitness_center_rounded, label: 'Workouts'),
       _NavItemData(icon: Icons.show_chart_rounded, selectedIcon: Icons.show_chart_rounded, label: 'Activity'),
       _NavItemData(icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long_rounded, label: 'My Diary'),
-      _NavItemData(icon: Icons.person_outline_rounded, selectedIcon: Icons.person_rounded, label: 'Profile'),
     ];
 
     return Scaffold(
       body: Stack(
         children: [
-          child,
+          // Screen Content with Apple iOS Framer-Motion window switch transition
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 240),
+            switchInCurve: AppMotion.iosDecelerate,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              return AppleTransitions.buildWindowSwitchTransition(
+                child: child,
+                animation: animation,
+              );
+            },
+            child: KeyedSubtree(
+              key: ValueKey<int>(selectedIndex),
+              child: child,
+            ),
+          ),
+
+          // Top Offline / Outbox Status Banner
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 6,
+            left: 16,
+            right: 16,
+            child: const OfflineSyncBanner(),
+          ),
 
           // Active Workout Floating Banner (sitting above floating navigation dock)
           if (activeState.isActive && activeState.workout != null)
@@ -65,7 +86,7 @@ class MainNavigationShell extends ConsumerWidget {
               left: 16,
               right: 16,
               bottom: 96,
-              child: GestureDetector(
+              child: BouncyTap(
                 onTap: () => context.push('/active-workout'),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -135,79 +156,92 @@ class MainNavigationShell extends ConsumerWidget {
               ),
             ),
 
-          // Floating Island Bottom Navigation Dock matching reference UI
+          // Floating Island Bottom Navigation Dock (4 tabs: Home, Workouts, Activity, My Diary)
           Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
-            child: Container(
-              height: 64,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161920) : Colors.white,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
+            left: 20,
+            right: 20,
+            bottom: 18,
+            child: RepaintBoundary(
+              child: Container(
+                height: 64,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF161920) : Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
                   ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(navItems.length, (index) {
-                  final item = navItems[index];
-                  final isSelected = index == selectedIndex;
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(navItems.length, (index) {
+                    final item = navItems[index];
+                    final isSelected = index == selectedIndex;
 
-                  if (isSelected) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF6B4A),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFF6B4A).withValues(alpha: 0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(item.selectedIcon, size: 18, color: Colors.white),
-                          const SizedBox(width: 6),
-                          Text(
-                            item.label,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                    return BouncyTap(
+                      scaleDown: 0.94,
+                      onTap: () {
+                        if (!isSelected) {
+                          AppMotion.selectHaptic();
+                          _onItemTapped(index, context);
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSelected ? 18 : 14,
+                          vertical: isSelected ? 10 : 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.limeGreen
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.limeGreen.withValues(alpha: 0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSelected ? item.selectedIcon : item.icon,
+                              size: isSelected ? 18 : 22,
+                              color: isSelected
+                                  ? Colors.black
+                                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                             ),
-                          ),
-                        ],
+                            if (isSelected) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                item.label,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     );
-                  }
-
-                  return InkWell(
-                    onTap: () => _onItemTapped(index, context),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      child: Icon(
-                        item.icon,
-                        size: 22,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      ),
-                    ),
-                  );
-                }),
+                  }),
+                ),
               ),
             ),
           ),

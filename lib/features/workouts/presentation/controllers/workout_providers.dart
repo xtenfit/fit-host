@@ -1,20 +1,34 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fit_host/core/database/database.dart';
-import 'package:fit_host/features/workouts/data/repositories/workout_repository_impl.dart';
+import 'package:fit_host/core/services/supabase_service.dart';
+import 'package:fit_host/core/sync/sync_outbox_worker.dart';
+import 'package:fit_host/core/data/workout_repository.dart';
 import 'package:fit_host/features/workouts/domain/models/workout_models.dart';
-import 'package:fit_host/features/workouts/domain/repositories/workout_repository.dart';
-
-final databaseProvider = Provider<AppDatabase>((ref) {
-  final db = AppDatabase();
-  ref.onDispose(() => db.close());
-  return db;
-});
+import 'package:fit_host/features/profile/presentation/controllers/user_profile_controller.dart';
 
 final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
+  final status = ref.watch(authProvider).status;
   final db = ref.watch(databaseProvider);
-  return WorkoutRepositoryImpl(db);
+  if (status == AuthStatus.authenticated) {
+    final user = ref.watch(authProvider).user;
+    if (user != null) {
+      SupabaseClient? client;
+      try {
+        client = Supabase.instance.client;
+      } catch (_) {}
+      final outbox = ref.watch(syncOutboxWorkerProvider);
+      return CloudWorkoutRepository(
+        db: db,
+        supabase: client,
+        outboxWorker: outbox,
+        userId: user.id,
+      );
+    }
+  }
+  return LocalWorkoutRepository(db);
 });
 
 final workoutsStreamProvider = StreamProvider<List<WorkoutEntity>>((ref) {
@@ -25,8 +39,25 @@ final workoutsStreamProvider = StreamProvider<List<WorkoutEntity>>((ref) {
 class ExerciseFilter {
   final String query;
   final String category;
+  final String? genderFilter;
 
-  const ExerciseFilter({this.query = '', this.category = 'All'});
+  const ExerciseFilter({
+    this.query = '',
+    this.category = 'All',
+    this.genderFilter,
+  });
+
+  ExerciseFilter copyWith({
+    String? query,
+    String? category,
+    String? genderFilter,
+  }) {
+    return ExerciseFilter(
+      query: query ?? this.query,
+      category: category ?? this.category,
+      genderFilter: genderFilter ?? this.genderFilter,
+    );
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -34,21 +65,31 @@ class ExerciseFilter {
       other is ExerciseFilter &&
           runtimeType == other.runtimeType &&
           query == other.query &&
-          category == other.category;
+          category == other.category &&
+          genderFilter == other.genderFilter;
 
   @override
-  int get hashCode => query.hashCode ^ category.hashCode;
+  int get hashCode =>
+      query.hashCode ^ category.hashCode ^ (genderFilter?.hashCode ?? 0);
 }
 
 class ExerciseFilterNotifier extends Notifier<ExerciseFilter> {
   @override
-  ExerciseFilter build() => const ExerciseFilter();
+  ExerciseFilter build() {
+    final userGender = ref.watch(userProfileProvider).gender;
+    return ExerciseFilter(genderFilter: userGender);
+  }
 
-  void updateFilter({String? query, String? category}) {
-    state = ExerciseFilter(
-      query: query ?? state.query,
-      category: category ?? state.category,
+  void updateFilter({String? query, String? category, String? genderFilter}) {
+    state = state.copyWith(
+      query: query,
+      category: category,
+      genderFilter: genderFilter,
     );
+  }
+
+  void resetToAll() {
+    state = state.copyWith(genderFilter: 'All', category: 'All', query: '');
   }
 }
 
@@ -60,7 +101,11 @@ final exercisesFilterProvider =
 final exercisesListProvider = FutureProvider<List<ExerciseEntity>>((ref) async {
   final repo = ref.watch(workoutRepositoryProvider);
   final filter = ref.watch(exercisesFilterProvider);
-  return repo.getExercises(query: filter.query, category: filter.category);
+  return repo.getExercises(
+    query: filter.query,
+    category: filter.category,
+    genderFilter: filter.genderFilter,
+  );
 });
 
 class ActiveWorkoutState {
@@ -68,12 +113,14 @@ class ActiveWorkoutState {
   final bool isActive;
   final int restTimeRemaining;
   final bool isResting;
+  final bool isTimerRunning;
 
   const ActiveWorkoutState({
     this.workout,
     this.isActive = false,
     this.restTimeRemaining = 0,
     this.isResting = false,
+    this.isTimerRunning = false,
   });
 
   ActiveWorkoutState copyWith({
@@ -81,12 +128,14 @@ class ActiveWorkoutState {
     bool? isActive,
     int? restTimeRemaining,
     bool? isResting,
+    bool? isTimerRunning,
   }) {
     return ActiveWorkoutState(
       workout: workout != null ? workout() : this.workout,
       isActive: isActive ?? this.isActive,
       restTimeRemaining: restTimeRemaining ?? this.restTimeRemaining,
       isResting: isResting ?? this.isResting,
+      isTimerRunning: isTimerRunning ?? this.isTimerRunning,
     );
   }
 }
@@ -156,14 +205,19 @@ class ActiveWorkoutNotifier extends Notifier<ActiveWorkoutState> {
       exercises: exercises,
     );
 
+    final shouldStartTimer = exercises.isNotEmpty;
+
     state = ActiveWorkoutState(
       workout: newWorkout,
       isActive: true,
       restTimeRemaining: 0,
       isResting: false,
+      isTimerRunning: shouldStartTimer,
     );
 
-    _startDurationTimer();
+    if (shouldStartTimer) {
+      _startDurationTimer();
+    }
   }
 
   void _startDurationTimer() {
@@ -179,6 +233,24 @@ class ActiveWorkoutNotifier extends Notifier<ActiveWorkoutState> {
         );
       }
     });
+  }
+
+  void startOrResumeTimer() {
+    _startDurationTimer();
+    state = state.copyWith(isTimerRunning: true);
+  }
+
+  void pauseTimer() {
+    _durationTimer?.cancel();
+    state = state.copyWith(isTimerRunning: false);
+  }
+
+  void toggleTimer() {
+    if (state.isTimerRunning) {
+      pauseTimer();
+    } else {
+      startOrResumeTimer();
+    }
   }
 
   void addExercise(ExerciseEntity exercise) {
@@ -210,7 +282,11 @@ class ActiveWorkoutNotifier extends Notifier<ActiveWorkoutState> {
       updatedAt: DateTime.now(),
     );
     state = state.copyWith(workout: () => updated);
+    if (!state.isTimerRunning) {
+      startOrResumeTimer();
+    }
   }
+
 
   void removeExercise(int index) {
     if (state.workout == null) return;
@@ -410,8 +486,17 @@ class ActiveWorkoutNotifier extends Notifier<ActiveWorkoutState> {
     _durationTimer?.cancel();
     _restTimer?.cancel();
 
+    final profile = ref.read(userProfileProvider);
+    final weightKg = profile.weightKg > 0 ? profile.weightKg : 70.0;
+    final burned = WorkoutEntity.computeCalories(
+      category: state.workout!.category ?? state.workout!.title,
+      weightKg: weightKg,
+      durationSeconds: state.workout!.durationSeconds,
+    );
+
     final finished = state.workout!.copyWith(
       status: 'completed',
+      caloriesBurned: burned,
       completedAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

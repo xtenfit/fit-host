@@ -66,5 +66,22 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMotionUsageDescription</key>
+	<string>Fit Host tracks your daily steps and walking distance to help you reach your daily movement goals.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Fit Host needs camera access to take profile photos and scan food barcodes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fit Host needs photo library access to choose a profile image and meal photos.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>io.supabase.fithost</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

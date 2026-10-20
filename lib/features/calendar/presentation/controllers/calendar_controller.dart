@@ -152,6 +152,14 @@ class CalendarNotifier extends Notifier<CalendarState> {
   Future<void> rescheduleEvent(String id, DateTime newDate, DateTime? newTime) async {
     await _repository.rescheduleEvent(id, newDate, newTime);
   }
+
+  Future<void> clearAllEvents() async {
+    await _repository.clearAllEvents();
+  }
+
+  Future<void> cleanDemoEvents() async {
+    await _repository.cleanDemoSeededEvents();
+  }
 }
 
 extension on CalendarState {

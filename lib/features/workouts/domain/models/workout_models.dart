@@ -90,10 +90,12 @@ class WorkoutEntity {
   final String id;
   final String title;
   final String? note;
+  final String? category;
   final DateTime startedAt;
   final DateTime? completedAt;
   final String status; // 'in_progress', 'completed', 'cancelled'
   final int durationSeconds;
+  final int? caloriesBurned;
   final String syncStatus; // 'pending', 'synced', 'failed'
   final DateTime updatedAt;
   final List<WorkoutExerciseEntity> exercises;
@@ -102,10 +104,12 @@ class WorkoutEntity {
     required this.id,
     required this.title,
     this.note,
+    this.category,
     required this.startedAt,
     this.completedAt,
     this.status = 'in_progress',
     this.durationSeconds = 0,
+    this.caloriesBurned,
     this.syncStatus = 'pending',
     required this.updatedAt,
     this.exercises = const [],
@@ -115,10 +119,12 @@ class WorkoutEntity {
     String? id,
     String? title,
     String? note,
+    String? category,
     DateTime? startedAt,
     DateTime? completedAt,
     String? status,
     int? durationSeconds,
+    int? caloriesBurned,
     String? syncStatus,
     DateTime? updatedAt,
     List<WorkoutExerciseEntity>? exercises,
@@ -127,14 +133,37 @@ class WorkoutEntity {
       id: id ?? this.id,
       title: title ?? this.title,
       note: note ?? this.note,
+      category: category ?? this.category,
       startedAt: startedAt ?? this.startedAt,
       completedAt: completedAt ?? this.completedAt,
       status: status ?? this.status,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       syncStatus: syncStatus ?? this.syncStatus,
       updatedAt: updatedAt ?? this.updatedAt,
       exercises: exercises ?? this.exercises,
     );
+  }
+
+  /// Calculates burned calories using MET formula: MET × weight_kg × (duration_sec / 3600)
+  /// MET map: strength=6.0, cardio=8.0, yoga=3.0, default=5.0
+  static int computeCalories({
+    String? category,
+    required double weightKg,
+    required int durationSeconds,
+  }) {
+    final clean = (category ?? '').toLowerCase();
+    final double met;
+    if (clean.contains('strength')) {
+      met = 6.0;
+    } else if (clean.contains('cardio')) {
+      met = 8.0;
+    } else if (clean.contains('yoga')) {
+      met = 3.0;
+    } else {
+      met = 5.0;
+    }
+    return (met * weightKg * (durationSeconds / 3600.0)).round();
   }
 
   int get totalSets => exercises.fold(0, (sum, e) => sum + e.sets.length);
@@ -165,6 +194,7 @@ class ExerciseEntity {
   final DateTime createdAt;
   final String? imageAsset;
   final String? anatomyAsset;
+  final List<String> recommendedFor;
 
   const ExerciseEntity({
     required this.id,
@@ -177,5 +207,6 @@ class ExerciseEntity {
     required this.createdAt,
     this.imageAsset,
     this.anatomyAsset,
+    this.recommendedFor = const ['all'],
   });
 }

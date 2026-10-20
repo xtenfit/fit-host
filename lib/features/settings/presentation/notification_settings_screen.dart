@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/notification_service.dart';
 
@@ -43,6 +44,55 @@ class _NotificationSettingsScreenState
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
+            // Permission & Reliability Status Card
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF13221C), const Color(0xFF101924)]
+                      : [const Color(0xFFE8F8F0), Colors.white],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.limeGreen.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.limeGreen.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.security_update_good_rounded,
+                    color: AppColors.limeGreen,
+                    size: 22,
+                  ),
+                ),
+                title: const Text(
+                  'App Permissions & Reliability',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                ),
+                subtitle: Text(
+                  'Configure exact alarms, battery optimization, and lockscreen popups',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: AppColors.limeGreen,
+                ),
+                onTap: () => context.push('/permission-settings'),
+              ),
+            ),
+
             // Master Switch Card
             Container(
               padding: const EdgeInsets.all(18),

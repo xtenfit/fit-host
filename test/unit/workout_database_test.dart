@@ -24,7 +24,7 @@ void main() {
       final exercises = await repository.getExercises();
       expect(exercises, isNotEmpty);
       expect(exercises.length, greaterThanOrEqualTo(10));
-      expect(exercises.any((e) => e.name == 'Barbell Bench Press'), isTrue);
+      expect(exercises.any((e) => e.name == 'Bench Press (Barbell)' || e.name == 'Barbell Bench Press'), isTrue);
       expect(exercises.any((e) => e.name == 'Barbell Back Squat'), isTrue);
       expect(exercises.any((e) => e.name == 'Conventional Deadlift'), isTrue);
     });
@@ -99,7 +99,7 @@ void main() {
       expect(retrieved.status, equals('completed'));
       expect(retrieved.durationSeconds, equals(2700));
       expect(retrieved.exercises.length, equals(1));
-      expect(retrieved.exercises.first.exerciseName, equals('Barbell Bench Press'));
+      expect(retrieved.exercises.first.exerciseName, anyOf('Barbell Bench Press', 'Bench Press (Barbell)'));
       expect(retrieved.exercises.first.sets.length, equals(2));
       expect(retrieved.exercises.first.sets.first.weightKg, equals(80.0));
       expect(retrieved.exercises.first.sets.first.reps, equals(10));

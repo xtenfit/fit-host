@@ -1,8 +1,6 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-import '../../../../core/database/database.dart' as db;
-import '../../../workouts/presentation/controllers/workout_providers.dart';
+import '../../../../core/database/database.dart' as db hide CalendarEvent;
 import '../../domain/models/calendar_event.dart';
 
 abstract class CalendarRepository {
@@ -15,14 +13,16 @@ abstract class CalendarRepository {
   Future<void> deleteEvent(String id);
   Future<void> toggleCompletion(String id, bool isCompleted);
   Future<void> rescheduleEvent(String id, DateTime newDate, DateTime? newStartTime);
-  Future<void> seedInitialCalendarEvents();
+  Future<void> clearAllEvents();
+  Future<void> cleanDemoSeededEvents();
 }
 
 class CalendarRepositoryImpl implements CalendarRepository {
   final db.AppDatabase _db;
-  final _uuid = const Uuid();
 
-  CalendarRepositoryImpl(this._db);
+  CalendarRepositoryImpl(this._db) {
+    cleanDemoSeededEvents();
+  }
 
   @override
   Stream<List<CalendarEvent>> watchAllEvents() {
@@ -135,124 +135,21 @@ class CalendarRepositoryImpl implements CalendarRepository {
   }
 
   @override
-  Future<void> seedInitialCalendarEvents() async {
-    final count = await _db.customSelect(
-      'SELECT COUNT(*) as c FROM calendar_events',
-      readsFrom: {_db.calendarEvents},
-    ).getSingle();
+  Future<void> cleanDemoSeededEvents() async {
+    try {
+      await _db.customStatement(
+        "DELETE FROM calendar_events WHERE title IN ('Upper Body Hypertrophy', 'Post-Workout High Protein Fuel', 'Daily Hydration Target', 'Lower Body & Core Blast', 'Active Recovery & Mobility', 'Weekly Bodyweight & Composition Check', 'Sleep Wind-Down & Blue Light Cutoff')",
+      );
+    } catch (_) {}
+  }
 
-    final total = count.read<int>('c');
-    if (total > 0) return;
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    final initialEvents = [
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Upper Body Hypertrophy',
-        description: 'Chest, Shoulders & Triceps progressive overload session',
-        eventType: CalendarEventType.workout,
-        scheduledDate: today,
-        startTime: DateTime(today.year, today.month, today.day, 17, 30),
-        endTime: DateTime(today.year, today.month, today.day, 18, 30),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.weekdays,
-        targetMetrics: {'targetDurationMinutes': 60, 'targetCalories': 450},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Post-Workout High Protein Fuel',
-        description: 'Grilled salmon, brown rice & steamed broccoli (45g protein)',
-        eventType: CalendarEventType.meal,
-        scheduledDate: today,
-        startTime: DateTime(today.year, today.month, today.day, 19, 0),
-        endTime: DateTime(today.year, today.month, today.day, 19, 30),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.daily,
-        targetMetrics: {'calories': 680, 'proteinGrams': 45},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Daily Hydration Target',
-        description: '3.5 Liters electrolyte-infused water',
-        eventType: CalendarEventType.hydration,
-        scheduledDate: today,
-        startTime: DateTime(today.year, today.month, today.day, 9, 0),
-        isCompleted: true,
-        recurrenceRule: RecurrenceRule.daily,
-        targetMetrics: {'targetMl': 3500, 'currentMl': 3500},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Lower Body & Core Blast',
-        description: 'Barbell squats, Romanian deadlifts & cable crunches',
-        eventType: CalendarEventType.workout,
-        scheduledDate: today.add(const Duration(days: 1)),
-        startTime: DateTime(today.year, today.month, today.day + 1, 18, 0),
-        endTime: DateTime(today.year, today.month, today.day + 1, 19, 15),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.weekly,
-        targetMetrics: {'targetDurationMinutes': 75, 'targetCalories': 520},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Active Recovery & Mobility',
-        description: 'Light 30m outdoor walk, foam rolling & hamstring stretches',
-        eventType: CalendarEventType.restDay,
-        scheduledDate: today.add(const Duration(days: 2)),
-        startTime: DateTime(today.year, today.month, today.day + 2, 10, 0),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.none,
-        targetMetrics: {'targetDurationMinutes': 45},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Weekly Bodyweight & Composition Check',
-        description: 'Fasted morning weigh-in and progress metric check',
-        eventType: CalendarEventType.weighIn,
-        scheduledDate: today.add(const Duration(days: 3)),
-        startTime: DateTime(today.year, today.month, today.day + 3, 7, 30),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.weekly,
-        targetMetrics: {'targetWeightKg': 75.0},
-        createdAt: now,
-        updatedAt: now,
-      ),
-      CalendarEvent(
-        id: _uuid.v4(),
-        title: 'Sleep Wind-Down & Blue Light Cutoff',
-        description: 'Read physical book, dim lights, 8 hours restorative sleep',
-        eventType: CalendarEventType.sleep,
-        scheduledDate: today,
-        startTime: DateTime(today.year, today.month, today.day, 22, 30),
-        isCompleted: false,
-        recurrenceRule: RecurrenceRule.daily,
-        targetMetrics: {'targetSleepHours': 8.0},
-        createdAt: now,
-        updatedAt: now,
-      ),
-    ];
-
-    for (final event in initialEvents) {
-      await createEvent(event);
-    }
+  @override
+  Future<void> clearAllEvents() async {
+    await _db.delete(_db.calendarEvents).go();
   }
 }
 
 final calendarRepositoryProvider = Provider<CalendarRepository>((ref) {
-  final dbInstance = ref.watch(databaseProvider);
-  final repo = CalendarRepositoryImpl(dbInstance);
-  repo.seedInitialCalendarEvents();
-  return repo;
+  final dbInstance = ref.watch(db.databaseProvider);
+  return CalendarRepositoryImpl(dbInstance);
 });

@@ -23,7 +23,9 @@ void main() {
 
     // Start a workout via the notifier
     final allExercises = await inMemoryRepo.getExercises();
-    final benchPress = allExercises.firstWhere((e) => e.name == 'Barbell Bench Press');
+    final benchPress = allExercises.firstWhere(
+      (e) => e.name == 'Bench Press (Barbell)' || e.name == 'Barbell Bench Press',
+    );
 
     container.read(activeWorkoutProvider.notifier).startNewWorkout(
           title: 'Morning Strength',
@@ -43,7 +45,7 @@ void main() {
 
     // Verify workout title and exercise present
     expect(find.text('Morning Strength'), findsOneWidget);
-    expect(find.text('Barbell Bench Press'), findsOneWidget);
+    expect(find.text(benchPress.name), findsOneWidget);
 
     // Verify initial set row (Set 1)
     expect(find.text('SET'), findsOneWidget);

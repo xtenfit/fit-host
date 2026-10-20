@@ -222,7 +222,7 @@ class CalendarEvent {
       targetMetrics: metrics,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
-      syncStatus: data.syncStatus,
+      syncStatus: data.syncStatus ?? 'synced',
     );
   }
 

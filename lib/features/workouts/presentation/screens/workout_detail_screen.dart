@@ -9,8 +9,20 @@ import 'package:fit_host/features/workouts/presentation/controllers/workout_prov
 final workoutDetailProvider =
     FutureProvider.family<WorkoutEntity?, String>((ref, id) async {
   final repo = ref.watch(workoutRepositoryProvider);
-  return repo.getWorkoutById(id);
+  return await repo.getWorkoutById(id);
 });
+
+String _getWorkoutImage(String id) {
+  if (id.contains('strength') || id.contains('push')) {
+    return 'assets/images/categories/strength.png';
+  } else if (id.contains('bodyweight') ||
+      id.contains('athletic') ||
+      id.contains('conditioning') ||
+      id.contains('leg')) {
+    return 'assets/images/categories/bodyweight.png';
+  }
+  return 'assets/images/workouts/today_workout_athlete.png';
+}
 
 class WorkoutDetailScreen extends ConsumerWidget {
   final String workoutId;
@@ -53,13 +65,25 @@ class WorkoutDetailScreen extends ConsumerWidget {
               );
 
               if (confirmed == true) {
-                await ref.read(workoutRepositoryProvider).deleteWorkout(workoutId);
-                ref.invalidate(workoutsStreamProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Workout deleted.')),
-                  );
-                  context.pop();
+                try {
+                  await ref.read(workoutRepositoryProvider).deleteWorkout(workoutId);
+                  ref.invalidate(workoutsStreamProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Workout deleted.')),
+                    );
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      context.go('/workouts');
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to delete workout: $e')),
+                    );
+                  }
                 }
               }
             },
@@ -76,14 +100,104 @@ class WorkoutDetailScreen extends ConsumerWidget {
               DateFormat('EEEE, MMMM d, y • h:mm a').format(workout.startedAt);
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
             children: [
+              // Hero Banner Image: Smoothly expanded from the carousel card
+              Hero(
+                tag: 'workout_hero_image_${workout.id}',
+                child: Container(
+                  height: 220,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.12),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(
+                          _getWorkoutImage(workout.id),
+                          fit: BoxFit.cover,
+                          alignment: Alignment.center,
+                          errorBuilder: (ctx, err, st) => Image.asset(
+                            'assets/images/workouts/today_workout_athlete.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        // Futuristic scrim gradient overlay
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                (isDark ? Colors.black : Colors.black87)
+                                    .withValues(alpha: 0.85),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 16,
+                          right: 16,
+                          bottom: 16,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF00E676),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'WORKOUT DETAIL',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.black,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                workout.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
               // Header Card
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkSurface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isDark
                         ? AppColors.darkSurfaceBorder
@@ -191,6 +305,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 ...workout.exercises.map((e) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -199,13 +314,18 @@ class WorkoutDetailScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                e.exerciseName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              Expanded(
+                                child: Text(
+                                  e.exerciseName,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 e.category,
                                 style: TextStyle(
@@ -244,14 +364,18 @@ class WorkoutDetailScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 14),
-                                  Text(
-                                    '${s.weightKg == s.weightKg.roundToDouble() ? s.weightKg.toInt() : s.weightKg} kg × ${s.reps} reps',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                  Expanded(
+                                    child: Text(
+                                      '${s.weightKg == s.weightKg.roundToDouble() ? s.weightKg.toInt() : s.weightKg} kg × ${s.reps} reps',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(width: 8),
                                   Icon(
                                     s.isCompleted
                                         ? Icons.check_circle_rounded
@@ -281,7 +405,7 @@ class WorkoutDetailScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDuration(int seconds) {
+  static String _formatDuration(int seconds) {
     final m = seconds ~/ 60;
     final s = seconds % 60;
     return '${m}m ${s}s';

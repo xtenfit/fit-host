@@ -124,7 +124,7 @@ def crop_exact(src_path, dst_path, x, y, width, height):
     abs_dst = os.path.abspath(dst_path).encode('utf-8')
     dst_url = CFURLCreateFromFileSystemRepresentation(None, abs_dst, len(abs_dst), False)
     
-    uti_name = b"public.jpeg" if (dst_path.lower().endswith(".jpg") or dst_path.lower().endswith(".jpeg")) else b"public.png"
+    uti_name = b"public.png"
     uti_cf = CFStringCreateWithCString(None, uti_name, kCFStringEncodingUTF8)
     
     dest = CGImageDestinationCreateWithURL(dst_url, uti_cf, 1, None)

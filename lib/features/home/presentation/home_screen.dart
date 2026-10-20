@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
+import 'package:fit_host/core/theme/app_motion.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/nutrition/presentation/controllers/nutrition_controller.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_streak_date_strip.dart';
 import 'widgets/home_statistics_grid.dart';
 import 'widgets/home_today_workout_hero.dart';
+import 'widgets/home_step_card.dart';
 import 'widgets/home_diet_diary_card.dart';
 import 'widgets/home_activity_card.dart';
+import 'widgets/guest_upgrade_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -28,22 +31,28 @@ class HomeScreen extends ConsumerWidget {
             ref.invalidate(nutritionProvider);
           },
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
             children: [
               // 1. Top Header: Grid Menu, Greeting/Profile Name, Notification, Avatar
               HomeHeader(isDark: isDark),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
 
-              // 2. Streak & Weekly Mini Date Strip
+              // 1b. Non-blocking Guest -> Account Upgrade Banner
+              GuestUpgradeBanner(isDark: isDark),
+
+              // 2. Today's Workout Glassmorphic Hero Carousel
+              HomeTodayWorkoutHero(isDark: isDark),
+              const SizedBox(height: 24),
+
+              // 3. Real Training Metrics (Streak Date Strip + Statistics Grid)
               HomeStreakDateStrip(isDark: isDark),
-              const SizedBox(height: 22),
-
-              // 3. Statistics 2x2 Grid (Calories, Steps, Heart Beats, Workouts)
+              const SizedBox(height: 20),
               HomeStatisticsGrid(isDark: isDark),
               const SizedBox(height: 24),
 
-              // 4. Today's Workout Glassmorphic Hero Card
-              HomeTodayWorkoutHero(isDark: isDark),
+              // 4. Daily Steps & Distance Tracker Card
+              HomeStepCard(isDark: isDark),
               const SizedBox(height: 24),
 
               // 5. My Diary / Calorie Balance & Meal Routine Card (Radial Gauge & Burrito)
@@ -58,12 +67,16 @@ class HomeScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Workout Categories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+                  const Expanded(
+                    child: Text(
+                      'Workout Categories',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                   TextButton(
@@ -74,112 +87,104 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               SizedBox(
-                height: 156,
+                height: 200,
                 child: ListView(
+                  physics: const BouncingScrollPhysics(),
                   scrollDirection: Axis.horizontal,
                   children: [
                     _CategoryCard(
                       title: 'Strength',
                       subtitle: 'Build muscle',
-                      imagePath: 'assets/images/workouts/strength.jpg',
+                      imagePath: 'assets/images/categories/strength.png',
                       icon: Icons.fitness_center_rounded,
                       color: AppColors.electricBlue,
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Strength'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Cardio',
                       subtitle: 'Burn fat & stamina',
-                      imagePath: 'assets/images/workouts/cardio.jpg',
+                      imagePath: 'assets/images/categories/cardio.png',
                       icon: Icons.directions_run_rounded,
                       color: const Color(0xFFFF5252),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Cardio'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'HIIT',
                       subtitle: 'High intensity burn',
-                      imagePath: 'assets/images/workouts/hiit.jpg',
+                      imagePath: 'assets/images/categories/hiit.png',
                       icon: Icons.local_fire_department_rounded,
                       color: const Color(0xFFFF6D00),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/HIIT'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Bodyweight',
                       subtitle: 'No equipment needed',
-                      imagePath: 'assets/images/workouts/bodyweight.jpg',
+                      imagePath: 'assets/images/categories/bodyweight.png',
                       icon: Icons.accessibility_new_rounded,
                       color: AppColors.electricCyan,
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Bodyweight'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Yoga',
                       subtitle: 'Mind & flexibility',
-                      imagePath: 'assets/images/workouts/yoga.jpg',
+                      imagePath: 'assets/images/categories/yoga.png',
                       icon: Icons.spa_rounded,
                       color: const Color(0xFF00E676),
-                      onTap: () => context.push('/routines'),
-                    ),
-                    const SizedBox(width: 12),
-                    _CategoryCard(
-                      title: 'Gym Workout',
-                      subtitle: 'Full body iron',
-                      imagePath: 'assets/images/workouts/gym_workout.jpg',
-                      icon: Icons.sports_gymnastics_rounded,
-                      color: const Color(0xFFFFB300),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Yoga'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Running',
                       subtitle: 'Road & sprint pace',
-                      imagePath: 'assets/images/workouts/running.jpg',
+                      imagePath: 'assets/images/categories/running.png',
                       icon: Icons.speed_rounded,
                       color: const Color(0xFF00B0FF),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Running'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Cycling',
                       subtitle: 'Speed & endurance',
-                      imagePath: 'assets/images/workouts/cycling.jpg',
+                      imagePath: 'assets/images/categories/cycling.png',
                       icon: Icons.pedal_bike_rounded,
                       color: const Color(0xFF76FF03),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Cycling'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Mobility',
                       subtitle: 'Joint health & range',
-                      imagePath: 'assets/images/workouts/mobility.jpg',
+                      imagePath: 'assets/images/categories/mobility.png',
                       icon: Icons.airline_seat_legroom_extra_rounded,
                       color: const Color(0xFFE040FB),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Mobility'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Stretching',
                       subtitle: 'Recovery & length',
-                      imagePath: 'assets/images/workouts/stretching.jpg',
+                      imagePath: 'assets/images/categories/stretching.png',
                       icon: Icons.self_improvement_rounded,
                       color: const Color(0xFF1DE9B6),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Mobility'),
                     ),
                     const SizedBox(width: 12),
                     _CategoryCard(
                       title: 'Meditation',
                       subtitle: 'Focus & breathwork',
-                      imagePath: 'assets/images/workouts/meditation.jpg',
+                      imagePath: 'assets/images/categories/meditation.png',
                       icon: Icons.nature_people_rounded,
                       color: const Color(0xFF651FFF),
-                      onTap: () => context.push('/routines'),
+                      onTap: () => context.push('/workout-category/Yoga'),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 120),
             ],
           ),
         ),
@@ -209,14 +214,14 @@ class _CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
+    return BouncyTap(
+      scaleDown: 0.94,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 140,
+        width: 150,
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
           ),
@@ -234,16 +239,16 @@ class _CategoryCard extends StatelessWidget {
           children: [
             Stack(
               children: [
-                Image.asset(
-                  imagePath,
-                  height: 85,
+                Container(
+                  height: 125,
                   width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 85,
-                    color: color.withValues(alpha: 0.2),
-                    child: Center(
-                      child: Icon(icon, color: color, size: 28),
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.all(6),
+                  child: Image.asset(
+                    imagePath,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Center(
+                      child: Icon(icon, color: color, size: 36),
                     ),
                   ),
                 ),
@@ -262,7 +267,7 @@ class _CategoryCard extends StatelessWidget {
               ],
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

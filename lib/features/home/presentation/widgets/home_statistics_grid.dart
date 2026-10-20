@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../workouts/domain/models/workout_models.dart';
 import '../../../workouts/presentation/controllers/workout_providers.dart';
 import '../../../nutrition/presentation/controllers/nutrition_controller.dart';
 import '../../../nutrition/presentation/widgets/custom_meal_routine_sheet.dart';
-import '../controllers/home_dashboard_controller.dart';
 
 class HomeStatisticsGrid extends ConsumerWidget {
   final bool isDark;
@@ -14,35 +14,89 @@ class HomeStatisticsGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dashboard = ref.watch(homeDashboardProvider);
-    final notifier = ref.read(homeDashboardProvider.notifier);
     final nutrition = ref.watch(nutritionProvider);
     final workoutsAsync = ref.watch(workoutsStreamProvider);
 
-    final completedWorkoutsCount = workoutsAsync.maybeWhen(
-      data: (workouts) => workouts.where((w) => w.status == 'completed').length,
-      orElse: () => 14,
+    // Compute 100% REAL metrics from SQLite database & active state
+    final completedWorkouts = workoutsAsync.maybeWhen(
+      data: (workouts) => workouts.where((w) => w.status == 'completed').toList(),
+      orElse: () => <WorkoutEntity>[],
     );
+
+    final completedWorkoutsCount = completedWorkouts.length;
+
+    final totalVolumeKg = completedWorkouts.fold<double>(
+      0.0,
+      (sum, w) => sum + w.totalVolumeKg,
+    );
+
+    final totalMinutes = completedWorkouts.fold<int>(
+      0,
+      (sum, w) => sum + (w.durationSeconds ~/ 60),
+    );
+
+    final caloriesBurned = (totalMinutes * 7.5).round();
+
+    final volumeDisplay = totalVolumeKg >= 1000
+        ? '${(totalVolumeKg / 1000).toStringAsFixed(1)}k kg'
+        : '${totalVolumeKg.toInt()} kg';
+
+    final durationDisplay = totalMinutes >= 60
+        ? '${totalMinutes ~/ 60}h ${totalMinutes % 60}m'
+        : '$totalMinutes min';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Statistics',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+              child: Text(
+                'Real Training Metrics',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.limeGreen.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_rounded, size: 12, color: AppColors.limeGreen),
+                  SizedBox(width: 4),
+                  Text(
+                    'Real Data',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.limeGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            // Card 1: Calories
+            // Card 1: Calories (Logged Food Intake vs Burned)
             Expanded(
               child: _StatGridCard(
-                title: 'Calories',
-                value: '${nutrition.totalCaloriesGained > 0 ? nutrition.totalCaloriesGained : 1200} Kcal',
+                title: 'Calories Logged',
+                value: '${nutrition.totalCaloriesGained} kcal',
+                subtitle: caloriesBurned > 0 ? '$caloriesBurned kcal burned' : 'Track daily fuel',
                 icon: Icons.local_fire_department_rounded,
                 accentColor: AppColors.limeGreen,
                 isDark: isDark,
@@ -51,24 +105,16 @@ class HomeStatisticsGrid extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
 
-            // Card 2: Steps
+            // Card 2: Total Volume Lifted (Real weight * reps from SQLite)
             Expanded(
               child: _StatGridCard(
-                title: 'Steps',
-                value: '${dashboard.stepsCount} Steps',
-                icon: Icons.directions_walk_rounded,
+                title: 'Volume Lifted',
+                value: volumeDisplay,
+                subtitle: 'Total weight moved',
+                icon: Icons.fitness_center_rounded,
                 accentColor: AppColors.electricCyan,
                 isDark: isDark,
-                onTap: () {
-                  notifier.addSteps(250);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('🚶 Logged +250 active steps in real-time!'),
-                      duration: Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onTap: () => context.go('/progress'),
               ),
             ),
           ],
@@ -76,34 +122,27 @@ class HomeStatisticsGrid extends ConsumerWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            // Card 3: Heart Beats
+            // Card 3: Real Active Training Duration
             Expanded(
               child: _StatGridCard(
-                title: 'Heart Beats',
-                value: '${dashboard.heartRateBpm} bpm',
-                icon: Icons.favorite_rounded,
-                accentColor: const Color(0xFFFF5252),
+                title: 'Active Time',
+                value: durationDisplay,
+                subtitle: 'Logged sessions',
+                icon: Icons.timer_rounded,
+                accentColor: const Color(0xFFFF9800),
                 isDark: isDark,
-                onTap: () {
-                  notifier.pulseHeartRate();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('❤️ Resting Heart Rate calibrated: ${dashboard.heartRateBpm} bpm'),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onTap: () => context.go('/workouts'),
               ),
             ),
             const SizedBox(width: 12),
 
-            // Card 4: Workouts
+            // Card 4: Real Workouts Completed
             Expanded(
               child: _StatGridCard(
                 title: 'Workouts',
-                value: '$completedWorkoutsCount / 20',
-                icon: Icons.fitness_center_rounded,
+                value: '$completedWorkoutsCount sessions',
+                subtitle: 'Verified history',
+                icon: Icons.emoji_events_rounded,
                 accentColor: const Color(0xFFA855F7),
                 isDark: isDark,
                 onTap: () => context.go('/workouts'),
@@ -119,6 +158,7 @@ class HomeStatisticsGrid extends ConsumerWidget {
 class _StatGridCard extends StatelessWidget {
   final String title;
   final String value;
+  final String subtitle;
   final IconData icon;
   final Color accentColor;
   final bool isDark;
@@ -127,6 +167,7 @@ class _StatGridCard extends StatelessWidget {
   const _StatGridCard({
     required this.title,
     required this.value,
+    required this.subtitle,
     required this.icon,
     required this.accentColor,
     required this.isDark,
@@ -139,7 +180,7 @@ class _StatGridCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -160,12 +201,16 @@ class _StatGridCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Icon(
@@ -175,7 +220,7 @@ class _StatGridCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               value,
               style: TextStyle(
@@ -183,6 +228,17 @@ class _StatGridCard extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 color: isDark ? Colors.white : AppColors.lightTextPrimary,
                 letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../workouts/domain/models/workout_models.dart';
+import '../../../workouts/presentation/controllers/workout_providers.dart';
+import '../../../steps/presentation/controllers/step_controller.dart';
+import '../../../steps/domain/step_calculator.dart';
+import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import '../controllers/home_dashboard_controller.dart';
 
 class HomeActivityCard extends ConsumerWidget {
@@ -14,6 +19,23 @@ class HomeActivityCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     final notifier = ref.read(homeDashboardProvider.notifier);
+    final workoutsAsync = ref.watch(workoutsStreamProvider);
+    final profile = ref.watch(userProfileProvider);
+
+    final completedWorkouts = workoutsAsync.maybeWhen(
+      data: (workouts) => workouts.where((w) => w.status == 'completed').toList(),
+      orElse: () => <WorkoutEntity>[],
+    );
+
+    final totalActiveMinutes = completedWorkouts.fold<int>(
+      0,
+      (sum, w) => sum + (w.durationSeconds ~/ 60),
+    );
+
+    final goalMinutes = profile.dailyWorkoutMinutes > 0 ? profile.dailyWorkoutMinutes : 45;
+    final progress = (totalActiveMinutes / goalMinutes).clamp(0.0, 1.0);
+    final leftMinutes = (goalMinutes - totalActiveMinutes).clamp(0, goalMinutes);
+    final restMinutes = (totalActiveMinutes * 0.15).round();
 
     const filters = ['Today', 'Weekly', 'Monthly', 'Yearly', 'All Time'];
 
@@ -121,33 +143,40 @@ class HomeActivityCard extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: const BoxDecoration(
-                          color: AppColors.limeGreen,
-                          shape: BoxShape.circle,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: AppColors.limeGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 11,
+                            color: Colors.black,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          size: 11,
-                          color: Colors.black,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Today\'s Workout',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Today\'s Workout',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
-                    '14 / 20',
+                    '${completedWorkouts.length} Completed',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -158,7 +187,7 @@ class HomeActivityCard extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // Circular Timer Gauge: 45 of 60 min.
+              // Circular Timer Gauge: Active vs Goal min.
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -176,11 +205,11 @@ class HomeActivityCard extends ConsumerWidget {
                       Row(
                         children: [
                           Text(
-                            '6',
-                            style: TextStyle(
+                            '$restMinutes',
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
-                              color: const Color(0xFFFFB300),
+                              color: Color(0xFFFFB300),
                             ),
                           ),
                           const SizedBox(width: 2),
@@ -206,7 +235,7 @@ class HomeActivityCard extends ConsumerWidget {
                         CustomPaint(
                           size: const Size(110, 110),
                           painter: _ActivityGaugePainter(
-                            progress: 45 / 60,
+                            progress: progress,
                             isDark: isDark,
                           ),
                         ),
@@ -214,7 +243,7 @@ class HomeActivityCard extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '45',
+                              '$totalActiveMinutes',
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
@@ -223,7 +252,7 @@ class HomeActivityCard extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              'of 60 min.',
+                              'of $goalMinutes min.',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -250,11 +279,11 @@ class HomeActivityCard extends ConsumerWidget {
                       Row(
                         children: [
                           Text(
-                            '15',
-                            style: TextStyle(
+                            '$leftMinutes',
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
-                              color: const Color(0xFFFFB300),
+                              color: Color(0xFFFFB300),
                             ),
                           ),
                           const SizedBox(width: 2),
@@ -273,24 +302,81 @@ class HomeActivityCard extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // Workout Activity Items: Weight Training & Cardio
-              _WorkoutActivityTile(
-                title: 'Weight Training',
-                subtitle: 'Chest, Biceps, Triceps, Back',
-                duration: '30 min.',
-                icon: Icons.fitness_center_rounded,
-                iconColor: const Color(0xFFFFB300),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 10),
-              _WorkoutActivityTile(
-                title: 'Cardio & Care',
-                subtitle: 'HIIT, Core, Flexibility',
-                duration: '15 min.',
-                icon: Icons.favorite_rounded,
-                iconColor: const Color(0xFFFF5252),
-                isDark: isDark,
-              ),
+              // Workout Activity Items: Real Database Entries or Start Routine Prompt
+              if (completedWorkouts.isNotEmpty) ...[
+                ...completedWorkouts.take(2).map((w) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _WorkoutActivityTile(
+                      title: w.title,
+                      subtitle: '${w.totalVolumeKg.toInt()} kg volume • ${w.completedSets} sets completed',
+                      duration: '${(w.durationSeconds ~/ 60)} min.',
+                      icon: Icons.fitness_center_rounded,
+                      iconColor: const Color(0xFFFFB300),
+                      isDark: isDark,
+                    ),
+                  );
+                }),
+              ] else ...[
+                InkWell(
+                  onTap: () => context.go('/workouts'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.limeGreen.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.fitness_center_rounded,
+                            size: 16,
+                            color: AppColors.limeGreen,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ready to Train?',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                ),
+                              ),
+                              Text(
+                                'Start a workout routine to record real volume and duration',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: AppColors.limeGreen,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -301,59 +387,63 @@ class HomeActivityCard extends ConsumerWidget {
           children: [
             // Walk Card
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Walk',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.directions_walk_rounded,
-                          size: 16,
-                          color: AppColors.electricCyan,
-                        ),
-                      ],
+              child: InkWell(
+                onTap: () => _showLogStepsDialog(context, ref),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
                     ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Column(
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${dashboard.walkSteps}',
+                            'Walk',
                             style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : AppColors.lightTextPrimary,
                             ),
                           ),
-                          Text(
-                            'Steps',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                            ),
+                          const Icon(
+                            Icons.directions_walk_rounded,
+                            size: 16,
+                            color: AppColors.electricCyan,
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              '${dashboard.walkSteps}',
+                              style: TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                              ),
+                            ),
+                            Text(
+                              'Steps',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -361,61 +451,195 @@ class HomeActivityCard extends ConsumerWidget {
 
             // Sleep Card
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Sleep',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                          ),
-                        ),
-                        const Text('🌙', style: TextStyle(fontSize: 14)),
-                      ],
+              child: InkWell(
+                onTap: () => _showLogSleepDialog(context, ref, dashboard.sleepHours),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
                     ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: Column(
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            dashboard.sleepHours.toStringAsFixed(2),
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFFFF6B4A),
-                            ),
-                          ),
-                          Text(
-                            'Hours',
+                            'Sleep',
                             style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
                             ),
                           ),
+                          const Text('🌙', style: TextStyle(fontSize: 14)),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              dashboard.sleepHours.toStringAsFixed(2),
+                              style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFFF6B4A),
+                              ),
+                            ),
+                            Text(
+                              'Hours',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showLogStepsDialog(BuildContext context, WidgetRef ref) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final textVal = controller.text.trim();
+            final parsed = int.tryParse(textVal) ?? 0;
+            final dist = StepCalculator.distanceKm(steps: parsed, strideCm: 72.6);
+            final cal = StepCalculator.estimateCalories(parsed);
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              title: const Row(
+                children: [
+                  Icon(Icons.directions_walk_rounded, color: AppColors.limeGreen),
+                  SizedBox(width: 10),
+                  Text('Log Walk Steps', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Enter your actual steps walked today from a treadmill, outdoor walk, or smartwatch session.',
+                    style: TextStyle(fontSize: 13, height: 1.35),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 2500',
+                      labelText: 'Actual Steps',
+                      prefixIcon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  if (parsed > 0) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.limeGreen.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Est. Distance: ${dist.toStringAsFixed(2)} km', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text('Est. Burn: $cal kcal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.limeGreen)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    context.push('/steps');
+                  },
+                  child: const Text('View All Steps'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: parsed <= 0
+                      ? null
+                      : () {
+                          ref.read(homeDashboardProvider.notifier).logSteps(parsed);
+                          ref.read(stepControllerProvider.notifier).addSimulatedSteps(parsed);
+                          Navigator.pop(ctx);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.limeGreen,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: const Text('Save Steps'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showLogSleepDialog(BuildContext context, WidgetRef ref, double current) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log Sleep Duration', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('7.5 Hours (Optimal Recovery)'),
+              onTap: () {
+                ref.read(homeDashboardProvider.notifier).setSleepHours(7.5);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text('8.0 Hours (Deep Sleep)'),
+              onTap: () {
+                ref.read(homeDashboardProvider.notifier).setSleepHours(8.0);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              title: const Text('6.5 Hours (Short Rest)'),
+              onTap: () {
+                ref.read(homeDashboardProvider.notifier).setSleepHours(6.5);
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

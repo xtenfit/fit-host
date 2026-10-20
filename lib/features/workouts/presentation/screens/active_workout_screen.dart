@@ -50,13 +50,54 @@ class ActiveWorkoutScreen extends ConsumerWidget {
               workout.title,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            Text(
-              _formatTimer(workout.durationSeconds),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
-              ),
+            Row(
+              children: [
+                Text(
+                  _formatTimer(workout.durationSeconds),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: activeState.isTimerRunning
+                        ? (isDark ? AppColors.limeGreen : AppColors.limeGreenLight)
+                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => notifier.toggleTimer(),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          activeState.isTimerRunning
+                              ? Icons.pause_circle_filled_rounded
+                              : Icons.play_circle_fill_rounded,
+                          size: 16,
+                          color: activeState.isTimerRunning
+                              ? AppColors.limeGreen
+                              : (isDark ? Colors.white70 : Colors.black87),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          activeState.isTimerRunning
+                              ? 'Active'
+                              : (workout.exercises.isEmpty ? 'Ready' : 'Paused'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: activeState.isTimerRunning
+                                ? AppColors.limeGreen
+                                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -101,6 +142,25 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               ),
               onPressed: () async {
+                if (workout.exercises.isEmpty) {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('No Exercises Added'),
+                      content: const Text(
+                        'This session currently has no exercises. Please add an exercise before finishing, or tap Discard.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    ),
+                  );
+                  return;
+                }
+
                 final completedWorkout = await notifier.finishWorkout();
                 if (context.mounted && completedWorkout != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +172,7 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Workout saved offline! (${completedWorkout.completedSets} sets completed)',
+                              'Workout saved and synced! (${completedWorkout.completedSets} sets completed)',
                               style: TextStyle(
                                 color: isDark ? Colors.white : Colors.black,
                                 fontWeight: FontWeight.w600,
@@ -178,44 +238,93 @@ class ActiveWorkoutScreen extends ConsumerWidget {
           Expanded(
             child: workout.exercises.isEmpty
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.fitness_center_rounded,
-                          size: 48,
-                          color: isDark
-                              ? AppColors.darkTextTertiary
-                              : AppColors.lightTextTertiary,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'No exercises added yet',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Tap below to add an exercise from your library.',
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.darkTextSecondary
-                                : AppColors.lightTextSecondary,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.fitness_center_rounded,
+                              size: 44,
+                              color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => _showAddExerciseModal(context, ref),
-                          icon: const Icon(Icons.add_rounded, color: Colors.black),
-                          label: const Text(
-                            'Add Exercise',
-                            style: TextStyle(color: Colors.black),
+                          const SizedBox(height: 18),
+                          const Text(
+                            'Session Ready To Begin',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 6),
+                          Text(
+                            activeState.isTimerRunning
+                                ? 'Session timer is running. Tap below to pick an exercise.'
+                                : 'Timer will begin when you add your first exercise or tap Start Timer.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.limeGreen,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                                onPressed: () => _showAddExerciseModal(context, ref),
+                                icon: const Icon(Icons.add_rounded, color: Colors.black),
+                                label: const Text(
+                                  'Add Exercise',
+                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  side: BorderSide(
+                                    color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                  ),
+                                ),
+                                onPressed: () => notifier.toggleTimer(),
+                                icon: Icon(
+                                  activeState.isTimerRunning
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  size: 20,
+                                  color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                ),
+                                label: Text(
+                                  activeState.isTimerRunning ? 'Pause' : 'Start Timer',
+                                  style: TextStyle(
+                                    color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
                     itemCount: workout.exercises.length + 1,
                     itemBuilder: (context, exIndex) {
                       if (exIndex == workout.exercises.length) {

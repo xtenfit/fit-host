@@ -27,10 +27,20 @@ class ReminderCard extends StatelessWidget {
     if (!reminder.isEnabled) return 'Disabled';
     final now = DateTime.now();
     final next = reminder.nextOccurrence(now);
-    final isToday = next.day == now.day && next.month == now.month && next.year == now.year;
+    final timeStr = DateFormat('h:mm a').format(next);
     final isTomorrow = next.difference(now).inDays == 1 || (next.day == now.day + 1);
 
-    final timeStr = DateFormat('h:mm a').format(next);
+    if (reminder.isCompletedToday) {
+      final compTime = reminder.lastCompletedAt != null
+          ? DateFormat('h:mm a').format(reminder.lastCompletedAt!)
+          : '';
+      final nextPrefix = isTomorrow ? 'Tomorrow at $timeStr' : '${DateFormat('EEE, MMM d').format(next)} at $timeStr';
+      return compTime.isNotEmpty
+          ? 'Completed for today ($compTime) • Next: $nextPrefix'
+          : 'Completed for today • Next: $nextPrefix';
+    }
+
+    final isToday = next.day == now.day && next.month == now.month && next.year == now.year;
     if (isToday) return 'Today at $timeStr';
     if (isTomorrow) return 'Tomorrow at $timeStr';
     return '${DateFormat('EEE, MMM d').format(next)} at $timeStr';
@@ -41,16 +51,22 @@ class ReminderCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final catColor = reminder.category.color;
+    final isDoneToday = reminder.isCompletedToday;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+        color: isDoneToday
+            ? (isDark ? const Color(0xFF101B17) : const Color(0xFFF4FAF6))
+            : (isDark ? AppColors.darkSurfaceElevated : Colors.white),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: reminder.isEnabled
-              ? (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder)
-              : Colors.transparent,
+          color: isDoneToday
+              ? AppColors.limeGreen.withValues(alpha: isDark ? 0.45 : 0.35)
+              : (reminder.isEnabled
+                  ? (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder)
+                  : Colors.transparent),
+          width: isDoneToday ? 1.5 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
@@ -92,6 +108,36 @@ class ReminderCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+
+                // Completed for today badge
+                if (isDoneToday) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.limeGreen.withValues(alpha: isDark ? 0.22 : 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.limeGreen.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded, size: 12, color: AppColors.limeGreen),
+                        SizedBox(width: 4),
+                        Text(
+                          'Completed for today',
+                          style: TextStyle(
+                            color: AppColors.limeGreen,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
 
                 // Sound / Vibration indicator icons
                 if (reminder.soundEnabled)
@@ -173,12 +219,18 @@ class ReminderCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  '• ${_formatNextAlarm()}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: reminder.isEnabled ? AppColors.electricBlue : Colors.grey[500],
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    '• ${_formatNextAlarm()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDoneToday
+                          ? AppColors.limeGreen
+                          : (reminder.isEnabled ? AppColors.electricBlue : Colors.grey[500]),
+                      fontWeight: isDoneToday ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -189,8 +241,8 @@ class ReminderCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                // Snooze Action Button
-                if (reminder.isEnabled)
+                // Snooze Action Button (only if not completed today)
+                if (reminder.isEnabled && !isDoneToday) ...[
                   OutlinedButton.icon(
                     onPressed: () => onSnooze(reminder.snoozeDurationMinutes),
                     icon: const Icon(Icons.snooze_rounded, size: 14),
@@ -203,17 +255,27 @@ class ReminderCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                const SizedBox(width: 8),
+                  const SizedBox(width: 8),
+                ],
 
                 // Mark Done / Completed
                 if (reminder.isEnabled)
                   ElevatedButton.icon(
                     onPressed: onComplete,
-                    icon: const Icon(Icons.check_rounded, size: 14),
-                    label: const Text('Complete'),
+                    icon: Icon(
+                      isDoneToday ? Icons.check_circle_rounded : Icons.check_rounded,
+                      size: 14,
+                      color: isDoneToday ? AppColors.limeGreen : Colors.black,
+                    ),
+                    label: Text(isDoneToday ? 'Completed for today ✓' : 'Complete'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.limeGreen,
-                      foregroundColor: Colors.black,
+                      backgroundColor: isDoneToday
+                          ? (isDark ? const Color(0xFF132A1E) : const Color(0xFFE8F8F0))
+                          : AppColors.limeGreen,
+                      foregroundColor: isDoneToday ? AppColors.limeGreen : Colors.black,
+                      side: isDoneToday
+                          ? BorderSide(color: AppColors.limeGreen.withValues(alpha: 0.6))
+                          : BorderSide.none,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       shape: RoundedRectangleBorder(

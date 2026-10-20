@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/nutrition_models.dart';
 import '../controllers/nutrition_controller.dart';
+import '../../../profile/presentation/controllers/user_profile_controller.dart';
 
 class CustomMealRoutineSheet extends ConsumerStatefulWidget {
   const CustomMealRoutineSheet({super.key});
@@ -24,13 +25,14 @@ class CustomMealRoutineSheet extends ConsumerStatefulWidget {
 
 class _CustomMealRoutineSheetState
     extends ConsumerState<CustomMealRoutineSheet> {
-  String _selectedDiet = 'all'; // 'all', 'vegan', 'non_veg'
+  String _selectedDiet = 'all'; // 'all', 'vegan', 'non_veg', etc.
   final String _selectedMealCategory = 'all'; // 'all', 'breakfast', 'lunch', 'dinner', 'snack'
 
   @override
   Widget build(BuildContext context) {
     final nutrition = ref.watch(nutritionProvider);
     final notifier = ref.read(nutritionProvider.notifier);
+    final profile = ref.watch(userProfileProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -237,33 +239,86 @@ class _CustomMealRoutineSheetState
                     ),
                     const SizedBox(height: 12),
 
-                    // Vegan vs Non-Veg Filter Chips
-                    Row(
-                      children: [
-                        _DietFilterPill(
-                          label: 'All Diets',
-                          icon: Icons.all_inclusive_rounded,
-                          isSelected: _selectedDiet == 'all',
-                          onTap: () => setState(() => _selectedDiet = 'all'),
-                          isDark: isDark,
-                        ),
-                        const SizedBox(width: 8),
-                        _DietFilterPill(
-                          label: '🥗 Vegan',
-                          icon: Icons.eco_rounded,
-                          isSelected: _selectedDiet == 'vegan',
-                          onTap: () => setState(() => _selectedDiet = 'vegan'),
-                          isDark: isDark,
-                        ),
-                        const SizedBox(width: 8),
-                        _DietFilterPill(
-                          label: '🥩 Non-Veg',
-                          icon: Icons.restaurant_rounded,
-                          isSelected: _selectedDiet == 'non_veg',
-                          onTap: () => setState(() => _selectedDiet = 'non_veg'),
-                          isDark: isDark,
-                        ),
-                      ],
+                    // Dietary Filter Carousel
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _DietFilterPill(
+                            label: 'All Diets',
+                            icon: Icons.all_inclusive_rounded,
+                            isSelected: _selectedDiet == 'all',
+                            onTap: () => setState(() => _selectedDiet = 'all'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          if (profile.dietType.isNotEmpty) ...[
+                            _DietFilterPill(
+                              label: '🎯 My Diet (${profile.dietType.replaceAll('_', ' ')})',
+                              icon: Icons.stars_rounded,
+                              isSelected: _selectedDiet == profile.dietType,
+                              onTap: () => setState(() => _selectedDiet = profile.dietType),
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          _DietFilterPill(
+                            label: '🥩 High Protein',
+                            icon: Icons.fitness_center_rounded,
+                            isSelected: _selectedDiet == 'high_protein',
+                            onTap: () => setState(() => _selectedDiet = 'high_protein'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '🥑 Low Carb',
+                            icon: Icons.egg_alt_rounded,
+                            isSelected: _selectedDiet == 'low_carb',
+                            onTap: () => setState(() => _selectedDiet = 'low_carb'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '🧀 Vegetarian',
+                            icon: Icons.spa_rounded,
+                            isSelected: _selectedDiet == 'vegetarian',
+                            onTap: () => setState(() => _selectedDiet = 'vegetarian'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '🥗 Vegan',
+                            icon: Icons.eco_rounded,
+                            isSelected: _selectedDiet == 'vegan',
+                            onTap: () => setState(() => _selectedDiet = 'vegan'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '🫒 Mediterranean',
+                            icon: Icons.local_dining_rounded,
+                            isSelected: _selectedDiet == 'mediterranean',
+                            onTap: () => setState(() => _selectedDiet = 'mediterranean'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '⚖️ Balanced',
+                            icon: Icons.tune_rounded,
+                            isSelected: _selectedDiet == 'balanced',
+                            onTap: () => setState(() => _selectedDiet = 'balanced'),
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 8),
+                          _DietFilterPill(
+                            label: '🍗 Non-Veg',
+                            icon: Icons.restaurant_rounded,
+                            isSelected: _selectedDiet == 'non_veg',
+                            onTap: () => setState(() => _selectedDiet = 'non_veg'),
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 14),
 
@@ -346,13 +401,26 @@ class _CustomMealRoutineSheetState
   }
 
   void _showAddCustomMealDialog(BuildContext context) {
+    final profile = ref.read(userProfileProvider);
     final nameCtrl = TextEditingController();
     final calCtrl = TextEditingController();
     final proteinCtrl = TextEditingController();
     final carbsCtrl = TextEditingController();
     final fatCtrl = TextEditingController();
     String mealType = 'lunch';
-    String dietType = 'vegan';
+    String dietType = profile.dietType.isNotEmpty ? profile.dietType : 'high_protein';
+
+    void autoCalculateCalories(StateSetter setDlgState) {
+      final p = double.tryParse(proteinCtrl.text) ?? 0.0;
+      final c = double.tryParse(carbsCtrl.text) ?? 0.0;
+      final f = double.tryParse(fatCtrl.text) ?? 0.0;
+      final computed = ((p * 4) + (c * 4) + (f * 9)).round();
+      if (computed > 0) {
+        setDlgState(() {
+          calCtrl.text = computed.toString();
+        });
+      }
+    }
 
     showDialog(
       context: context,
@@ -368,7 +436,7 @@ class _CustomMealRoutineSheetState
                     controller: nameCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Meal Name',
-                      hintText: 'e.g., Post-Workout High Protein Oats',
+                      hintText: 'e.g., Post-Workout Salmon & Sweet Potato',
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -379,8 +447,13 @@ class _CustomMealRoutineSheetState
                           initialValue: dietType,
                           decoration: const InputDecoration(labelText: 'Diet Type'),
                           items: const [
+                            DropdownMenuItem(value: 'high_protein', child: Text('🥩 High Protein')),
+                            DropdownMenuItem(value: 'low_carb', child: Text('🥑 Low Carb')),
+                            DropdownMenuItem(value: 'vegetarian', child: Text('🧀 Vegetarian')),
                             DropdownMenuItem(value: 'vegan', child: Text('🥗 Vegan')),
-                            DropdownMenuItem(value: 'non_veg', child: Text('🥩 Non-Veg')),
+                            DropdownMenuItem(value: 'mediterranean', child: Text('🫒 Mediterranean')),
+                            DropdownMenuItem(value: 'balanced', child: Text('⚖️ Balanced')),
+                            DropdownMenuItem(value: 'non_veg', child: Text('🍗 Non-Veg')),
                           ],
                           onChanged: (v) => setDlgState(() => dietType = v!),
                         ),
@@ -402,13 +475,25 @@ class _CustomMealRoutineSheetState
                     ],
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: calCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Calories (kcal)',
-                      suffixText: 'kcal',
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: calCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Calories (kcal)',
+                            suffixText: 'kcal',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.calculate_rounded, size: 16),
+                        label: const Text('Auto-calc', style: TextStyle(fontSize: 12)),
+                        onPressed: () => autoCalculateCalories(setDlgState),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -421,6 +506,7 @@ class _CustomMealRoutineSheetState
                             labelText: 'Protein',
                             suffixText: 'g',
                           ),
+                          onChanged: (_) => autoCalculateCalories(setDlgState),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -432,6 +518,7 @@ class _CustomMealRoutineSheetState
                             labelText: 'Carbs',
                             suffixText: 'g',
                           ),
+                          onChanged: (_) => autoCalculateCalories(setDlgState),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -443,6 +530,7 @@ class _CustomMealRoutineSheetState
                             labelText: 'Fat',
                             suffixText: 'g',
                           ),
+                          onChanged: (_) => autoCalculateCalories(setDlgState),
                         ),
                       ),
                     ],
@@ -788,37 +876,36 @@ class _DietFilterPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.limeGreen
+              : (isDark ? AppColors.darkSurface : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
             color: isSelected
                 ? AppColors.limeGreen
-                : (isDark ? AppColors.darkSurface : Colors.grey.shade100),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.limeGreen
-                  : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
-            ),
+                : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 14, color: isSelected ? Colors.black : null),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.black : null,
-                ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

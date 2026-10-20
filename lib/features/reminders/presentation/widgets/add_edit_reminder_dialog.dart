@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/services/permission_service.dart';
 import '../../domain/models/reminder.dart';
 
 class AddEditReminderDialog extends StatefulWidget {
@@ -415,7 +416,7 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final title = _titleController.text.trim();
                   if (title.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -423,6 +424,10 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                     );
                     return;
                   }
+
+                  // Request OS permissions and battery optimization exemption
+                  await PermissionService.instance.requestReminderPermissions(context);
+                  if (!context.mounted) return;
 
                   final hStr = _timeOfDay.hour.toString().padLeft(2, '0');
                   final mStr = _timeOfDay.minute.toString().padLeft(2, '0');

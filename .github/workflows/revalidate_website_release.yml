@@ -1,0 +1,28 @@
+name: Revalidate Website Release Cache
+
+on:
+  release:
+    types: [published, edited, deleted]
+
+jobs:
+  revalidate:
+    name: Purge and Revalidate Next.js Release Cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel On-Demand ISR Revalidation
+        run: |
+          echo "Triggering Fit Host website release revalidation for published tag: ${{ github.event.release.tag_name }}"
+          HTTP_STATUS=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            "https://fithost.amitrana.tech/api/revalidate-releases" \
+            -H "Content-Type: application/json" \
+            -H "x-revalidate-secret: ${{ secrets.REVALIDATION_SECRET }}")
+
+          cat response.json
+          echo ""
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Revalidation endpoint returned HTTP status $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "Successfully triggered instant cache revalidation on https://fithost.amitrana.tech"

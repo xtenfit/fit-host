@@ -4,6 +4,8 @@ import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/features/workouts/domain/models/workout_models.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 
+import 'package:fit_host/features/profile/presentation/controllers/user_profile_controller.dart';
+
 class ExerciseLibraryScreen extends ConsumerStatefulWidget {
   const ExerciseLibraryScreen({super.key});
 
@@ -21,32 +23,132 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final exercisesAsync = ref.watch(exercisesListProvider);
+    final filter = ref.watch(exercisesFilterProvider);
+    final profile = ref.watch(userProfileProvider);
+    final userGender = profile.gender;
+    final currentGenderFilter = filter.genderFilter ?? userGender;
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    // Gender chip options
+    final userGenderLabel = userGender.toLowerCase() == 'female'
+        ? 'Female (${userGender[0].toUpperCase()}${userGender.substring(1)})'
+        : (userGender.toLowerCase() == 'male'
+            ? 'Male (${userGender[0].toUpperCase()}${userGender.substring(1)})'
+            : '${userGender[0].toUpperCase()}${userGender.substring(1)} Focus');
+
+    final genderChips = [
+      {'id': 'All', 'label': 'All'},
+      {'id': 'male', 'label': 'Male Focus'},
+      {'id': 'female', 'label': 'Female Focus'},
+      {'id': userGender, 'label': userGenderLabel},
+    ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Exercise Library'),
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              setState(() {
+                _query = '';
+                _selectedCategory = 'All';
+              });
+              ref.read(exercisesFilterProvider.notifier).resetToAll();
+            },
+            icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.limeGreen),
+            label: const Text(
+              'Show all',
+              style: TextStyle(
+                color: AppColors.limeGreen,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: 'Search by exercise or muscle...',
-                prefixIcon: Icon(Icons.search_rounded),
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          setState(() => _query = '');
+                          ref.read(exercisesFilterProvider.notifier).updateFilter(
+                                query: '',
+                                category: _selectedCategory,
+                                genderFilter: currentGenderFilter,
+                              );
+                        },
+                      )
+                    : null,
               ),
               onChanged: (val) {
                 setState(() => _query = val);
-                ref
-                    .read(exercisesFilterProvider.notifier)
-                    .updateFilter(query: _query, category: _selectedCategory);
+                ref.read(exercisesFilterProvider.notifier).updateFilter(
+                      query: _query,
+                      category: _selectedCategory,
+                      genderFilter: currentGenderFilter,
+                    );
               },
             ),
           ),
+
+          // Gender Focus Chip Row
           SizedBox(
-            height: 44,
+            height: 38,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: genderChips.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, idx) {
+                final chip = genderChips[idx];
+                final chipId = chip['id']!;
+                final chipLabel = chip['label']!;
+                final isSelected = currentGenderFilter.toLowerCase() == chipId.toLowerCase();
+
+                return ChoiceChip(
+                  avatar: chipId.toLowerCase() == userGender.toLowerCase() && chipId.toLowerCase() != 'all'
+                      ? const Icon(Icons.person_rounded, size: 14, color: Colors.black)
+                      : null,
+                  label: Text(chipLabel),
+                  selected: isSelected,
+                  selectedColor: AppColors.limeGreen,
+                  backgroundColor: isDark ? AppColors.darkSurface : Colors.grey.shade200,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.black
+                        : (isDark ? Colors.white70 : Colors.black87),
+                  ),
+                  onSelected: (selected) {
+                    if (selected) {
+                      ref.read(exercisesFilterProvider.notifier).updateFilter(
+                            query: _query,
+                            category: _selectedCategory,
+                            genderFilter: chipId,
+                          );
+                    }
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Category Chips Row
+          SizedBox(
+            height: 38,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               scrollDirection: Axis.horizontal,
@@ -58,12 +160,22 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                 return ChoiceChip(
                   label: Text(cat),
                   selected: isSelected,
+                  selectedColor: AppColors.electricBlue,
+                  labelStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? Colors.white70 : Colors.black87),
+                  ),
                   onSelected: (selected) {
                     if (selected) {
                       setState(() => _selectedCategory = cat);
-                      ref
-                          .read(exercisesFilterProvider.notifier)
-                          .updateFilter(query: _query, category: cat);
+                      ref.read(exercisesFilterProvider.notifier).updateFilter(
+                            query: _query,
+                            category: cat,
+                            genderFilter: currentGenderFilter,
+                          );
                     }
                   },
                 );
@@ -94,7 +206,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
                   itemCount: exercises.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, idx) {
@@ -264,7 +376,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                   if (exercise.imageAsset != null)
                     Expanded(
                       child: Container(
-                        height: 110,
+                        height: 140,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -285,11 +397,17 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                                 color: Colors.black54,
                               ),
                             ),
-                            const SizedBox(height: 4),
                             Expanded(
                               child: Image.asset(
                                 exercise.imageAsset!,
                                 fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) => Center(
+                                  child: Icon(
+                                    _getCategoryIcon(exercise.category),
+                                    color: AppColors.limeGreenDark,
+                                    size: 32,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -302,7 +420,7 @@ class _ExerciseLibraryScreenState extends ConsumerState<ExerciseLibraryScreen> {
                   if (exercise.anatomyAsset != null)
                     Expanded(
                       child: Container(
-                        height: 110,
+                        height: 140,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.black,

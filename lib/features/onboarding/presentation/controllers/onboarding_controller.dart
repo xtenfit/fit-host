@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/onboarding_models.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
+import '../../../profile/presentation/controllers/user_profile_controller.dart';
+import 'package:fit_host/core/services/startup_gate_service.dart';
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   return OnboardingRepositoryImpl();
@@ -29,17 +31,66 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   void nextStep() {
-    if (state.currentStep < 12) {
-      state = state.copyWith(currentStep: state.currentStep + 1);
-      _autoSave();
+    final step = state.currentStep;
+    int next = step + 1;
+    bool isBranch = false;
+
+    if (step == 6 &&
+        (state.goals.contains('maintain') ||
+            state.goals.contains('maintain_weight'))) {
+      next = 8;
+    } else if (step == 8 && !state.isGenderBranch) {
+      if (state.gender == 'male' || state.gender == 'female') {
+        next = 8;
+        isBranch = true;
+      } else {
+        next = 9;
+      }
+    } else if (step == 8 && state.isGenderBranch) {
+      next = 9;
+      isBranch = false;
+    } else if (step >= 17) {
+      return;
     }
+
+    state = state.copyWith(
+      currentStep: next.clamp(1, 17),
+      isGenderBranch: isBranch,
+    );
+    _autoSave();
   }
 
   void previousStep() {
-    if (state.currentStep > 1) {
-      state = state.copyWith(currentStep: state.currentStep - 1);
-      _autoSave();
+    final step = state.currentStep;
+    if (step <= 1 && !state.isGenderBranch) return;
+
+    int prev = step - 1;
+    bool isBranch = false;
+
+    if (step == 8 && state.isGenderBranch) {
+      prev = 8;
+      isBranch = false;
+    } else if (step == 9) {
+      if (state.gender == 'male' || state.gender == 'female') {
+        prev = 8;
+        isBranch = true;
+      } else {
+        prev = 8;
+      }
+    } else if (step == 8) {
+      if (state.goals.contains('maintain') ||
+          state.goals.contains('maintain_weight')) {
+        prev = 6;
+      } else {
+        prev = 7;
+      }
     }
+
+    state = state.copyWith(
+      currentStep: prev.clamp(1, 17),
+      isGenderBranch: isBranch,
+    );
+    _autoSave();
   }
 
   void skipStep() {
@@ -47,10 +98,19 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   void jumpToStep(int step) {
-    if (step >= 1 && step <= 12) {
-      state = state.copyWith(currentStep: step);
-      _autoSave();
-    }
+    state = state.copyWith(
+      currentStep: step.clamp(1, 17),
+      isGenderBranch: false,
+    );
+    _autoSave();
+  }
+
+  void jumpToGenderBranch() {
+    state = state.copyWith(
+      currentStep: 8,
+      isGenderBranch: true,
+    );
+    _autoSave();
   }
 
   void setGender(String? gender) {
@@ -245,9 +305,186 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     _autoSave();
   }
 
+  void toggleGenderSpecificGoal(String goal) {
+    final list = List<String>.from(state.genderSpecificGoals);
+    if (list.contains(goal)) {
+      list.remove(goal);
+    } else {
+      list.add(goal);
+    }
+    state = state.copyWith(genderSpecificGoals: list);
+    _autoSave();
+  }
+
+  void updateBodyComposition({
+    double? bodyFatPercentage,
+    double? waistCm,
+    double? hipCm,
+    double? chestCm,
+    double? neckCm,
+  }) {
+    state = state.copyWith(
+      bodyFatPercentage: bodyFatPercentage ?? state.bodyFatPercentage,
+      waistCm: waistCm ?? state.waistCm,
+      hipCm: hipCm ?? state.hipCm,
+      chestCm: chestCm ?? state.chestCm,
+      neckCm: neckCm ?? state.neckCm,
+    );
+    _autoSave();
+  }
+
+  void setTargetTimeline({double? targetWeightKg, int? targetWeeks}) {
+    state = state.copyWith(
+      targetWeightKg: targetWeightKg ?? state.targetWeightKg,
+      targetWeeks: targetWeeks ?? state.targetWeeks,
+    );
+    _autoSave();
+  }
+
+  void toggleWorkoutLocation(String location) {
+    final list = List<String>.from(state.workoutLocations);
+    if (list.contains(location)) {
+      if (list.length > 1) list.remove(location);
+    } else {
+      list.add(location);
+    }
+    state = state.copyWith(
+      workoutLocations: list,
+      workoutLocation: list.isNotEmpty ? list.first : 'gym',
+    );
+    _autoSave();
+  }
+
+  void toggleWeekday(int dayIndex) {
+    final list = List<int>.from(state.selectedWeekdays);
+    if (list.contains(dayIndex)) {
+      if (list.length > 1) list.remove(dayIndex);
+    } else {
+      list.add(dayIndex);
+      list.sort();
+    }
+    state = state.copyWith(
+      selectedWeekdays: list,
+      workoutDaysPerWeek: list.length,
+      usesEveryDay: list.length == 7,
+    );
+    _autoSave();
+  }
+
+  void setDaysPerWeekSlider(int days) {
+    final clamped = days.clamp(1, 7);
+    final autoSelected = List<int>.generate(clamped, (i) => i);
+    state = state.copyWith(
+      workoutDaysPerWeek: clamped,
+      selectedWeekdays: autoSelected,
+      usesEveryDay: clamped == 7,
+    );
+    _autoSave();
+  }
+
+  void setEveryDaySchedule(bool everyDay) {
+    if (everyDay) {
+      state = state.copyWith(
+        workoutDaysPerWeek: 7,
+        selectedWeekdays: const [0, 1, 2, 3, 4, 5, 6],
+        usesEveryDay: true,
+      );
+    } else {
+      state = state.copyWith(
+        workoutDaysPerWeek: 4,
+        selectedWeekdays: const [0, 1, 2, 3],
+        usesEveryDay: false,
+      );
+    }
+    _autoSave();
+  }
+
+  void setWeeklySchedule({int? days, List<int>? weekdays, bool? usesEveryDay}) {
+    state = state.copyWith(
+      workoutDaysPerWeek: days ?? state.workoutDaysPerWeek,
+      selectedWeekdays: weekdays ?? state.selectedWeekdays,
+      usesEveryDay: usesEveryDay ?? state.usesEveryDay,
+    );
+    _autoSave();
+  }
+
+  void setLifestyle({
+    String? activityLevel,
+    double? sleepHours,
+    int? workHours,
+    String? stressLevel,
+  }) {
+    state = state.copyWith(
+      activityLevel: activityLevel ?? state.activityLevel,
+      sleepHours: sleepHours ?? state.sleepHours,
+      workHours: workHours ?? state.workHours,
+      stressLevel: stressLevel ?? state.stressLevel,
+    );
+    _autoSave();
+  }
+
+  void setHydrationTarget({
+    int? dailyWaterMl,
+    int? reminderFrequencyHours,
+    String? quietHoursStart,
+    String? quietHoursEnd,
+  }) {
+    state = state.copyWith(
+      dailyWaterMl: dailyWaterMl ?? state.dailyWaterMl,
+      reminderFrequencyHours:
+          reminderFrequencyHours ?? state.reminderFrequencyHours,
+      quietHoursStart: quietHoursStart ?? state.quietHoursStart,
+      quietHoursEnd: quietHoursEnd ?? state.quietHoursEnd,
+    );
+    _autoSave();
+  }
+
   Future<void> completeOnboarding({required bool isGuest}) async {
     state = state.copyWith(isCompleted: true, isGuest: isGuest);
     await _repository.completeOnboarding(state);
+
+    // Synchronize into UserProfile
+    String goal = 'maintain_weight';
+    if (state.goals.contains('lose_weight')) {
+      goal = 'lose_weight';
+    } else if (state.goals.contains('build_muscle')) {
+      goal = 'gain_weight';
+    } else if (state.goals.contains('recomp')) {
+      goal = 'maintain_weight';
+    }
+
+    String diet = 'balanced';
+    if (state.dietPreference == 'vegan') {
+      diet = 'vegan';
+    } else if (state.dietPreference == 'vegetarian') {
+      diet = 'vegetarian';
+    } else if (state.dietPreference == 'high_protein') {
+      diet = 'high_protein';
+    }
+
+    try {
+      await ref.read(userProfileProvider.notifier).saveSuggestedPlan(
+            name: isGuest ? 'Guest Athlete' : 'Athlete',
+            age: state.age,
+            gender: state.gender ?? 'male',
+            heightCm: state.heightCm,
+            weightKg: state.weightKg,
+            targetWeightKg: state.targetWeightKg,
+            fitnessGoal: goal,
+            dietType: diet,
+            weeklyWorkoutDays: state.workoutDaysPerWeek,
+            dailyWorkoutMinutes: state.sessionDurationMinutes,
+          );
+    } catch (_) {}
+
+    // Persist startup gate flags in FlutterSecureStorage
+    try {
+      final gate = ref.read(startupGateServiceProvider);
+      await gate.setFirstLaunchCompleted(true);
+      if (isGuest) {
+        await gate.setAuthDecisionMade(true);
+      }
+    } catch (_) {}
   }
 
   Future<void> reset() async {

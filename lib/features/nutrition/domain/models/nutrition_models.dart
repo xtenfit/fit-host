@@ -1,3 +1,7 @@
+export 'food_item.dart';
+export 'meal_entry.dart';
+export 'photo_meal_draft.dart';
+
 class MealItem {
   final String id;
   final String name;
@@ -54,6 +58,50 @@ class MealItem {
   }
 }
 
+enum LiquidDrinkType {
+  water,
+  creatine,
+  glucose,
+  protein,
+  custom,
+}
+
+class LiquidDrinkEntry {
+  final String id;
+  final LiquidDrinkType type;
+  final String name;
+  final int volumeMl;
+  final DateTime loggedAt;
+  final String? note;
+
+  const LiquidDrinkEntry({
+    required this.id,
+    required this.type,
+    required this.name,
+    required this.volumeMl,
+    required this.loggedAt,
+    this.note,
+  });
+
+  LiquidDrinkEntry copyWith({
+    String? id,
+    LiquidDrinkType? type,
+    String? name,
+    int? volumeMl,
+    DateTime? loggedAt,
+    String? note,
+  }) {
+    return LiquidDrinkEntry(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      name: name ?? this.name,
+      volumeMl: volumeMl ?? this.volumeMl,
+      loggedAt: loggedAt ?? this.loggedAt,
+      note: note ?? this.note,
+    );
+  }
+}
+
 class DailyNutritionState {
   final int targetCalories;
   final int targetProtein;
@@ -63,24 +111,26 @@ class DailyNutritionState {
   final List<MealItem> customMeals;
   final int waterGlasses;
   final int targetWater;
+  final List<LiquidDrinkEntry> loggedDrinks;
   final int manualCaloriesBurned;
   final int workoutCaloriesBurned;
   final String dietFilter; // 'all', 'vegan', 'non_veg'
   final String goalMode; // 'hypertrophy', 'cutting', 'recomp'
 
   const DailyNutritionState({
-    this.targetCalories = 2400,
-    this.targetProtein = 175,
-    this.targetCarbs = 245,
-    this.targetFat = 65,
+    this.targetCalories = 2250,
+    this.targetProtein = 145,
+    this.targetCarbs = 250,
+    this.targetFat = 60,
     this.loggedMeals = const [],
     this.customMeals = const [],
-    this.waterGlasses = 4,
-    this.targetWater = 8,
-    this.manualCaloriesBurned = 250,
-    this.workoutCaloriesBurned = 320,
+    this.waterGlasses = 0,
+    this.targetWater = 10,
+    this.loggedDrinks = const [],
+    this.manualCaloriesBurned = 0,
+    this.workoutCaloriesBurned = 0,
     this.dietFilter = 'all',
-    this.goalMode = 'hypertrophy',
+    this.goalMode = 'maintenance',
   });
 
   int get totalCaloriesGained =>
@@ -105,6 +155,20 @@ class DailyNutritionState {
   double get totalCarbs => totalCarbsGained;
   double get totalFats => totalFatGained;
 
+  int get totalDrinkMl =>
+      loggedDrinks.fold<int>(0, (sum, d) => sum + d.volumeMl);
+
+  int get totalHydrationMl {
+    if (loggedDrinks.isNotEmpty) {
+      final glassesFromDrinks = (totalDrinkMl / 250).floor();
+      final extraGlasses = (waterGlasses - glassesFromDrinks).clamp(0, 99);
+      return totalDrinkMl + (extraGlasses * 250);
+    }
+    return waterGlasses * 250;
+  }
+
+  int get targetHydrationMl => targetWater * 250;
+
   DailyNutritionState copyWith({
     int? targetCalories,
     int? targetProtein,
@@ -114,6 +178,7 @@ class DailyNutritionState {
     List<MealItem>? customMeals,
     int? waterGlasses,
     int? targetWater,
+    List<LiquidDrinkEntry>? loggedDrinks,
     int? manualCaloriesBurned,
     int? workoutCaloriesBurned,
     String? dietFilter,
@@ -128,6 +193,7 @@ class DailyNutritionState {
       customMeals: customMeals ?? this.customMeals,
       waterGlasses: waterGlasses ?? this.waterGlasses,
       targetWater: targetWater ?? this.targetWater,
+      loggedDrinks: loggedDrinks ?? this.loggedDrinks,
       manualCaloriesBurned: manualCaloriesBurned ?? this.manualCaloriesBurned,
       workoutCaloriesBurned: workoutCaloriesBurned ?? this.workoutCaloriesBurned,
       dietFilter: dietFilter ?? this.dietFilter,
@@ -135,3 +201,4 @@ class DailyNutritionState {
     );
   }
 }
+

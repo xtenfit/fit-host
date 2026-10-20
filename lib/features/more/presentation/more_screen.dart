@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_motion.dart';
 import '../../nutrition/presentation/widgets/custom_meal_routine_sheet.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -17,15 +18,16 @@ class MoreScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'More Features & Tools',
+          'Features & Tools',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20),
         ),
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
           children: [
-            // 1. Planning & Schedules Section
+            // 1. Planning & Schedules Section (Features)
             _buildSectionHeader('Planning & Schedules'),
             const SizedBox(height: 10),
             _buildGridCards(
@@ -54,17 +56,34 @@ class MoreScreen extends StatelessWidget {
                   route: '/planner',
                 ),
                 _MoreCardItem(
-                  title: 'Notification Settings',
-                  subtitle: 'Channels, quiet hours & snoozes',
-                  icon: Icons.notifications_active_rounded,
-                  color: const Color(0xFF00B4D8),
-                  route: '/settings/notifications',
+                  title: 'Daily Life Diary',
+                  subtitle: 'Career, fitness & voice memo notes',
+                  icon: Icons.menu_book_rounded,
+                  color: const Color(0xFFA855F7),
+                  route: '/diary',
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // 2. Nutrition & Fuel Section
+            // 2. Movement & Steps Section (Feature)
+            _buildSectionHeader('Movement & Pedometer'),
+            const SizedBox(height: 10),
+            _buildListContainer(
+              isDark,
+              [
+                _MoreListItem(
+                  title: 'Step Counter & Distance',
+                  subtitle: 'Real-time pedometer, walking/running km & 7-day trend',
+                  icon: Icons.directions_walk_rounded,
+                  color: AppColors.limeGreen,
+                  onTap: () => context.push('/steps'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // 3. Nutrition & Hydration Section (Features)
             _buildSectionHeader('Nutrition & Hydration'),
             const SizedBox(height: 10),
             _buildListContainer(
@@ -75,7 +94,7 @@ class MoreScreen extends StatelessWidget {
                   subtitle: 'Calorie balance, macros, breakfast, lunch & dinner',
                   icon: Icons.receipt_long_rounded,
                   color: const Color(0xFFFF6B4A),
-                  onTap: () => context.push('/nutrition'),
+                  onTap: () => context.go('/nutrition'),
                 ),
                 const Divider(height: 1),
                 _MoreListItem(
@@ -91,13 +110,13 @@ class MoreScreen extends StatelessWidget {
                   subtitle: 'Daily 3.5L fluid balance and intake logs',
                   icon: Icons.water_drop_rounded,
                   color: const Color(0xFF00B4D8),
-                  onTap: () => context.push('/nutrition'),
+                  onTap: () => context.push('/hydration'),
                 ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // 3. Workouts & Routines Section
+            // 4. Workouts & Routines Section (Features)
             _buildSectionHeader('Training & Exercises'),
             const SizedBox(height: 10),
             _buildListContainer(
@@ -108,7 +127,7 @@ class MoreScreen extends StatelessWidget {
                   subtitle: 'Pre-built splits, custom programs & history',
                   icon: Icons.fitness_center_rounded,
                   color: AppColors.electricBlue,
-                  onTap: () => context.push('/workouts'),
+                  onTap: () => context.push('/routines'),
                 ),
                 const Divider(height: 1),
                 _MoreListItem(
@@ -130,34 +149,34 @@ class MoreScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 4. Analytics & Account Section
-            _buildSectionHeader('Analytics, Privacy & Data'),
+            // 5. Smart Tools & Utilities Section (Tools)
+            _buildSectionHeader('Smart Tools & Audio Controls'),
             const SizedBox(height: 10),
             _buildListContainer(
               isDark,
               [
                 _MoreListItem(
-                  title: 'Activity & Progress Reports',
-                  subtitle: 'Volume trends, workout frequency & charts',
-                  icon: Icons.show_chart_rounded,
-                  color: Colors.purple,
-                  onTap: () => context.push('/progress'),
+                  title: 'Alarm & Reminder Sounds',
+                  subtitle: '5 acoustic tones, volume boost, device audio & custom mapping',
+                  icon: Icons.volume_up_rounded,
+                  color: const Color(0xFFFFB300),
+                  onTap: () => context.push('/settings/sound-settings'),
                 ),
                 const Divider(height: 1),
                 _MoreListItem(
-                  title: 'Profile & Fitness Goals',
-                  subtitle: 'Target weight, height, BMR & biometric metrics',
-                  icon: Icons.person_rounded,
-                  color: Colors.blueAccent,
-                  onTap: () => context.push('/profile'),
+                  title: 'Home Screen Widgets & Shortcuts',
+                  subtitle: 'iOS & Android widget showcase and instant action launchers',
+                  icon: Icons.widgets_rounded,
+                  color: const Color(0xFF00E5FF),
+                  onTap: () => context.push('/settings/widgets'),
                 ),
                 const Divider(height: 1),
                 _MoreListItem(
-                  title: 'Privacy & Data Export',
-                  subtitle: 'Download complete offline SQLite data as JSON',
-                  icon: Icons.shield_rounded,
-                  color: Colors.teal,
-                  onTap: () => context.push('/settings/privacy'),
+                  title: 'User Manual & Interactive Guides',
+                  subtitle: 'Interactive guide for workouts, diet, alarms & sensors',
+                  icon: Icons.auto_stories_rounded,
+                  color: AppColors.limeGreen,
+                  onTap: () => context.push('/settings/user-manual'),
                 ),
               ],
             ),
@@ -184,30 +203,33 @@ class MoreScreen extends StatelessWidget {
     bool isDark,
     List<_MoreCardItem> items,
   ) {
-    return GridView.count(
-      crossAxisCount: 2,
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.35,
-      children: items.map((item) {
-        return InkWell(
+      itemCount: items.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.25,
+      ),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return BouncyTap(
           onTap: () => context.push(item.route),
-          borderRadius: BorderRadius.circular(20),
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -216,30 +238,36 @@ class MoreScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: isDark ? 0.2 : 0.12),
+                    color: item.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(item.icon, size: 22, color: item.color),
+                  child: Icon(item.icon, color: item.color, size: 20),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.title,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        letterSpacing: -0.2,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       item.subtitle,
                       style: TextStyle(
                         fontSize: 10,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        height: 1.2,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -248,27 +276,30 @@ class MoreScreen extends StatelessWidget {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 
   Widget _buildListContainer(bool isDark, List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(children: children),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Column(children: children),
+      ),
     );
   }
 }
@@ -308,47 +339,57 @@ class _MoreListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return InkWell(
+    return BouncyTap(
+      scaleDown: 0.98,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(9),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.2 : 0.12),
-                borderRadius: BorderRadius.circular(12),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        letterSpacing: -0.2,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-            ),
-          ],
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: isDark ? Colors.white38 : Colors.black26,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -162,7 +162,8 @@ def run():
     copy_or_crop(
         os.path.join(ASSETS_DIR, "Neon-Edge Dumbbell Workout.png"),
         os.path.join(IMAGES_DIR, "workouts/today_workout_athlete.png"),
-        os.path.join(IMAGES_DIR, "workouts/today_workout_athlete.jpg")
+        os.path.join(IMAGES_DIR, "workouts/today_workout_athlete.jpg"),
+        box=(380, 0, 850, 941)
     )
     copy_or_crop(
         os.path.join(ASSETS_DIR, "Neon-Accented Gym Gear Still Life.png"),
