@@ -1,0 +1,10 @@
+name = "amitrana-email"
+main = "src/index.ts"
+compatibility_date = "2026-08-19"
+workers_dev = true
+
+# Cloudflare Email Service — outbound email
+[[send_email]]
+name = "EMAIL"
+remote = true
+allowed_sender_addresses = ["noreply@amitran.tech"]

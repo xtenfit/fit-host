@@ -61,3 +61,5 @@ node_modules/
 scratch/
 bug- screenshot/
 /android/build/
+.next/
+**/.next/
