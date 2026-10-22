@@ -2,14 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Download,
-  Smartphone,
-  Apple,
   ShieldCheck,
-  CheckCircle2,
   ExternalLink,
-  Sparkles,
-  Info,
-  HelpCircle,
   FileCode,
 } from "lucide-react";
 import PlatformDownloadCard from "@/components/releases/PlatformDownloadCard";
@@ -83,37 +77,35 @@ export default async function DownloadPage() {
         </section>
 
         {/* Verified Release Binary Assets */}
-        {latestRelease.assets.length > 0 && (
-          <section className="rounded-3xl border border-brand-border bg-brand-surface/40 p-6 sm:p-8 backdrop-blur-sm space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-white">
-                  Published Build Artifacts ({latestRelease.version})
-                </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Direct binary files hosted on GitHub Releases for this version.
-                </p>
-              </div>
-
-              {latestRelease.htmlUrl && (
-                <a
-                  href={latestRelease.htmlUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs text-brand-green hover:text-brand-green-hover font-bold"
-                >
-                  <span>View on GitHub</span>
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+        <section className="rounded-3xl border border-brand-border bg-brand-surface/40 p-6 sm:p-8 backdrop-blur-sm space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white">
+                Published Build Artifacts ({latestRelease.version})
+              </h3>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                Direct binary files hosted on GitHub Releases for this version.
+              </p>
             </div>
 
-            <ReleaseAssetList
-              assets={latestRelease.assets}
-              sha256Checksum={latestRelease.android.sha256Checksum}
-            />
-          </section>
-        )}
+            {latestRelease.htmlUrl && (
+              <a
+                href={latestRelease.htmlUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-brand-green hover:text-brand-green-hover font-bold"
+              >
+                <span>View on GitHub</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+
+          <ReleaseAssetList
+            assets={latestRelease.assets}
+            sha256Checksum={latestRelease.android.sha256Checksum}
+          />
+        </section>
 
         {/* Android Step-by-Step Sideload Installation Guide */}
         <section className="rounded-3xl border border-brand-border bg-gradient-to-b from-brand-surface to-brand-elevated/80 p-8 sm:p-10 space-y-8 shadow-xl">

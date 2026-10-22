@@ -1,8 +1,8 @@
 import { MetadataRoute } from 'next';
-import { getAllPublishedReleases } from '@/lib/data/updates';
+import { getAllMobileReleases } from '@/lib/github/releases';
 import { getAllGuides } from '@/lib/data/guides';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://fithost.amitrana.tech';
   const lastModified = new Date();
 
@@ -68,6 +68,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
+      url: `${baseUrl}/account-deletion`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/login`,
       lastModified,
       changeFrequency: 'monthly',
@@ -79,23 +85,46 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.6,
     },
+    {
+      url: `${baseUrl}/forgot-password`,
+      lastModified,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
   ];
 
-  // Dynamic release routes
-  const releaseRoutes: MetadataRoute.Sitemap = getAllPublishedReleases().map((r) => ({
-    url: `${baseUrl}/updates/${r.slug}`,
-    lastModified,
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  }));
+  // Dynamic release routes (auto-detects GitHub releases or uses cached updates)
+  const releases = await getAllMobileReleases();
+  const releaseRoutes: MetadataRoute.Sitemap = releases.map((r, index) => {
+    let date = lastModified;
+    try {
+      const parsed = new Date(r.publishedAt || r.displayDate);
+      if (!isNaN(parsed.getTime())) date = parsed;
+    } catch {}
 
-  // Dynamic guide routes
-  const guideRoutes: MetadataRoute.Sitemap = getAllGuides().map((g) => ({
-    url: `${baseUrl}/guides/${g.slug}`,
-    lastModified,
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  }));
+    return {
+      url: `${baseUrl}/updates/${r.slug}`,
+      lastModified: date,
+      changeFrequency: index === 0 ? 'weekly' : 'monthly',
+      priority: index === 0 ? 0.9 : 0.75,
+    };
+  });
+
+  // Dynamic guide routes with accurate guide updatedDate
+  const guideRoutes: MetadataRoute.Sitemap = getAllGuides().map((g) => {
+    let date = lastModified;
+    try {
+      const parsed = new Date(g.updatedDate);
+      if (!isNaN(parsed.getTime())) date = parsed;
+    } catch {}
+
+    return {
+      url: `${baseUrl}/guides/${g.slug}`,
+      lastModified: date,
+      changeFrequency: 'monthly',
+      priority: g.featured ? 0.85 : 0.75,
+    };
+  });
 
   return [...staticRoutes, ...releaseRoutes, ...guideRoutes];
 }

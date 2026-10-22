@@ -15,6 +15,40 @@ export interface ReleaseUpdate {
 
 export const releasesData: ReleaseUpdate[] = [
   {
+    slug: "v1-3-0-animated-onboarding-exercise-gifs",
+    version: "v1.3.0",
+    title: "Premium Animated Onboarding Wizard, 1,324+ Exercise GIFs & Anatomical Targeting",
+    releaseDate: "October 21, 2026",
+    summary:
+      "A flagship experience upgrade featuring a 20-step animated setup wizard with interactive 3D athlete models, personalized plan reveal, and an integrated exercise dataset containing 1,324+ exercises with looping GIF demonstrations and anatomical muscle targeting.",
+    status: "published",
+    categories: ["Features", "Improvements", "Architecture"],
+    newFeatures: [
+      "Animated 20-Step Setup Wizard: High-precision edge-to-edge onboarding featuring interactive male and female fitness model selection with electric-cyan ambient glow and perspective peek-in transitions.",
+      "Personalized Fitness Plan Reveal: Dynamic 2x2 stat matrix (Daily Time, Experience Level, Focus Area, Equipment) based on real user answers with custom coach badge and tailored macro caloric targets.",
+      "Universal Exercise GIF Visual Engine: 1,324+ exercises equipped with real-time looping animated GIF form guides, 180x180 thumbnails, and wger anatomical muscle map overlays.",
+      "Multi-Mode Exercise Media Visualizer: Fast list thumbnails, 220px animated looping player with play/pause controls, and full-screen pinch-to-zoom interactive viewer.",
+      "Comprehensive Body Composition & Circumference Logging: Track chest, waist, hips, arms, thighs, calves, neck, and shoulders with imperial and metric ruler inputs.",
+      "Advanced Nutrition & Meal Timing Calibration: Configurable meal frequency schedules, hydration reminder pacing, and quiet hours.",
+    ],
+    improvements: [
+      "Zero AGPL license contamination: Clean multi-source exercise catalog with open Creative Commons and MIT datasets.",
+      "Sub-millisecond Drift SQLite persistence with seamless offline-to-cloud synchronization.",
+      "Optimized CanvasKit and Skia rendering pipeline for fluid 60fps animations across all mobile screen sizes.",
+      "Rest timer audio and vibration cues enhanced for active workout set execution.",
+    ],
+    bugFixes: [
+      "Fixed step navigation state retention when skipping optional circumference measurements.",
+      "Prevented duplicate submission race conditions during final onboarding plan activation.",
+      "Resolved thumbnail image caching issue in active workout header on low-bandwidth connections.",
+    ],
+    knownIssues: [
+      "Full-screen pinch-to-zoom requires multi-touch gestures supported on modern mobile browsers and native devices.",
+    ],
+    platformNotes:
+      "Built for Android 8.0+ (API 26+) and iOS 14.0+. Release APK v1.3.0+3 compiled with tree-shaken icons and ProGuard optimization.",
+  },
+  {
     slug: "v2-1-0-online-first-cloud-sync",
     version: "v2.1.0",
     title: "Online-First Cloud Sync, Google OAuth & Realtime Drift Cache",

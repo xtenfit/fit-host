@@ -17,6 +17,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/release-notes",
+        destination: "/updates",
+        permanent: true,
+      },
+      {
+        source: "/releases",
+        destination: "/updates",
+        permanent: true,
+      },
+      {
+        source: "/changelog",
+        destination: "/updates",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Sparkles, AlertCircle, ExternalLink } from "lucide-react";
 import ReleaseHistory from "@/components/releases/ReleaseHistory";
 import DownloadCTA from "@/components/marketing/DownloadCTA";

@@ -19,9 +19,9 @@ export interface SiteConfig {
     };
     directApk: {
       available: boolean;
-      url: string;
+      url: string | null;
       label: string;
-      fileSize: string;
+      fileSize?: string;
     };
   };
   support: {
@@ -55,15 +55,15 @@ export const siteConfig: SiteConfig = {
       label: "Coming Soon to Google Play",
     },
     directApk: {
-      available: true,
-      url: "https://github.com/amitrana-tech/fit-host/releases/tag/v2.1.0",
-      label: "Download Android Release APK",
-      fileSize: "44.2 MB",
+      available: false,
+      url: null,
+      label: "Android APK: Release Soon",
+      fileSize: "",
     },
   },
   support: {
     email: "support@amitrana.tech",
-    githubUrl: "https://github.com/amitrana-tech/fit-host",
+    githubUrl: "https://github.com/xtenfit/fit-host",
   },
   auth: {
     mobileCallback: "io.supabase.fithost://login-callback",

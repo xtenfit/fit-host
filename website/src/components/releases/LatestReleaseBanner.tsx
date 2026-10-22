@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Sparkles, ArrowRight, Download, Calendar, Smartphone, Apple } from "lucide-react";
+import { Sparkles, ArrowRight, Download, Calendar, Smartphone, Apple, Clock } from "lucide-react";
 import type { MobileRelease } from "@/lib/github/releases";
 import VersionBadge from "./VersionBadge";
 
@@ -75,13 +75,19 @@ export default function LatestReleaseBanner({ release, className = "" }: LatestR
               )}
             </a>
           ) : (
-            <Link
-              href="/download"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-black bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-lg shadow-brand-green/20 transition-all"
-            >
-              <Smartphone className="h-4 w-4" />
-              <span>View Android Downloads</span>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="inline-flex items-center justify-center gap-2 px-4 py-3 text-xs font-semibold text-brand-green bg-brand-green/10 rounded-xl border border-brand-green/30 select-none">
+                <Clock className="h-4 w-4 text-brand-green" />
+                <span>Android APK: Release Soon</span>
+              </div>
+              <Link
+                href="/download"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-3 text-xs font-semibold text-zinc-300 hover:text-white bg-brand-surface hover:bg-brand-elevated rounded-xl border border-brand-border transition-all"
+              >
+                <span>Release Status</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           )}
 
           {hasIos ? (

@@ -1,28 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Dumbbell,
   Droplets,
-  Utensils,
   Zap,
-  WifiOff,
   Cloud,
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  Lock,
-  Smartphone,
-  ShieldCheck,
-  ChevronRight,
-  Activity,
-  Layers,
   Database,
-  RefreshCw,
-  Award,
+  PlaySquare,
 } from "lucide-react";
 import PhoneMockup from "@/components/marketing/PhoneMockup";
 import DownloadCTA from "@/components/marketing/DownloadCTA";
-import ReleaseCard from "@/components/marketing/ReleaseCard";
 import GuideCard from "@/components/marketing/GuideCard";
 import LatestReleaseBanner from "@/components/releases/LatestReleaseBanner";
 import { getFeaturedGuides } from "@/lib/data/guides";
@@ -43,6 +32,20 @@ const workoutCategories = [
 ];
 
 const coreBenefits = [
+  {
+    icon: PlaySquare,
+    title: "1,324+ Looping Exercise Form GIFs",
+    description:
+      "Master proper execution with real-time looping animated GIF form guides, 180x180 thumbnails, and anatomical muscle target diagrams from wger directly in the exercise library.",
+    badge: "Exercise Visuals",
+  },
+  {
+    icon: Sparkles,
+    title: "20-Step Animated Setup Wizard",
+    description:
+      "A motion-designed setup wizard featuring interactive athlete models, circumference tracking, workout scheduling, and an AI-calibrated plan reveal with coach badge.",
+    badge: "Personalized Plan",
+  },
   {
     icon: Database,
     title: "Fast Access with Local Caching",
@@ -75,6 +78,14 @@ const coreBenefits = [
 
 const faqs = [
   {
+    q: "Does Fit Host include animated exercise guides and form visualizers?",
+    a: "Yes. Fit Host includes a unified library of 1,324+ exercises equipped with looping animated GIFs, 180x180 thumbnails, and anatomical muscle target diagrams from wger. You can loop movements, toggle anatomy targeting, and use pinch-to-zoom directly during workout logging.",
+  },
+  {
+    q: "How does the personalized 20-step onboarding wizard work?",
+    a: "Fit Host guides you through an animated 20-step wizard: select your gender with interactive athlete models, enter your age, height, weight, timeline pace, and optional body circumferences (chest, waist, hips, arms, etc.). The wizard generates a customized plan reveal card with tailored daily workout duration, experience level, and macro targets.",
+  },
+  {
     q: "Is Fit Host a web application or a native mobile app?",
     a: "Fit Host is a native mobile application engineered with Flutter for Android and iOS. This website is the official product launch and update portal where you can find download links, version releases, setup guides, and support.",
   },
@@ -92,7 +103,7 @@ const faqs = [
   },
   {
     q: "Where can I download Fit Host today?",
-    a: "You can download the verified Android Release APK directly from this website. Official Apple App Store and Google Play Store listings are currently in preparation.",
+    a: "Official Android and iOS releases are launching soon. Verified Android APK builds will be available for direct download on this website as soon as published to our GitHub repository.",
   },
 ];
 

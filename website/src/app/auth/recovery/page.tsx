@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -48,8 +48,8 @@ export default function PasswordRecoveryPage() {
         router.push("/dashboard");
         router.refresh();
       }, 1500);
-    } catch (err: any) {
-      setError(err?.message || "Failed to update password.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update password.");
     } finally {
       setLoading(false);
     }

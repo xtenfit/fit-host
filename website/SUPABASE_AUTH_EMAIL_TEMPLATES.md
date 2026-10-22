@@ -1,6 +1,6 @@
 # FIT HOST — SUPABASE AUTH BRANDED EMAIL TEMPLATES
 **Domain:** `noreply.amitrana.tech`  
-**Sender:** `Fit Host <no-reply@noreply.amitrana.tech>`  
+**Sender:** `Fit Host <noreply@noreply.amitrana.tech>`  
 **Brand Palette:** Dark Charcoal (`#0B0D11`, `#12151C`) & Electric Neon Green (`#00E676`)
 
 ---

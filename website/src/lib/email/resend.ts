@@ -3,7 +3,7 @@ import { SendEmailOptions, SendEmailResult } from './types';
 import { emailStore } from './store';
 
 // Default sender identities based on discovered domain and provider setup
-export const DEFAULT_EMAIL_FROM = process.env.EMAIL_FROM || 'Fit Host <no-reply@noreply.amitrana.tech>';
+export const DEFAULT_EMAIL_FROM = process.env.EMAIL_FROM || 'Fit Host <noreply@noreply.amitrana.tech>';
 export const DEFAULT_EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || 'support@amitrana.tech';
 export const SENDING_DOMAIN = 'noreply.amitrana.tech';
 

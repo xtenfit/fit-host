@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, FileCode, CheckCircle2, Copy } from "lucide-react";
+import { Download, FileCode, CheckCircle2, Copy, Clock } from "lucide-react";
 import type { ReleaseAsset } from "@/lib/github/releases";
 
 interface ReleaseAssetListProps {
@@ -15,8 +15,14 @@ export default function ReleaseAssetList({
 }: ReleaseAssetListProps) {
   if (!assets || assets.length === 0) {
     return (
-      <div className={`p-4 rounded-xl border border-brand-border bg-brand-surface/40 text-xs text-zinc-400 ${className}`}>
-        No binary build assets attached to this release record.
+      <div className={`p-6 rounded-2xl border border-brand-border bg-brand-surface/40 text-center space-y-2 ${className}`}>
+        <div className="inline-flex items-center gap-2 text-xs font-semibold text-brand-green bg-brand-green/10 px-3 py-1 rounded-full border border-brand-green/30">
+          <Clock className="h-3.5 w-3.5 text-brand-green" />
+          <span>Release Assets Pending</span>
+        </div>
+        <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+          Official APK build artifacts and checksum files will be automatically listed here once published to GitHub Releases.
+        </p>
       </div>
     );
   }
@@ -52,8 +58,12 @@ export default function ReleaseAssetList({
                   </div>
                   <div className="flex items-center gap-2 text-xs text-zinc-400 mt-0.5">
                     <span>{asset.formattedSize}</span>
-                    <span>•</span>
-                    <span>{asset.downloadCount.toLocaleString()} downloads</span>
+                    {asset.downloadCount > 0 && (
+                      <>
+                        <span>•</span>
+                        <span>{asset.downloadCount.toLocaleString()} downloads</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

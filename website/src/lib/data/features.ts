@@ -13,6 +13,38 @@ export interface FeatureItem {
 
 export const featuresData: FeatureItem[] = [
   {
+    id: "exercise-dataset-gifs",
+    name: "1,324+ Exercises with Looping GIFs & Muscle Targeting",
+    category: "Workout Tracking",
+    status: "available",
+    statusLabel: "Available Now",
+    description:
+      "Master every lift and movement with real-time looping animated form guides, high-resolution 180x180 thumbnails, and anatomical muscle map overlays powered by wger and open exercise datasets.",
+    highlights: [
+      "1,324+ exercises cataloged with full looping animated GIF execution guides",
+      "Interactive multi-mode visualizer: list thumbnails, 220px loop player, and pinch-to-zoom modal",
+      "Anatomical muscle target diagrams highlighting primary and synergist muscle engagement",
+      "Filtering across 10 disciplines, target muscle groups, and required gym equipment",
+    ],
+    screenshot: "/images/screenshots/workouts.png",
+  },
+  {
+    id: "animated-onboarding-wizard",
+    name: "20-Step Animated Setup Wizard & Personalized Plan Reveal",
+    category: "Personalization",
+    status: "available",
+    statusLabel: "Available Now",
+    description:
+      "A motion-designed 20-step onboarding experience. Select your gender with animated athlete models, configure body composition, schedule workouts, and reveal your personalized fitness plan.",
+    highlights: [
+      "Interactive 3D athlete carousel (Male and Female models) with ambient glow and peek-in transitions",
+      "Personalized plan reveal card with 2x2 stat matrix (Daily Time, Level, Target Area, Equipment)",
+      "Dedicated macro targets computed dynamically from metabolic stage, weight, and pace goals",
+      "Comprehensive setup for circumference tracking, meal timing, and hydration schedules",
+    ],
+    screenshot: "/images/screenshots/home.png",
+  },
+  {
     id: "workout-logging",
     name: "Interactive Workout Logging",
     category: "Workout Tracking",

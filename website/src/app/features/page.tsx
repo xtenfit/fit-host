@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   CheckCircle2,
   Clock,
   Sparkles,
-  ArrowRight,
-  ShieldCheck,
-  Smartphone,
-  Cpu,
-  Layers,
-  Flame,
 } from "lucide-react";
 import PhoneMockup from "@/components/marketing/PhoneMockup";
 import DownloadCTA from "@/components/marketing/DownloadCTA";
-import { getAllFeatures, FeatureStatus } from "@/lib/data/features";
+import { getAllFeatures } from "@/lib/data/features";
 
 export const metadata: Metadata = {
   title: "Features — Workouts, Hydration, Nutrition & Secure Sync",

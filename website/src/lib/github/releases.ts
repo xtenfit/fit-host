@@ -288,7 +288,7 @@ export function tagNameToSlug(tag: string): string {
 export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
   const publishedDate = raw.published_at || raw.created_at;
   const displayDate = formatDisplayDate(publishedDate);
-  const notes = parseReleaseNotes(raw.body);
+  let notes = parseReleaseNotes(raw.body);
   const tagName = raw.tag_name || "v0.0.0";
   const slug = tagNameToSlug(tagName);
   const title = sanitizeText(raw.name || `Fit Host ${tagName}`);
@@ -306,12 +306,29 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
     updatedAt: a.updated_at,
   }));
 
-  // Identify Android APK asset
+  // Identify Android APK asset (auto-detect any .apk published in GitHub release assets)
   const apkAsset =
-    assets.find((a) => a.name.toLowerCase().startsWith("fithost-android") && a.name.toLowerCase().endsWith(".apk")) ||
+    assets.find((a) => a.name.toLowerCase().includes("universal") && a.name.toLowerCase().endsWith(".apk")) ||
     assets.find((a) => a.name.toLowerCase().endsWith(".apk"));
 
   const sha256 = extractSha256Checksum(raw.assets || [], raw.body);
+
+  // If GitHub release notes are brief, enrich with local changelog if available
+  const matchingLocal = releasesData.find(
+    (u) => u.version.toLowerCase() === tagName.toLowerCase() || u.slug.toLowerCase() === slug.toLowerCase()
+  );
+  if (matchingLocal && !notes.hasStructuredSections) {
+    notes = {
+      raw: raw.body || matchingLocal.summary,
+      summary: notes.summary && notes.summary !== "No release notes provided." ? notes.summary : matchingLocal.summary,
+      whatsNew: notes.whatsNew.length > 0 ? notes.whatsNew : matchingLocal.newFeatures,
+      improvements: notes.improvements.length > 0 ? notes.improvements : matchingLocal.improvements,
+      bugFixes: notes.bugFixes.length > 0 ? notes.bugFixes : matchingLocal.bugFixes,
+      securityFixes: notes.securityFixes,
+      knownIssues: notes.knownIssues.length > 0 ? notes.knownIssues : matchingLocal.knownIssues,
+      hasStructuredSections: true,
+    };
+  }
 
   const android: PlatformReleaseInfo = {
     platform: "android",
@@ -325,7 +342,7 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
     assetSize: apkAsset ? apkAsset.formattedSize : null,
     sha256Checksum: sha256,
     minimumSupportedOs: "Android 8.0+ (Oreo, API 26)",
-    distributionStatus: apkAsset ? "available" : "unavailable",
+    distributionStatus: apkAsset ? "available" : "coming_soon",
     releaseUrl: raw.html_url,
   };
 
@@ -369,14 +386,14 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
 
 /**
  * Construct fallback mobile releases from local historical cache (updates.ts).
- * This ensures high availability and resilience when GitHub API is down, rate limited,
- * or before releases are created in a brand new repository.
+ * This ensures high availability and resilience when GitHub API is down or rate-limited.
+ * Real APK download links and assets are ONLY populated when published to GitHub.
+ * When no release has been published yet, distributionStatus is "coming_soon" (Release Soon).
  */
 export function getFallbackReleases(): MobileRelease[] {
-  return releasesData.map((u: ReleaseUpdate, index: number) => {
+  return releasesData.map((u: ReleaseUpdate) => {
     const tagName = u.version;
     const slug = u.slug;
-    const isLatest = index === 0;
 
     const notes: StructuredReleaseNotes = {
       raw: u.summary,
@@ -389,22 +406,6 @@ export function getFallbackReleases(): MobileRelease[] {
       hasStructuredSections: true,
     };
 
-    const directApkUrl = isLatest
-      ? `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases/download/${tagName}/FitHost-Android-${tagName}.apk`
-      : `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases/tag/${tagName}`;
-
-    const apkAsset: ReleaseAsset = {
-      id: 1000 + index,
-      name: `FitHost-Android-${tagName}.apk`,
-      sizeBytes: 46347059, // 44.2 MB
-      formattedSize: "44.2 MB",
-      downloadUrl: directApkUrl,
-      contentType: "application/vnd.android.package-archive",
-      downloadCount: 1420 + index * 300,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
     return {
       id: `fallback-${slug}`,
       slug,
@@ -415,9 +416,9 @@ export function getFallbackReleases(): MobileRelease[] {
       displayDate: u.releaseDate,
       isPrerelease: false,
       isDraft: false,
-      htmlUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases/tag/${tagName}`,
+      htmlUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases`,
       notes,
-      assets: [apkAsset],
+      assets: [],
       android: {
         platform: "android",
         version: tagName,
@@ -425,13 +426,13 @@ export function getFallbackReleases(): MobileRelease[] {
         releaseTitle: u.title,
         publishedAt: new Date(u.releaseDate).toISOString() || new Date().toISOString(),
         releaseNotes: notes,
-        downloadUrl: directApkUrl,
-        assetName: apkAsset.name,
-        assetSize: apkAsset.formattedSize,
+        downloadUrl: null,
+        assetName: null,
+        assetSize: null,
         sha256Checksum: null,
         minimumSupportedOs: "Android 8.0+ (Oreo, API 26)",
-        distributionStatus: "available",
-        releaseUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases/tag/${tagName}`,
+        distributionStatus: "coming_soon",
+        releaseUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases`,
       },
       ios: {
         platform: "ios",
@@ -446,7 +447,7 @@ export function getFallbackReleases(): MobileRelease[] {
         sha256Checksum: null,
         minimumSupportedOs: "iOS 14.0+",
         distributionStatus: "coming_soon",
-        releaseUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases/tag/${tagName}`,
+        releaseUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases`,
       },
       isFallback: true,
     };
@@ -541,7 +542,12 @@ export async function getMobileReleaseBySlug(slug: string): Promise<MobileReleas
   const normalizedTag = slugToTagName(slug).toLowerCase();
 
   const found = all.find(
-    (r) => r.slug.toLowerCase() === normalizedSlug || r.tagName.toLowerCase() === normalizedTag
+    (r) =>
+      r.slug.toLowerCase() === normalizedSlug ||
+      r.tagName.toLowerCase() === normalizedTag ||
+      r.version.toLowerCase() === normalizedSlug ||
+      r.slug.toLowerCase().startsWith(normalizedSlug) ||
+      normalizedSlug.startsWith(r.slug.toLowerCase())
   );
 
   if (found) return found;
@@ -581,7 +587,12 @@ export async function getMobileReleaseBySlug(slug: string): Promise<MobileReleas
   const fallbackAll = getFallbackReleases();
   return (
     fallbackAll.find(
-      (r) => r.slug.toLowerCase() === normalizedSlug || r.tagName.toLowerCase() === normalizedTag
+      (r) =>
+        r.slug.toLowerCase() === normalizedSlug ||
+        r.tagName.toLowerCase() === normalizedTag ||
+        r.version.toLowerCase() === normalizedSlug ||
+        r.slug.toLowerCase().startsWith(normalizedSlug) ||
+        normalizedSlug.startsWith(r.slug.toLowerCase())
     ) || null
   );
 }

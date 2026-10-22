@@ -78,7 +78,7 @@ export default function ReleaseCard({ release, isLatest = false }: ReleaseCardPr
           {improvementsCount} improvements • {bugFixesCount} fixes
         </span>
         <div className="flex items-center gap-3">
-          {downloadUrl && (
+          {downloadUrl ? (
             <a
               href={downloadUrl}
               target="_blank"
@@ -88,6 +88,10 @@ export default function ReleaseCard({ release, isLatest = false }: ReleaseCardPr
               <Download className="h-3.5 w-3.5" />
               <span>APK {assetSize ? `(${assetSize})` : ""}</span>
             </a>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-green bg-brand-green/10 border border-brand-green/30 px-2.5 py-1 rounded-md select-none">
+              APK: Release Soon
+            </span>
           )}
           <Link
             href={`/updates/${slug}`}

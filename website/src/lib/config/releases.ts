@@ -49,8 +49,8 @@ export const releasesConfig: ReleasesConfig = {
   },
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://fithost.amitrana.tech",
   revalidation: {
-    // Default 10 minutes (600 seconds) time-based ISR revalidation
-    intervalSeconds: parseInt(process.env.RELEASE_CACHE_REVALIDATION_SECONDS || "600", 10),
+    // Default 60 seconds time-based ISR revalidation for rapid auto-detection of new GitHub releases
+    intervalSeconds: parseInt(process.env.RELEASE_CACHE_REVALIDATION_SECONDS || "60", 10),
     tag: "github-releases",
     secret: process.env.REVALIDATION_SECRET,
   },

@@ -4,7 +4,6 @@ import Image from "next/image";
 import {
   ShieldCheck,
   Zap,
-  Smartphone,
   Database,
   Code2,
   CheckCircle2,

@@ -31,10 +31,10 @@ export default function ReleaseStatusBadge({ status, platform, className = "" }:
     case "coming_soon":
       return (
         <span
-          className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-zinc-800/80 text-zinc-300 border border-zinc-700/60 ${className}`}
+          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-green/10 text-brand-green border border-brand-green/30 ${className}`}
         >
-          <Clock className="h-3.5 w-3.5 text-zinc-400" />
-          <span>{platform === "ios" ? "Coming Soon to App Store" : "Coming Soon"}</span>
+          <Clock className="h-3.5 w-3.5 text-brand-green" />
+          <span>{platform === "ios" ? "Coming Soon to App Store" : "Release Soon"}</span>
         </span>
       );
     case "unavailable":

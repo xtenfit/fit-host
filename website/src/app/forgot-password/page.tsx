@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, ArrowRight, AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
+import { Mail, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ForgotPasswordPage() {
@@ -36,8 +36,8 @@ export default function ForgotPasswordPage() {
       }
 
       setSubmitted(true);
-    } catch (err: any) {
-      setError(err?.message || "Failed to dispatch password recovery email.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to dispatch password recovery email.");
     } finally {
       setLoading(false);
     }

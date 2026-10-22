@@ -20,6 +20,8 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(
     errorParam === "auth_callback_failed"
       ? "Authentication verification failed or session expired. Please sign in again."
+      : errorParam
+      ? decodeURIComponent(errorParam)
       : null
   );
 

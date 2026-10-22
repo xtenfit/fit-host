@@ -3,13 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  Mail,
   Send,
   Layers,
   FileCode,
   Clock,
   CheckCircle2,
-  AlertCircle,
   Search,
   Copy,
   Smartphone,
@@ -23,7 +21,6 @@ import {
   FileText,
   SlidersHorizontal,
   ChevronRight,
-  ExternalLink,
   Flame,
   Check,
   XCircle,
@@ -576,7 +573,7 @@ export default function EmailStudioPage() {
                   <span>Sending Identity</span>
                   <Shield className="h-4 w-4 text-purple-400" />
                 </div>
-                <div className="text-sm font-bold text-white truncate">no-reply@noreply.amitrana.tech</div>
+                <div className="text-sm font-bold text-white truncate">noreply@noreply.amitrana.tech</div>
                 <div className="text-xs text-brand-green font-medium">SPF / DKIM / DMARC Ready</div>
               </div>
             </div>
@@ -1016,7 +1013,7 @@ export default function EmailStudioPage() {
                     {/* Simulated Mail Client Header */}
                     <div className="bg-[#12151C] border-b border-brand-border p-3 text-xs space-y-1">
                       <div className="text-zinc-400">
-                        <strong className="text-zinc-200">From:</strong> Fit Host &lt;no-reply@noreply.amitrana.tech&gt;
+                        <strong className="text-zinc-200">From:</strong> Fit Host &lt;noreply@noreply.amitrana.tech&gt;
                       </div>
                       <div className="text-zinc-400">
                         <strong className="text-zinc-200">To:</strong> athlete@amitrana.tech
@@ -1191,7 +1188,7 @@ export default function EmailStudioPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white">Resend API & SMTP Pipeline</h3>
-                    <p className="text-xs text-zinc-400">Verified sender: no-reply@noreply.amitrana.tech</p>
+                    <p className="text-xs text-zinc-400">Verified sender: noreply@noreply.amitrana.tech</p>
                   </div>
                 </div>
 
@@ -1261,7 +1258,7 @@ export default function EmailStudioPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
                 <div className="p-3 rounded-xl bg-[#0D1016] border border-brand-border">
                   <span className="text-zinc-500 block text-[10px] uppercase font-sans">Sender Email</span>
-                  <span className="text-brand-green font-bold">no-reply@noreply.amitrana.tech</span>
+                  <span className="text-brand-green font-bold">noreply@noreply.amitrana.tech</span>
                 </div>
                 <div className="p-3 rounded-xl bg-[#0D1016] border border-brand-border">
                   <span className="text-zinc-500 block text-[10px] uppercase font-sans">Sender Name</span>

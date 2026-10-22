@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Smartphone, Apple, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
+import { Download, Smartphone, Apple, CheckCircle2, AlertCircle, ArrowRight, Clock } from "lucide-react";
 import { siteConfig } from "@/lib/config/site";
 
 interface DownloadCTAProps {
@@ -24,21 +24,29 @@ export default function DownloadCTA({
   const { storeLinks, version: defaultVersion, releaseDate: defaultReleaseDate } = siteConfig;
   const currentVersion = propVersion || defaultVersion;
   const currentReleaseDate = propReleaseDate || defaultReleaseDate;
-  const apkDownloadUrl = propDownloadUrl || storeLinks.directApk.url;
-  const apkSize = propFileSize || storeLinks.directApk.fileSize;
+  const hasDirectApk = Boolean(propDownloadUrl || (storeLinks.directApk.available && storeLinks.directApk.url));
+  const apkDownloadUrl = propDownloadUrl || (storeLinks.directApk.available ? storeLinks.directApk.url : null);
+  const apkSize = propFileSize || (storeLinks.directApk.available ? storeLinks.directApk.fileSize : null);
 
   if (variant === "compact") {
     return (
       <div className={`flex flex-col sm:flex-row items-center gap-3 ${className}`}>
-        <a
-          href={apkDownloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-black bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-lg shadow-brand-green/20 transition-all"
-        >
-          <Download className="h-4 w-4" />
-          <span>Download Release APK ({currentVersion})</span>
-        </a>
+        {hasDirectApk && apkDownloadUrl ? (
+          <a
+            href={apkDownloadUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold text-black bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-lg shadow-brand-green/20 transition-all"
+          >
+            <Download className="h-4 w-4" />
+            <span>Download Release APK ({currentVersion})</span>
+          </a>
+        ) : (
+          <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 text-xs font-semibold text-brand-green bg-brand-surface rounded-xl border border-brand-green/30 select-none">
+            <Clock className="h-4 w-4 text-brand-green" />
+            <span>Android APK: Release Soon</span>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <Link
             href="/download"
@@ -84,17 +92,33 @@ export default function DownloadCTA({
             <ArrowRight className="h-4 w-4" />
           </Link>
 
-          <a
-            href={apkDownloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-semibold text-white bg-brand-elevated hover:bg-brand-surface rounded-xl border border-brand-border hover:border-brand-green/40 transition-all"
-          >
-            <span>Direct Android APK</span>
-            <span className="text-xs bg-black/30 text-brand-green px-2 py-0.5 rounded-md font-mono">
-              {apkSize}
-            </span>
-          </a>
+          {hasDirectApk && apkDownloadUrl ? (
+            <a
+              href={apkDownloadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-semibold text-white bg-brand-elevated hover:bg-brand-surface rounded-xl border border-brand-border hover:border-brand-green/40 transition-all"
+            >
+              <Download className="h-4 w-4 text-brand-green" />
+              <span>Direct Android APK</span>
+              {apkSize && (
+                <span className="text-xs bg-black/30 text-brand-green px-2 py-0.5 rounded-md font-mono">
+                  {apkSize}
+                </span>
+              )}
+            </a>
+          ) : (
+            <div
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-elevated/80 border border-brand-border text-zinc-400 text-xs font-semibold select-none"
+              title="Official Android APK release build is releasing soon on GitHub"
+            >
+              <Smartphone className="h-4 w-4 text-brand-green" />
+              <div className="text-left">
+                <div className="text-[10px] uppercase text-brand-green font-bold leading-tight">Android APK</div>
+                <div className="text-zinc-300 font-medium leading-tight">Release Soon</div>
+              </div>
+            </div>
+          )}
 
           {/* iOS App Store Status */}
           <div
@@ -126,7 +150,9 @@ export default function DownloadCTA({
         <div className="pt-2 flex items-center justify-center gap-2 text-[11px] text-zinc-500">
           <AlertCircle className="h-3 w-3 text-zinc-500 shrink-0" />
           <span>
-            Official store listings are currently being prepared for App Store and Google Play. You can install the verified Android Release APK today.
+            {hasDirectApk
+              ? "Official store listings are currently being prepared for App Store and Google Play. Direct verified Android APK is available above."
+              : "Official mobile release builds are launching soon. The latest APK will auto-detect from GitHub as soon as it is published."}
           </span>
         </div>
       </div>

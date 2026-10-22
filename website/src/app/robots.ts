@@ -6,7 +6,13 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/dashboard', '/auth/recovery', '/auth/callback'],
+        disallow: [
+          '/dashboard',
+          '/admin',
+          '/api/admin',
+          '/auth/recovery',
+          '/auth/callback',
+        ],
       },
     ],
     sitemap: 'https://fithost.amitrana.tech/sitemap.xml',

@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     ],
     supabaseSmtpConfig: {
       enabled: true,
-      senderEmail: 'no-reply@noreply.amitrana.tech',
+      senderEmail: 'noreply@noreply.amitrana.tech',
       senderName: 'Fit Host',
       host: 'smtp.resend.com',
       port: 465,

@@ -135,6 +135,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/account-deletion" className="hover:text-brand-green transition-colors">
+                  Account Deletion
+                </Link>
+              </li>
+              <li>
                 <span className="inline-block text-xs text-zinc-500 pt-2">
                   Official Origin: <br />
                   <code className="text-zinc-400 font-mono text-[11px]">https://{siteConfig.domain}</code>

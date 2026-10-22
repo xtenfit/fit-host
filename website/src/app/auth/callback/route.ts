@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeNextUrl } from '@/lib/auth-utils';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // If "next" is in the query, use it as redirect target (e.g. /dashboard)
-  const next = searchParams.get('next') ?? '/dashboard';
+  const errorParam = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
+
+  // If OAuth provider returned an error directly in callback query (e.g. access_denied)
+  if (errorParam) {
+    const errorMsg = encodeURIComponent(errorDescription || errorParam);
+    return NextResponse.redirect(`${origin}/login?error=${errorMsg}`);
+  }
+
+  // If "next" is in the query, sanitize it before redirecting
+  const next = sanitizeNextUrl(searchParams.get('next'));
 
   if (code) {
     const supabase = await createClient();
@@ -27,3 +37,4 @@ export async function GET(request: Request) {
   // Return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
 }
+
