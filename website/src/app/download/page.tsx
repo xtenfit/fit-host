@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import PlatformDownloadCard from "@/components/releases/PlatformDownloadCard";
 import LatestReleaseBanner from "@/components/releases/LatestReleaseBanner";
-import ReleaseAssetList from "@/components/releases/ReleaseAssetList";
 import { getLatestMobileRelease } from "@/lib/github/releases";
 import { releasesConfig } from "@/lib/config/releases";
 
@@ -74,37 +73,6 @@ export default async function DownloadPage() {
               slug={latestRelease.slug}
             />
           </div>
-        </section>
-
-        {/* Verified Release Binary Assets */}
-        <section className="rounded-3xl border border-brand-border bg-brand-surface/40 p-6 sm:p-8 backdrop-blur-sm space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-white">
-                Published Build Artifacts ({latestRelease.version})
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Direct binary files hosted on GitHub Releases for this version.
-              </p>
-            </div>
-
-            {latestRelease.htmlUrl && (
-              <a
-                href={latestRelease.htmlUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-brand-green hover:text-brand-green-hover font-bold"
-              >
-                <span>View on GitHub</span>
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </div>
-
-          <ReleaseAssetList
-            assets={latestRelease.assets}
-            sha256Checksum={latestRelease.android.sha256Checksum}
-          />
         </section>
 
         {/* Android Step-by-Step Sideload Installation Guide */}

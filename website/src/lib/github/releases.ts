@@ -293,21 +293,24 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
   const slug = tagNameToSlug(tagName);
   const title = sanitizeText(raw.name || `Fit Host ${tagName}`);
 
-  // Format assets
-  const assets: ReleaseAsset[] = (raw.assets || []).map((a) => ({
-    id: a.id,
-    name: a.name,
-    sizeBytes: a.size,
-    formattedSize: formatBytes(a.size),
-    downloadUrl: a.browser_download_url,
-    contentType: a.content_type,
-    downloadCount: a.download_count,
-    createdAt: a.created_at,
-    updatedAt: a.updated_at,
-  }));
+  // Format assets - strictly keep only valid .apk installable binaries, removing raw checksum assets
+  const assets: ReleaseAsset[] = (raw.assets || [])
+    .filter((a) => a.name.toLowerCase().endsWith(".apk"))
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      sizeBytes: a.size,
+      formattedSize: formatBytes(a.size),
+      downloadUrl: a.browser_download_url,
+      contentType: a.content_type,
+      downloadCount: a.download_count,
+      createdAt: a.created_at,
+      updatedAt: a.updated_at,
+    }));
 
   // Identify Android APK asset (auto-detect any .apk published in GitHub release assets)
   const apkAsset =
+    assets.find((a) => a.name.toLowerCase().includes("arm64") && a.name.toLowerCase().endsWith(".apk")) ||
     assets.find((a) => a.name.toLowerCase().includes("universal") && a.name.toLowerCase().endsWith(".apk")) ||
     assets.find((a) => a.name.toLowerCase().endsWith(".apk"));
 
@@ -330,9 +333,9 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
     };
   }
 
-  // If GitHub has no assets yet for v1.3.0, populate from public direct downloads
+  // If GitHub has no assets yet for v1.3.0, populate from official GitHub release CDN
   const isV130 = tagName === "v1.3.0" || slug.includes("v1-3-0");
-  const directApkUrl = apkAsset ? apkAsset.downloadUrl : (isV130 ? "/downloads/FitHost-v1.3.0-arm64-v8a.apk" : null);
+  const directApkUrl = apkAsset ? apkAsset.downloadUrl : (isV130 ? "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk" : null);
   const directApkName = apkAsset ? apkAsset.name : (isV130 ? "FitHost-v1.3.0-arm64-v8a.apk" : null);
   const directApkSize = apkAsset ? apkAsset.formattedSize : (isV130 ? "44.5 MB" : null);
   const directApkSha = sha256 || (isV130 ? "0f7443a47258a34e5e92fe783250aea4417300872f452a38d01632123c07b8ce" : null);
@@ -421,7 +424,7 @@ export function getFallbackReleases(): MobileRelease[] {
             name: "FitHost-v1.3.0-arm64-v8a.apk",
             sizeBytes: 44514274,
             formattedSize: "44.5 MB",
-            downloadUrl: "/downloads/FitHost-v1.3.0-arm64-v8a.apk",
+            downloadUrl: "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk",
             contentType: "application/vnd.android.package-archive",
             downloadCount: 1420,
             createdAt: new Date().toISOString(),
@@ -432,7 +435,7 @@ export function getFallbackReleases(): MobileRelease[] {
             name: "FitHost-v1.3.0-armeabi-v7a.apk",
             sizeBytes: 41367124,
             formattedSize: "41.4 MB",
-            downloadUrl: "/downloads/FitHost-v1.3.0-armeabi-v7a.apk",
+            downloadUrl: "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-armeabi-v7a.apk",
             contentType: "application/vnd.android.package-archive",
             downloadCount: 380,
             createdAt: new Date().toISOString(),
@@ -443,7 +446,7 @@ export function getFallbackReleases(): MobileRelease[] {
             name: "FitHost-v1.3.0-x86_64.apk",
             sizeBytes: 47496151,
             formattedSize: "47.5 MB",
-            downloadUrl: "/downloads/FitHost-v1.3.0-x86_64.apk",
+            downloadUrl: "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-x86_64.apk",
             contentType: "application/vnd.android.package-archive",
             downloadCount: 195,
             createdAt: new Date().toISOString(),
@@ -451,23 +454,12 @@ export function getFallbackReleases(): MobileRelease[] {
           },
           {
             id: 104,
-            name: "FitHost-v1.3.0-universal.apk",
+            name: "FitHost-Android-v1.3.0.apk",
             sizeBytes: 112673151,
             formattedSize: "107.4 MB",
-            downloadUrl: "/downloads/FitHost-v1.3.0-universal.apk",
+            downloadUrl: "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-Android-v1.3.0.apk",
             contentType: "application/vnd.android.package-archive",
             downloadCount: 650,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-          {
-            id: 105,
-            name: "FitHost-v1.3.0-arm64-v8a.apk.sha256",
-            sizeBytes: 95,
-            formattedSize: "95 B",
-            downloadUrl: "/downloads/FitHost-v1.3.0-arm64-v8a.apk.sha256",
-            contentType: "text/plain",
-            downloadCount: 512,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           },
@@ -494,7 +486,7 @@ export function getFallbackReleases(): MobileRelease[] {
         releaseTitle: u.title,
         publishedAt: new Date(u.releaseDate).toISOString() || new Date().toISOString(),
         releaseNotes: notes,
-        downloadUrl: isLatest130 ? "/downloads/FitHost-v1.3.0-arm64-v8a.apk" : null,
+        downloadUrl: isLatest130 ? "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk" : null,
         assetName: isLatest130 ? "FitHost-v1.3.0-arm64-v8a.apk" : null,
         assetSize: isLatest130 ? "44.5 MB" : null,
         sha256Checksum: isLatest130 ? "0f7443a47258a34e5e92fe783250aea4417300872f452a38d01632123c07b8ce" : null,

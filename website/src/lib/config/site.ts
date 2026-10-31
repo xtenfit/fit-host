@@ -56,7 +56,7 @@ export const siteConfig: SiteConfig = {
     },
     directApk: {
       available: true,
-      url: "/downloads/FitHost-v1.3.0-arm64-v8a.apk",
+      url: "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk",
       label: "Download Android APK (v1.3.0)",
       fileSize: "44.5 MB",
     },
