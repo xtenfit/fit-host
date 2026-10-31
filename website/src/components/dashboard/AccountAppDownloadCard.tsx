@@ -5,8 +5,6 @@ import {
   Download,
   Smartphone,
   ShieldCheck,
-  Check,
-  Copy,
   Layers,
   Cpu,
   RefreshCw,
@@ -31,17 +29,10 @@ export default function AccountAppDownloadCard({
   profileVersion = APP_SCHEMA_VERSION,
 }: AccountAppDownloadCardProps) {
   const [selectedAbi, setSelectedAbi] = useState<string>("arm64-v8a");
-  const [copiedSha, setCopiedSha] = useState(false);
 
   const selectedPkg =
     splitReleasePackages.find((p) => p.abi === selectedAbi) ||
     splitReleasePackages[0];
-
-  const handleCopySha = () => {
-    navigator.clipboard.writeText(selectedPkg.sha256);
-    setCopiedSha(true);
-    setTimeout(() => setCopiedSha(false), 2000);
-  };
 
   return (
     <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-brand-green/30 bg-gradient-to-br from-brand-surface via-brand-surface/95 to-brand-elevated shadow-xl space-y-6">
@@ -155,35 +146,6 @@ export default function AccountAppDownloadCard({
             <Download className="h-4 w-4" />
             <span>Download {selectedPkg.filename}</span>
           </a>
-        </div>
-
-        {/* SHA-256 Checksum Verification */}
-        <div className="pt-2 border-t border-brand-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 shrink-0">
-              SHA-256:
-            </span>
-            <code className="text-[11px] font-mono text-zinc-400 truncate select-all">
-              {selectedPkg.sha256}
-            </code>
-          </div>
-          <button
-            type="button"
-            onClick={handleCopySha}
-            className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 hover:text-white shrink-0 self-end sm:self-auto py-1 px-2 rounded-lg bg-brand-surface border border-brand-border hover:border-brand-green/40 transition-colors"
-          >
-            {copiedSha ? (
-              <>
-                <Check className="h-3 w-3 text-brand-green" />
-                <span className="text-brand-green font-semibold">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3 w-3" />
-                <span>Copy Checksum</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 

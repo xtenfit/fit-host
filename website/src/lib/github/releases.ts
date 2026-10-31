@@ -175,6 +175,16 @@ export function parseReleaseNotes(markdown: string | null | undefined): Structur
     const trimmed = line.trim();
     if (!trimmed) continue;
 
+    // Filter out checksum / hash lines completely from user-facing release notes
+    if (
+      trimmed.toLowerCase().includes("sha-256") ||
+      trimmed.toLowerCase().includes("sha256") ||
+      trimmed.toLowerCase().includes("checksum") ||
+      /[a-f0-9]{64}/i.test(trimmed)
+    ) {
+      continue;
+    }
+
     // Check for bullet point
     const bulletMatch = trimmed.match(/^[-*+]\s+(.*)$/) || trimmed.match(/^\d+\.\s+(.*)$/);
     const content = sanitizeText(bulletMatch ? bulletMatch[1].trim() : trimmed);
@@ -229,24 +239,9 @@ export function parseReleaseNotes(markdown: string | null | undefined): Structur
 }
 
 /**
- * Extract verified SHA-256 checksum from release assets or release markdown body
+ * Extract verified SHA-256 checksum from release assets or release markdown body (disabled for privacy)
  */
 export function extractSha256Checksum(assets: GitHubAssetRaw[], rawBody: string | null): string | null {
-  // 1. Check for .sha256 file asset
-  const shaAsset = assets.find((a) => a.name.toLowerCase().endsWith(".sha256"));
-  // If there's an asset named <filename>.sha256, it's downloadable from shaAsset.browser_download_url
-  if (shaAsset) {
-    // Note: the asset itself contains the hash; if available in markdown, extract it
-  }
-
-  // 2. Look for SHA-256 pattern in markdown text: `SHA256: <64-hex>` or `SHA-256: <64-hex>`
-  if (rawBody) {
-    const match = rawBody.match(/(?:sha[-_]?256|checksum)[\s:=]+([a-fA-F0-9]{64})/i);
-    if (match) {
-      return match[1].toLowerCase();
-    }
-  }
-
   return null;
 }
 
@@ -338,8 +333,6 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
   const directApkUrl = apkAsset ? apkAsset.downloadUrl : (isV130 ? "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk" : null);
   const directApkName = apkAsset ? apkAsset.name : (isV130 ? "FitHost-v1.3.0-arm64-v8a.apk" : null);
   const directApkSize = apkAsset ? apkAsset.formattedSize : (isV130 ? "44.5 MB" : null);
-  const directApkSha = sha256 || (isV130 ? "0f7443a47258a34e5e92fe783250aea4417300872f452a38d01632123c07b8ce" : null);
-
   const android: PlatformReleaseInfo = {
     platform: "android",
     version: tagName,
@@ -350,7 +343,7 @@ export function normalizeGitHubRelease(raw: GitHubReleaseRaw): MobileRelease {
     downloadUrl: directApkUrl,
     assetName: directApkName,
     assetSize: directApkSize,
-    sha256Checksum: directApkSha,
+    sha256Checksum: null,
     minimumSupportedOs: "Android 8.0+ (Oreo, API 26)",
     distributionStatus: directApkUrl ? "available" : "coming_soon",
     releaseUrl: raw.html_url,
@@ -489,7 +482,7 @@ export function getFallbackReleases(): MobileRelease[] {
         downloadUrl: isLatest130 ? "https://github.com/xtenfit/fit-host/releases/download/v1.3.0/FitHost-v1.3.0-arm64-v8a.apk" : null,
         assetName: isLatest130 ? "FitHost-v1.3.0-arm64-v8a.apk" : null,
         assetSize: isLatest130 ? "44.5 MB" : null,
-        sha256Checksum: isLatest130 ? "0f7443a47258a34e5e92fe783250aea4417300872f452a38d01632123c07b8ce" : null,
+        sha256Checksum: null,
         minimumSupportedOs: "Android 8.0+ (Oreo, API 26)",
         distributionStatus: isLatest130 ? "available" : "coming_soon",
         releaseUrl: `https://github.com/${releasesConfig.github.owner}/${releasesConfig.github.repo}/releases`,

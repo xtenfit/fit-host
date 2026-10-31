@@ -152,7 +152,6 @@ export default async function ReleaseDetailPage({ params }: ReleasePageProps) {
           <div className="pt-4">
             <ReleaseAssetList
               assets={release.assets}
-              sha256Checksum={release.android.sha256Checksum}
             />
           </div>
         )}

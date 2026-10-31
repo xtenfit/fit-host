@@ -10,8 +10,6 @@ import {
   ExternalLink,
   Info,
   Clock,
-  Check,
-  Copy,
   Cpu,
 } from "lucide-react";
 import type { PlatformReleaseInfo } from "@/lib/github/releases";
@@ -34,17 +32,10 @@ export default function PlatformDownloadCard({
 }: PlatformDownloadCardProps) {
   const isAndroid = platform === "android";
   const [selectedAbi, setSelectedAbi] = useState<string>("arm64-v8a");
-  const [copiedSha, setCopiedSha] = useState(false);
 
   const activeSplitPkg =
     splitReleasePackages.find((p) => p.abi === selectedAbi) ||
     splitReleasePackages[0];
-
-  const handleCopySha = (sha: string) => {
-    navigator.clipboard.writeText(sha);
-    setCopiedSha(true);
-    setTimeout(() => setCopiedSha(false), 2000);
-  };
 
   if (isAndroid) {
     const hasApk = Boolean(
@@ -54,7 +45,6 @@ export default function PlatformDownloadCard({
 
     const downloadHref = activeSplitPkg.downloadUrl || info.downloadUrl || "#";
     const displayedSize = activeSplitPkg.sizeFormatted || info.assetSize || "44.5 MB";
-    const displayedSha = activeSplitPkg.sha256 || info.sha256Checksum;
 
     return (
       <div
@@ -152,37 +142,6 @@ export default function PlatformDownloadCard({
               <em>&ldquo;Install unknown apps&rdquo;</em>. Allow your browser or file manager in settings to proceed.
             </p>
           </div>
-
-          {/* Verified Checksum */}
-          {displayedSha && (
-            <div className="rounded-xl border border-brand-border bg-black/40 p-3 text-xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase font-bold text-brand-muted">
-                  SHA-256 ({activeSplitPkg.name})
-                </span>
-                <button
-                  type="button"
-                  onClick={() => handleCopySha(displayedSha)}
-                  className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white"
-                >
-                  {copiedSha ? (
-                    <>
-                      <Check className="h-2.5 w-2.5 text-brand-green" />
-                      <span className="text-brand-green">Copied</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-2.5 w-2.5" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              <code className="text-[10px] font-mono text-zinc-300 break-all select-all block">
-                {displayedSha}
-              </code>
-            </div>
-          )}
         </div>
 
         {/* Bottom Actions */}

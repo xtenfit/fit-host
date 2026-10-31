@@ -1,16 +1,14 @@
 import React from "react";
-import { Download, FileCode, CheckCircle2, Copy, Clock } from "lucide-react";
+import { Download, FileCode, Clock } from "lucide-react";
 import type { ReleaseAsset } from "@/lib/github/releases";
 
 interface ReleaseAssetListProps {
   assets: ReleaseAsset[];
-  sha256Checksum?: string | null;
   className?: string;
 }
 
 export default function ReleaseAssetList({
   assets,
-  sha256Checksum,
   className = "",
 }: ReleaseAssetListProps) {
   const apkAssets = (assets || []).filter((asset) =>
@@ -80,19 +78,6 @@ export default function ReleaseAssetList({
           );
         })}
       </div>
-
-      {/* Verified SHA-256 Checksum Display */}
-      {sha256Checksum && (
-        <div className="rounded-xl border border-brand-border bg-zinc-950 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-zinc-400">
-            <CheckCircle2 className="h-4 w-4 text-brand-green shrink-0" />
-            <span className="font-semibold text-zinc-300">Verified SHA-256:</span>
-            <span className="font-mono text-[11px] text-zinc-400 break-all select-all">
-              {sha256Checksum}
-            </span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
