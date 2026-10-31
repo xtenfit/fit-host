@@ -10,7 +10,9 @@ class DeleteAccountScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Delete Account'),
         leading: IconButton(
@@ -29,11 +31,17 @@ class DeleteAccountScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.warmCoral.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.warmCoral.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AppColors.warmCoral.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: AppColors.warmCoral, size: 28),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: AppColors.warmCoral,
+                      size: 28,
+                    ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
@@ -54,7 +62,9 @@ class DeleteAccountScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.6,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               const Spacer(),
@@ -65,7 +75,9 @@ class DeleteAccountScreen extends StatelessWidget {
                     backgroundColor: AppColors.warmCoral,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   onPressed: () => DeleteAccountDialog.show(context),
                   child: const Text(
@@ -82,7 +94,9 @@ class DeleteAccountScreen extends StatelessWidget {
                   child: Text(
                     'Cancel and Keep Account',
                     style: TextStyle(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),

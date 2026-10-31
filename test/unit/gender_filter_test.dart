@@ -33,8 +33,11 @@ void main() {
     test('default filter in ProviderContainer matches male user gender', () {
       final container = ProviderContainer(
         overrides: [
-          userProfileProvider.overrideWith(() =>
-              MockProfileNotifier(UserProfile.defaultGuest().copyWith(gender: 'male'))),
+          userProfileProvider.overrideWith(
+            () => MockProfileNotifier(
+              UserProfile.defaultGuest().copyWith(gender: 'male'),
+            ),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -46,8 +49,11 @@ void main() {
     test('default filter in ProviderContainer matches female user gender', () {
       final container = ProviderContainer(
         overrides: [
-          userProfileProvider.overrideWith(() =>
-              MockProfileNotifier(UserProfile.defaultGuest().copyWith(gender: 'female'))),
+          userProfileProvider.overrideWith(
+            () => MockProfileNotifier(
+              UserProfile.defaultGuest().copyWith(gender: 'female'),
+            ),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -56,67 +62,81 @@ void main() {
       expect(filter.genderFilter, equals('female'));
     });
 
-    test('female filter includes female-focus seeded exercises and all', () async {
-      final exercises = await repo.getExercises(genderFilter: 'female');
-      final names = exercises.map((e) => e.name).toList();
+    test(
+      'female filter includes universal exercises (universal exercises are never hidden)',
+      () async {
+        final exercises = await repo.getExercises(genderFilter: 'female');
+        final names = exercises.map((e) => e.name).toList();
 
-      // Female focus exercises must be present
-      expect(names, contains('Hip Thrust (Barbell)'));
-      expect(names, contains('Glute Bridge'));
-      expect(names, contains('Bulgarian Split Squat'));
-      expect(names, contains('Cable Kickback'));
-      expect(names, contains('Hip Abduction (Machine)'));
-      expect(names, contains('Step-ups'));
+        // Universal compound & mobility exercises must NEVER be hidden for female audience
+        expect(names, contains('Barbell Bench Press'));
+        expect(names, contains('Barbell Incline Bench Press'));
+        expect(names, contains('Barbell Glute Bridge'));
+        expect(names, contains('Air Bike'));
+        expect(exercises.length, greaterThan(1000));
+      },
+    );
 
-      // Male-only focus exercises must be excluded
-      expect(names, isNot(contains('Incline Barbell Press')));
-      expect(names, isNot(contains('Arnold Press')));
-      expect(names, isNot(contains('Cable Crossover')));
-      expect(names, isNot(contains('Dumbbell Pullover')));
-    });
+    test(
+      'male filter includes universal exercises (universal exercises are never hidden)',
+      () async {
+        final exercises = await repo.getExercises(genderFilter: 'male');
+        final names = exercises.map((e) => e.name).toList();
 
-    test('male filter includes male-focus seeded exercises and all', () async {
-      final exercises = await repo.getExercises(genderFilter: 'male');
-      final names = exercises.map((e) => e.name).toList();
+        // Universal compound & glute/leg exercises must NEVER be hidden for male audience
+        expect(names, contains('Barbell Bench Press'));
+        expect(names, contains('Barbell Incline Bench Press'));
+        expect(names, contains('Barbell Glute Bridge'));
+        expect(names, contains('Air Bike'));
+        expect(exercises.length, greaterThan(1000));
+      },
+    );
 
-      // Male focus exercises must be present
-      expect(names, contains('Bench Press (Barbell)'));
-      expect(names, contains('Incline Barbell Press'));
-      expect(names, contains('Arnold Press'));
-      expect(names, contains('Cable Crossover'));
-      expect(names, contains('Lateral Raise (Dumbbell)'));
-      expect(names, contains('Dumbbell Pullover'));
-
-      // Female-only focus exercises must be excluded
-      expect(names, isNot(contains('Hip Thrust (Barbell)')));
-      expect(names, isNot(contains('Cable Kickback')));
-      expect(names, isNot(contains('Glute Bridge')));
-      expect(names, isNot(contains('Hip Abduction (Machine)')));
-    });
-
-    test('Show all reset returns all exercises regardless of gender focus', () async {
-      final container = ProviderContainer(
-        overrides: [
-          userProfileProvider.overrideWith(() =>
-              MockProfileNotifier(UserProfile.defaultGuest().copyWith(gender: 'male'))),
-        ],
+    test('universal filter returns all universal exercises', () async {
+      final exercises = await repo.getExercises(genderFilter: 'universal');
+      expect(exercises.length, equals(1324));
+      expect(
+        exercises.every((e) => e.audienceSuitability == 'universal'),
+        isTrue,
       );
-      addTearDown(container.dispose);
-
-      // Initially male
-      expect(container.read(exercisesFilterProvider).genderFilter, equals('male'));
-
-      // Reset to all
-      container.read(exercisesFilterProvider.notifier).resetToAll();
-      expect(container.read(exercisesFilterProvider).genderFilter, equals('All'));
-
-      final allExercises = await repo.getExercises(genderFilter: 'All');
-      final allNames = allExercises.map((e) => e.name).toList();
-
-      // Contains both female and male focus exercises
-      expect(allNames, contains('Hip Thrust (Barbell)'));
-      expect(allNames, contains('Bench Press (Barbell)'));
-      expect(allNames, contains('Standard Push-Up'));
     });
+
+    test(
+      'Show all reset returns all exercises regardless of gender focus',
+      () async {
+        final container = ProviderContainer(
+          overrides: [
+            userProfileProvider.overrideWith(
+              () => MockProfileNotifier(
+                UserProfile.defaultGuest().copyWith(gender: 'male'),
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        // Initially male
+        expect(
+          container.read(exercisesFilterProvider).genderFilter,
+          equals('male'),
+        );
+
+        // Reset to all
+        container.read(exercisesFilterProvider.notifier).resetToAll();
+        expect(
+          container.read(exercisesFilterProvider).genderFilter,
+          equals('All'),
+        );
+
+        final allExercises = await repo.getExercises(genderFilter: 'All');
+        final allNames = allExercises.map((e) => e.name).toList();
+
+        // Contains both universal lifts
+        expect(allNames, contains('Barbell Bench Press'));
+        expect(allNames, contains('Barbell Glute Bridge'));
+        expect(allNames, contains('Air Bike'));
+        expect(allExercises.length, equals(1324));
+      },
+    );
   });
 }

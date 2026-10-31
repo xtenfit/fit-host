@@ -15,7 +15,10 @@ class StepCalculator {
 
   /// Estimates stride length in cm from user height:
   /// stride_cm = height_cm * 0.415 (walking) or * 0.45 (running)
-  static double estimateStrideCm({required double heightCm, bool isRunning = false}) {
+  static double estimateStrideCm({
+    required double heightCm,
+    bool isRunning = false,
+  }) {
     if (heightCm <= 0) return 70.0;
     final factor = isRunning ? 0.45 : 0.415;
     return heightCm * factor;

@@ -5,12 +5,36 @@ import '../../../../core/database/database.dart' as db;
 import '../../../../core/theme/app_colors.dart';
 
 enum ReminderCategory {
-  workout(label: 'Workout', icon: Icons.fitness_center_rounded, color: AppColors.electricBlue),
-  meal(label: 'Meal Time', icon: Icons.restaurant_rounded, color: Color(0xFFFF6B4A)),
-  hydration(label: 'Water Intake', icon: Icons.water_drop_rounded, color: Color(0xFF00B4D8)),
-  sleep(label: 'Sleep & Wind-down', icon: Icons.bedtime_rounded, color: Color(0xFF9D4EDD)),
-  habit(label: 'Daily Habit', icon: Icons.check_circle_rounded, color: AppColors.limeGreen),
-  custom(label: 'Custom Alarm', icon: Icons.alarm_rounded, color: Color(0xFFFFD166));
+  workout(
+    label: 'Workout',
+    icon: Icons.fitness_center_rounded,
+    color: AppColors.electricBlue,
+  ),
+  meal(
+    label: 'Meal Time',
+    icon: Icons.restaurant_rounded,
+    color: Color(0xFFFF6B4A),
+  ),
+  hydration(
+    label: 'Water Intake',
+    icon: Icons.water_drop_rounded,
+    color: Color(0xFF00B4D8),
+  ),
+  sleep(
+    label: 'Sleep & Wind-down',
+    icon: Icons.bedtime_rounded,
+    color: Color(0xFF9D4EDD),
+  ),
+  habit(
+    label: 'Daily Habit',
+    icon: Icons.check_circle_rounded,
+    color: AppColors.limeGreen,
+  ),
+  custom(
+    label: 'Custom Alarm',
+    icon: Icons.alarm_rounded,
+    color: Color(0xFFFFD166),
+  );
 
   final String label;
   final IconData icon;
@@ -75,6 +99,31 @@ enum ReminderRecurrence {
   String get dbValue => name;
 }
 
+enum ReminderDeliveryMode {
+  alarm(
+    label: 'Alarm-Style',
+    description:
+        'Prominent alarm with sound, vibration, and Snooze/Stop actions',
+  ),
+  notification(
+    label: 'Standard Notification',
+    description: 'Standard notification banner and sound',
+  );
+
+  final String label;
+  final String description;
+  const ReminderDeliveryMode({required this.label, required this.description});
+
+  static ReminderDeliveryMode fromString(String? val) {
+    if (val != null && val.toLowerCase() == 'notification') {
+      return ReminderDeliveryMode.notification;
+    }
+    return ReminderDeliveryMode.alarm;
+  }
+
+  String get dbValue => name;
+}
+
 class Reminder {
   final String id;
   final String title;
@@ -91,6 +140,7 @@ class Reminder {
   final bool isDismissed;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final ReminderDeliveryMode deliveryMode;
 
   Reminder({
     required this.id,
@@ -108,6 +158,7 @@ class Reminder {
     this.isDismissed = false,
     required this.createdAt,
     required this.updatedAt,
+    this.deliveryMode = ReminderDeliveryMode.alarm,
   });
 
   int get hour {
@@ -166,7 +217,13 @@ class Reminder {
       }
     }
 
-    DateTime candidate = DateTime(effectiveFrom.year, effectiveFrom.month, effectiveFrom.day, hour, minute);
+    DateTime candidate = DateTime(
+      effectiveFrom.year,
+      effectiveFrom.month,
+      effectiveFrom.day,
+      hour,
+      minute,
+    );
 
     switch (recurrence) {
       case ReminderRecurrence.once:
@@ -178,12 +235,15 @@ class Reminder {
         return candidate.add(const Duration(days: 1));
 
       case ReminderRecurrence.weekdays:
-        if (candidate.isAfter(effectiveFrom) && candidate.weekday >= DateTime.monday && candidate.weekday <= DateTime.friday) {
+        if (candidate.isAfter(effectiveFrom) &&
+            candidate.weekday >= DateTime.monday &&
+            candidate.weekday <= DateTime.friday) {
           return candidate;
         }
         do {
           candidate = candidate.add(const Duration(days: 1));
-        } while (candidate.weekday == DateTime.saturday || candidate.weekday == DateTime.sunday);
+        } while (candidate.weekday == DateTime.saturday ||
+            candidate.weekday == DateTime.sunday);
         return candidate;
 
       case ReminderRecurrence.weekly:
@@ -211,7 +271,8 @@ class Reminder {
         }
         for (int i = 0; i < 14; i++) {
           final testDate = candidate.add(Duration(days: i));
-          if (testDate.isAfter(effectiveFrom) && repeatDays.contains(testDate.weekday)) {
+          if (testDate.isAfter(effectiveFrom) &&
+              repeatDays.contains(testDate.weekday)) {
             return testDate;
           }
         }
@@ -235,6 +296,7 @@ class Reminder {
     bool? isDismissed,
     DateTime? createdAt,
     DateTime? updatedAt,
+    ReminderDeliveryMode? deliveryMode,
   }) {
     return Reminder(
       id: id ?? this.id,
@@ -246,12 +308,14 @@ class Reminder {
       repeatDays: repeatDays ?? this.repeatDays,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
-      snoozeDurationMinutes: snoozeDurationMinutes ?? this.snoozeDurationMinutes,
+      snoozeDurationMinutes:
+          snoozeDurationMinutes ?? this.snoozeDurationMinutes,
       lastTriggeredAt: lastTriggeredAt ?? this.lastTriggeredAt,
       lastCompletedAt: lastCompletedAt ?? this.lastCompletedAt,
       isDismissed: isDismissed ?? this.isDismissed,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deliveryMode: deliveryMode ?? this.deliveryMode,
     );
   }
 
@@ -281,12 +345,14 @@ class Reminder {
       isDismissed: data.isDismissed,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
+      deliveryMode: ReminderDeliveryMode.fromString(data.deliveryMode),
     );
   }
 
-  db.RemindersCompanion toCompanion() {
+  db.RemindersCompanion toCompanion({String? userId}) {
     return db.RemindersCompanion(
       id: drift.Value(id),
+      userId: userId != null ? drift.Value(userId) : const drift.Value.absent(),
       title: drift.Value(title),
       category: drift.Value(category.dbValue),
       timeOfDay: drift.Value(timeOfDay),
@@ -301,6 +367,7 @@ class Reminder {
       isDismissed: drift.Value(isDismissed),
       createdAt: drift.Value(createdAt),
       updatedAt: drift.Value(updatedAt),
+      deliveryMode: drift.Value(deliveryMode.dbValue),
     );
   }
 }

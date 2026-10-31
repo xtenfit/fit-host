@@ -32,26 +32,45 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
   late ScrollController _scrollController;
   final double _itemWidth = 14.0; // width per step
   bool _isUserScrolling = false;
+  bool _isProgrammaticScroll = false;
+  int _syncGeneration = 0;
 
   @override
   void initState() {
     super.initState();
-    final initialIndex = ((widget.value - widget.minValue) / widget.step).clamp(0, _totalSteps).toDouble();
+    final initialIndex = ((widget.value - widget.minValue) / widget.step)
+        .clamp(0, _totalSteps)
+        .toDouble();
     _scrollController = ScrollController(
       initialScrollOffset: initialIndex * _itemWidth,
     );
   }
 
-  int get _totalSteps => ((widget.maxValue - widget.minValue) / widget.step).round();
+  int get _totalSteps =>
+      ((widget.maxValue - widget.minValue) / widget.step).round();
 
   @override
   void didUpdateWidget(covariant InteractiveRulerSlider oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_isUserScrolling && (oldWidget.value != widget.value || oldWidget.minValue != widget.minValue || oldWidget.maxValue != widget.maxValue)) {
-      final targetIndex = ((widget.value - widget.minValue) / widget.step).clamp(0, _totalSteps).toDouble();
+    if (!_isUserScrolling &&
+        (oldWidget.value != widget.value ||
+            oldWidget.minValue != widget.minValue ||
+            oldWidget.maxValue != widget.maxValue)) {
+      final targetIndex = ((widget.value - widget.minValue) / widget.step)
+          .clamp(0, _totalSteps)
+          .toDouble();
       final targetOffset = targetIndex * _itemWidth;
-      if (_scrollController.hasClients && (_scrollController.offset - targetOffset).abs() > 2) {
-        _scrollController.jumpTo(targetOffset);
+      if (_scrollController.hasClients &&
+          (_scrollController.offset - targetOffset).abs() > 2) {
+        final generation = ++_syncGeneration;
+        _isProgrammaticScroll = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || generation != _syncGeneration) return;
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(targetOffset);
+          }
+          _isProgrammaticScroll = false;
+        });
       }
     }
   }
@@ -63,7 +82,11 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients) return;
+    if (_isProgrammaticScroll ||
+        !_scrollController.hasClients ||
+        !_isUserScrolling) {
+      return;
+    }
     final offset = _scrollController.offset;
     final index = (offset / _itemWidth).round().clamp(0, _totalSteps);
     final calculatedValue = widget.minValue + (index * widget.step);
@@ -109,11 +132,14 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
                   controller: _scrollController,
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: halfScreenWidth - (_itemWidth / 2)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: halfScreenWidth - (_itemWidth / 2),
+                  ),
                   itemCount: _totalSteps + 1,
                   itemBuilder: (context, index) {
                     final isMajor = index % 5 == 0;
-                    final isNumbered = index % 10 == 0 || (_totalSteps <= 20 && isMajor);
+                    final isNumbered =
+                        index % 10 == 0 || (_totalSteps <= 20 && isMajor);
                     final tickValue = widget.minValue + (index * widget.step);
 
                     return SizedBox(
@@ -129,7 +155,9 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextTertiary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextTertiary,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -189,8 +217,13 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          isDark ? AppColors.darkBackground : AppColors.lightBackground,
-                          (isDark ? AppColors.darkBackground : AppColors.lightBackground).withValues(alpha: 0.0),
+                          isDark
+                              ? AppColors.darkBackground
+                              : AppColors.lightBackground,
+                          (isDark
+                                  ? AppColors.darkBackground
+                                  : AppColors.lightBackground)
+                              .withValues(alpha: 0.0),
                         ],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -209,8 +242,13 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          (isDark ? AppColors.darkBackground : AppColors.lightBackground).withValues(alpha: 0.0),
-                          isDark ? AppColors.darkBackground : AppColors.lightBackground,
+                          (isDark
+                                  ? AppColors.darkBackground
+                                  : AppColors.lightBackground)
+                              .withValues(alpha: 0.0),
+                          isDark
+                              ? AppColors.darkBackground
+                              : AppColors.lightBackground,
                         ],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
@@ -229,7 +267,9 @@ class _InteractiveRulerSliderState extends State<InteractiveRulerSlider> {
   bool _isSnapping = false;
 
   void _snapToNearestStep() {
-    if (!_scrollController.hasClients || _isSnapping) return;
+    if (!_scrollController.hasClients || _isSnapping || _isProgrammaticScroll) {
+      return;
+    }
     final offset = _scrollController.offset;
     final index = (offset / _itemWidth).round().clamp(0, _totalSteps);
     final targetOffset = index * _itemWidth;

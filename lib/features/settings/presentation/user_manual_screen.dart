@@ -19,7 +19,8 @@ class _UserManualScreenState extends State<UserManualScreen> {
       icon: Icons.directions_walk_rounded,
       color: AppColors.limeGreen,
       badge: 'Sensor Real-Time',
-      summary: 'Accurate step counting, treadmill manual logging & distance math',
+      summary:
+          'Accurate step counting, treadmill manual logging & distance math',
       details: [
         _ManualItem(
           subtitle: 'Live Sensor Step Counting',
@@ -182,7 +183,8 @@ class _UserManualScreenState extends State<UserManualScreen> {
       icon: Icons.support_agent_rounded,
       color: AppColors.warmCoral,
       badge: 'amitrana Team',
-      summary: 'Official support channels, feedback templates, and legal notices',
+      summary:
+          'Official support channels, feedback templates, and legal notices',
       details: [
         _ManualItem(
           subtitle: 'Direct Engineering Support',
@@ -215,13 +217,17 @@ class _UserManualScreenState extends State<UserManualScreen> {
       final titleMatch = section.title.toLowerCase().contains(q);
       final summaryMatch = section.summary.toLowerCase().contains(q);
       final detailMatch = section.details.any(
-        (d) => d.subtitle.toLowerCase().contains(q) || d.text.toLowerCase().contains(q),
+        (d) =>
+            d.subtitle.toLowerCase().contains(q) ||
+            d.text.toLowerCase().contains(q),
       );
       return titleMatch || summaryMatch || detailMatch;
     }).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('User Manual & Guide'),
         leading: IconButton(
@@ -261,24 +267,38 @@ class _UserManualScreenState extends State<UserManualScreen> {
                               color: AppColors.limeGreen.withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.menu_book_rounded, color: AppColors.limeGreen, size: 22),
+                            child: const Icon(
+                              Icons.menu_book_rounded,
+                              color: AppColors.limeGreen,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           const Text(
                             'Fit Host Documentation',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.limeGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
-                          '1.2.2v2',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.limeGreen),
+                          '1.3.0',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.limeGreen,
+                          ),
                         ),
                       ),
                     ],
@@ -289,7 +309,9 @@ class _UserManualScreenState extends State<UserManualScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.45,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -302,10 +324,13 @@ class _UserManualScreenState extends State<UserManualScreen> {
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val.trim()),
               decoration: InputDecoration(
-                hintText: 'Search manual (e.g. treadmill, macros, alarms, voice...)',
+                hintText:
+                    'Search manual (e.g. treadmill, macros, alarms, voice...)',
                 hintStyle: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: _searchQuery.isNotEmpty
@@ -319,17 +344,24 @@ class _UserManualScreenState extends State<UserManualScreen> {
                     : null,
                 filled: true,
                 fillColor: isDark ? AppColors.darkSurface : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
               ),
@@ -349,7 +381,9 @@ class _UserManualScreenState extends State<UserManualScreen> {
                   border: Border.all(
                     color: isExpanded
                         ? section.color.withValues(alpha: 0.5)
-                        : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                        : (isDark
+                              ? AppColors.darkSurfaceBorder
+                              : AppColors.lightSurfaceBorder),
                     width: isExpanded ? 1.5 : 1.0,
                   ),
                 ),
@@ -373,13 +407,18 @@ class _UserManualScreenState extends State<UserManualScreen> {
                     ),
                     title: Text(
                       section.title,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
                     ),
                     subtitle: Text(
                       section.summary,
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -393,7 +432,11 @@ class _UserManualScreenState extends State<UserManualScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.check_circle_outline_rounded, size: 16, color: section.color),
+                                  Icon(
+                                    Icons.check_circle_outline_rounded,
+                                    size: 16,
+                                    color: section.color,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -401,7 +444,9 @@ class _UserManualScreenState extends State<UserManualScreen> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,
-                                        color: isDark ? Colors.white : Colors.black87,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                   ),
@@ -415,7 +460,9 @@ class _UserManualScreenState extends State<UserManualScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     height: 1.5,
-                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary,
                                   ),
                                 ),
                               ),
@@ -472,8 +519,5 @@ class _ManualItem {
   final String subtitle;
   final String text;
 
-  const _ManualItem({
-    required this.subtitle,
-    required this.text,
-  });
+  const _ManualItem({required this.subtitle, required this.text});
 }

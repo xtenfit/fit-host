@@ -1,7 +1,11 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -30,6 +34,11 @@ enum NotificationChannelType {
     id: 'fit_host_habits',
     name: 'Habits & Goals',
     description: 'Daily consistency and streak check-ins',
+  ),
+  reminders(
+    id: 'fit_host_reminders',
+    name: 'Fit Host Reminders',
+    description: 'General fitness alarms, workouts, and reminders',
   );
 
   final String id;
@@ -65,6 +74,48 @@ class ScheduledNotificationItem {
   });
 }
 
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  debugPrint(
+    '🚨 [NotificationService] Background action: ${response.actionId}, id: ${response.id}, payload: ${response.payload}',
+  );
+
+  if (response.actionId == 'snooze_action') {
+    final payload = response.payload;
+    if (payload != null) {
+      final uri = Uri.tryParse(payload);
+      final id = uri?.queryParameters['id'] ?? 'snooze_${response.id}';
+      final snoozeMins =
+          int.tryParse(uri?.queryParameters['snoozeMinutes'] ?? '') ?? 10;
+      final title = uri?.queryParameters['title'] ?? 'Fit Host Alarm';
+      final channelName = uri?.queryParameters['channel'] ?? 'workouts';
+
+      await NotificationService.instance.snoozeAlarmDirect(
+        id: id,
+        title: title,
+        body: 'Snoozed alarm ($snoozeMins mins)',
+        snoozeMinutes: snoozeMins,
+        channelName: channelName,
+      );
+    }
+  } else if (response.actionId == 'complete_action') {
+    if (response.id != null) {
+      await FlutterLocalNotificationsPlugin().cancel(id: response.id!);
+    }
+    final payload = response.payload;
+    if (payload != null) {
+      final uri = Uri.tryParse(payload);
+      final id = uri?.queryParameters['id'] ?? payload;
+      NotificationService.instance.handleNotificationAction('complete', id);
+    }
+  } else if (response.actionId == 'dismiss_action') {
+    if (response.id != null) {
+      await FlutterLocalNotificationsPlugin().cancel(id: response.id!);
+    }
+  }
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -72,26 +123,76 @@ class NotificationService {
 
   static NotificationService get instance => _instance;
 
+  static const String keyWizardSkipReminderId = 'setup_wizard_skip_reminder';
+  static const String keyWizardFollowupReminderId =
+      'setup_wizard_reminder_followup';
+
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   FlutterLocalNotificationsPlugin get plugin => _notificationsPlugin;
 
   bool _initialized = false;
+  Future<void>? _initializationFuture;
   bool _notificationsAllowed = true;
+  bool _fullScreenPermissionRequested = false;
   String _quietHoursStart = '22:00';
   String _quietHoursEnd = '07:00';
   bool _quietHoursEnabled = true;
   final List<ScheduledNotificationItem> _scheduledItems = [];
   final _tapController = StreamController<String>.broadcast();
+  final _alarmActionController =
+      StreamController<Map<String, String>>.broadcast();
 
   Stream<String> get onNotificationTap => _tapController.stream;
+  Stream<Map<String, String>> get onAlarmAction =>
+      _alarmActionController.stream;
   List<ScheduledNotificationItem> get scheduledNotifications =>
       List.unmodifiable(_scheduledItems);
   bool get isPermissionGranted => _notificationsAllowed;
   bool get isQuietHoursEnabled => _quietHoursEnabled;
   String get quietHoursStart => _quietHoursStart;
   String get quietHoursEnd => _quietHoursEnd;
+
+  void handleNotificationAction(String action, String id) {
+    _alarmActionController.add({'action': action, 'id': id});
+  }
+
+  Future<bool> areNotificationsEnabled() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    try {
+      final androidImpl = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      return await androidImpl?.areNotificationsEnabled() ?? true;
+    } catch (e) {
+      debugPrint('[NotificationService] Notification state check failed: $e');
+      return false;
+    }
+  }
+
+  Future<AndroidNotificationChannel?> getAlarmChannel() async {
+    if (kIsWeb || !Platform.isAndroid) return null;
+    try {
+      final androidImpl = _notificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final channels = await androidImpl?.getNotificationChannels() ?? const [];
+      for (final channel in channels) {
+        if (channel.id == 'fit_host_alarms_v4' ||
+            channel.id == 'fit_host_alarms_v3' ||
+            channel.id == 'fit_host_alarms_v2' ||
+            channel.id == 'fit_host_alarms') {
+          return channel;
+        }
+      }
+    } catch (e) {
+      debugPrint('[NotificationService] Alarm channel check failed: $e');
+    }
+    return null;
+  }
 
   void configureQuietHours({
     required String start,
@@ -139,23 +240,34 @@ class NotificationService {
     return [hour, minute];
   }
 
-  Future<void> initialize() async {
-    if (_initialized) return;
+  Future<void> initialize() {
+    if (_initialized) return Future<void>.value();
+    final pending = _initializationFuture;
+    if (pending != null) return pending;
+    final future = _initializeInternal();
+    _initializationFuture = future;
+    return future;
+  }
 
+  Future<void> _initializeInternal() async {
     try {
       tz.initializeTimeZones();
     } catch (e) {
       debugPrint('[NotificationService] Timezone init info: $e');
     }
 
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
-        const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+        const androidInit = AndroidInitializationSettings(
+          '@mipmap/ic_launcher',
+        );
         const darwinInit = DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         );
         const initSettings = InitializationSettings(
           android: androidInit,
@@ -166,69 +278,186 @@ class NotificationService {
         await _notificationsPlugin.initialize(
           settings: initSettings,
           onDidReceiveNotificationResponse: (NotificationResponse response) {
-            if (response.payload != null) {
+            if (response.actionId == 'snooze_action') {
+              final payload = response.payload;
+              if (payload != null) {
+                final uri = Uri.tryParse(payload);
+                final id = uri?.queryParameters['id'] ?? payload;
+                final snoozeMins =
+                    int.tryParse(uri?.queryParameters['snoozeMinutes'] ?? '') ??
+                    10;
+                snoozeNotification(id, snoozeMins);
+              }
+            } else if (response.actionId == 'complete_action') {
+              final payload = response.payload;
+              if (payload != null) {
+                final uri = Uri.tryParse(payload);
+                final id = uri?.queryParameters['id'] ?? payload;
+                cancelNotification(id);
+                handleNotificationAction('complete', id);
+              }
+            } else if (response.actionId == 'dismiss_action') {
+              if (response.payload != null) {
+                final uri = Uri.tryParse(response.payload!);
+                final id = uri?.queryParameters['id'] ?? response.payload!;
+                cancelNotification(id);
+              }
+            } else if (response.payload != null) {
               handleNotificationTap(response.payload!);
             }
           },
+          onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
         );
 
-        // Standard Android Notification Channel
-        const androidChannel = AndroidNotificationChannel(
+        // Standard Android Activity Notification Channel v2
+        const standardChannelV2 = AndroidNotificationChannel(
+          'fit_host_notifications_v3',
+          'Fit Host Activity Reminders',
+          description:
+              'Notifications for workouts, meals, hydration, and sleep',
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+        );
+
+        // High-Priority Android Alarm Channel v4 with raw alarm ringtone, looping sound & vibration
+        final alarmChannelV4 = AndroidNotificationChannel(
+          'fit_host_alarms_v4',
+          'Fit Host Alarms & Reminders',
+          description:
+              'High-priority alarms and reminders with continuous ringing, vibration, and lock-screen alerts',
+          importance: Importance.max,
+          playSound: true,
+          sound: const RawResourceAndroidNotificationSound('fit_host_alarm'),
+          enableVibration: true,
+          vibrationPattern: Int64List.fromList(<int>[
+            0,
+            1000,
+            500,
+            1000,
+            500,
+            1000,
+            500,
+          ]),
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+        );
+
+        // Legacy channels for seamless backward compatibility
+        const alarmChannelV2 = AndroidNotificationChannel(
+          'fit_host_alarms_v3',
+          'Fit Host Alarms & Reminders (v3)',
+          description: 'Legacy alarm channel',
+          importance: Importance.max,
+          playSound: true,
+          enableVibration: true,
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+        );
+        const legacyReminderChannel = AndroidNotificationChannel(
           'fit_host_reminders',
-          'Fit Host Reminders',
-          description:
-              'Notifications and alarms for workouts, meals, hydration, and sleep',
-          importance: Importance.max,
-          playSound: true,
-          enableVibration: true,
+          'Fit Host Reminders (Legacy)',
+          description: 'Legacy notification channel',
+          importance: Importance.high,
         );
-
-        // High-Priority Android Alarm Channel with fullScreenIntent support
-        const alarmChannel = AndroidNotificationChannel(
+        const legacyAlarmChannel = AndroidNotificationChannel(
           'fit_host_alarms',
-          'Fit Host Alarms',
-          description:
-              'Continuous alarms and reminders with lock-screen alerts',
+          'Fit Host Alarms (Legacy)',
+          description: 'Legacy alarm channel',
           importance: Importance.max,
-          playSound: true,
-          enableVibration: true,
         );
 
         final androidImpl = _notificationsPlugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>();
-        await androidImpl?.createNotificationChannel(androidChannel);
-        await androidImpl?.createNotificationChannel(alarmChannel);
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+        await androidImpl?.createNotificationChannel(alarmChannelV4);
+        await androidImpl?.createNotificationChannel(standardChannelV2);
+        await androidImpl?.createNotificationChannel(alarmChannelV2);
+        await androidImpl?.createNotificationChannel(legacyReminderChannel);
+        await androidImpl?.createNotificationChannel(legacyAlarmChannel);
       } catch (e) {
         debugPrint('[NotificationService] Native plugin init error: $e');
       }
     }
 
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _notificationsAllowed =
+          prefs.getBool('notification_master_enabled') ?? true;
+    } catch (_) {}
+
     _initialized = true;
-    debugPrint('🔔 [NotificationService] Initialized Flutter Local Notifications & timezone');
+    debugPrint(
+      '🔔 [NotificationService] Initialized Flutter Local Notifications & timezone (allowed: $_notificationsAllowed)',
+    );
+  }
+
+  /// 32-bit FNV-1a hash to guarantee 100% deterministic integer ID across process restarts and VM reboots
+  static int toNotificationId(String id) {
+    var hash = 0x811c9dc5;
+    for (var i = 0; i < id.length; i++) {
+      hash ^= id.codeUnitAt(i);
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
+    }
+    return hash & 0x7FFFFFFF;
+  }
+
+  Future<void> _ensureInitialized() async {
+    if (!_initialized) {
+      await initialize();
+    }
   }
 
   Future<bool> requestPermissions() async {
     _notificationsAllowed = true;
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
         await _notificationsPlugin
             .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>()
+              IOSFlutterLocalNotificationsPlugin
+            >()
             ?.requestPermissions(alert: true, badge: true, sound: true);
 
         await _notificationsPlugin
             .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
+              AndroidFlutterLocalNotificationsPlugin
+            >()
             ?.requestNotificationsPermission();
+
+        if (Platform.isAndroid) {
+          final fullScreenGranted = await _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.requestFullScreenIntentPermission();
+          debugPrint(
+            '[NotificationService] Full-screen alarm permission: '
+            '${fullScreenGranted == true ? 'granted' : 'not granted'}',
+          );
+          _fullScreenPermissionRequested = true;
+        }
       } catch (_) {}
     }
     return true;
   }
 
+  Future<bool> canScheduleExactAlarms() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    try {
+      return await Permission.scheduleExactAlarm.isGranted;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> setPermissionsAllowed(bool allowed) async {
     _notificationsAllowed = allowed;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notification_master_enabled', allowed);
+    } catch (_) {}
     if (!allowed) {
       await cancelAllNotifications();
     }
@@ -241,11 +470,15 @@ class NotificationService {
     required DateTime scheduledTime,
     required NotificationChannelType channel,
     String? payload,
+    int snoozeMinutes = 10,
     bool sound = true,
     bool vibration = true,
   }) async {
+    await _ensureInitialized();
     if (!_notificationsAllowed) {
-      debugPrint('🔔 [NotificationService] Notifications disabled; skipping id: $id');
+      debugPrint(
+        '🔔 [NotificationService] Notifications disabled; skipping id: $id',
+      );
       return;
     }
 
@@ -262,28 +495,39 @@ class NotificationService {
       );
     }
 
+    final effectivePayload =
+        payload ??
+        '/notifications?id=${Uri.encodeComponent(id)}&title=${Uri.encodeComponent(title)}&channel=${channel.name}&snoozeMinutes=$snoozeMinutes';
+
     final item = ScheduledNotificationItem(
       id: id,
       title: title,
       body: body,
       scheduledTime: scheduledTime,
       channel: channel,
-      payload: payload,
+      payload: effectivePayload,
       sound: effectiveSound,
       vibration: effectiveVibration,
     );
 
     _scheduledItems.add(item);
 
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
-        final notifId = id.hashCode.abs() % 2147483647;
+        final notifId = toNotificationId(id);
         var targetTime = scheduledTime;
         if (targetTime.isBefore(DateTime.now())) {
           targetTime = DateTime.now().add(const Duration(seconds: 5));
         }
         final scheduledTz = tz.TZDateTime.from(targetTime, tz.local);
+
+        final canExact = await canScheduleExactAlarms();
+        final scheduleMode = canExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle;
 
         await _notificationsPlugin.zonedSchedule(
           id: notifId,
@@ -292,23 +536,41 @@ class NotificationService {
           scheduledDate: scheduledTz,
           notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
-              'fit_host_reminders',
-              'Fit Host Reminders',
+              'fit_host_notifications_v3',
+              'Fit Host Activity Reminders',
               channelDescription:
-                  'Notifications and alarms for workouts, meals, hydration, and sleep',
-              importance: Importance.max,
+                  'Notifications for workouts, meals, hydration, and sleep',
+              importance: Importance.high,
               priority: Priority.high,
+              category: AndroidNotificationCategory.reminder,
+              audioAttributesUsage: AudioAttributesUsage.notification,
               playSound: effectiveSound,
               enableVibration: effectiveVibration,
+              visibility: NotificationVisibility.public,
+              actions: <AndroidNotificationAction>[
+                AndroidNotificationAction(
+                  'snooze_action',
+                  'Snooze ${snoozeMinutes}m',
+                  showsUserInterface: false,
+                  cancelNotification: true,
+                ),
+                const AndroidNotificationAction(
+                  'dismiss_action',
+                  'Dismiss',
+                  showsUserInterface: false,
+                  cancelNotification: true,
+                ),
+              ],
             ),
             iOS: DarwinNotificationDetails(
               presentAlert: true,
               presentBadge: true,
               presentSound: effectiveSound,
+              interruptionLevel: InterruptionLevel.timeSensitive,
             ),
           ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-          payload: payload,
+          androidScheduleMode: scheduleMode,
+          payload: effectivePayload,
         );
       } catch (e) {
         debugPrint('[NotificationService] zonedSchedule error: $e');
@@ -320,7 +582,7 @@ class NotificationService {
     );
   }
 
-  /// High-priority full-screen alarm with continuous alert attributes
+  /// High-priority full-screen alarm with sound, vibration, and actionable buttons
   Future<void> scheduleAlarm({
     required String id,
     required String title,
@@ -328,11 +590,15 @@ class NotificationService {
     required DateTime scheduledTime,
     required NotificationChannelType channel,
     String? payload,
+    int snoozeMinutes = 10,
     bool sound = true,
     bool vibration = true,
   }) async {
+    await _ensureInitialized();
     if (!_notificationsAllowed) {
-      debugPrint('🔔 [NotificationService] Notifications disabled; skipping alarm: $id');
+      debugPrint(
+        '🔔 [NotificationService] Notifications disabled; skipping alarm: $id',
+      );
       return;
     }
 
@@ -342,8 +608,9 @@ class NotificationService {
     final effectiveSound = sound && !inQuiet;
     final effectiveVibration = vibration && !inQuiet;
 
-    final alarmPayload = payload ??
-        '/alarm?id=${Uri.encodeComponent(id)}&title=${Uri.encodeComponent(title)}&body=${Uri.encodeComponent(body)}&channel=${channel.name}';
+    final alarmPayload =
+        payload ??
+        '/alarm?id=${Uri.encodeComponent(id)}&title=${Uri.encodeComponent(title)}&body=${Uri.encodeComponent(body)}&channel=${channel.name}&snoozeMinutes=$snoozeMinutes';
 
     final item = ScheduledNotificationItem(
       id: id,
@@ -358,15 +625,44 @@ class NotificationService {
 
     _scheduledItems.add(item);
 
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
-        final notifId = id.hashCode.abs() % 2147483647;
+        final notifId = toNotificationId(id);
         var targetTime = scheduledTime;
         if (targetTime.isBefore(DateTime.now())) {
           targetTime = DateTime.now().add(const Duration(seconds: 5));
         }
         final scheduledTz = tz.TZDateTime.from(targetTime, tz.local);
+
+        final canExact = await canScheduleExactAlarms();
+
+        final scheduleMode = canExact
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle;
+
+        if (!canExact) {
+          debugPrint(
+            '🔔 [NotificationService] Exact timing unavailable; using standard notification delivery.',
+          );
+        }
+
+        if (Platform.isAndroid && !_fullScreenPermissionRequested) {
+          final fullScreenGranted = await _notificationsPlugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.requestFullScreenIntentPermission();
+          _fullScreenPermissionRequested = true;
+          if (fullScreenGranted != true) {
+            debugPrint(
+              '[NotificationService] Full-screen alarm permission is not granted; '
+              'Android may show a notification instead of opening the alarm screen.',
+            );
+          }
+        }
 
         await _notificationsPlugin.zonedSchedule(
           id: notifId,
@@ -375,27 +671,69 @@ class NotificationService {
           scheduledDate: scheduledTz,
           notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
-              'fit_host_alarms',
-              'Fit Host Alarms',
+              'fit_host_alarms_v4',
+              'Fit Host Alarms & Reminders',
               channelDescription:
-                  'Continuous alarms and reminders with lock-screen alerts',
+                  'High-priority alarms and reminders with continuous ringing, vibration, and lock-screen alerts',
               importance: Importance.max,
               priority: Priority.max,
               fullScreenIntent: true,
               category: AndroidNotificationCategory.alarm,
               audioAttributesUsage: AudioAttributesUsage.alarm,
+              sound: const RawResourceAndroidNotificationSound(
+                'fit_host_alarm',
+              ),
               playSound: effectiveSound,
               enableVibration: effectiveVibration,
+              vibrationPattern: Int64List.fromList(<int>[
+                0,
+                1000,
+                500,
+                1000,
+                500,
+                1000,
+                500,
+              ]),
+              additionalFlags: Int32List.fromList(
+                <int>[4],
+              ), // Notification.FLAG_INSISTENT: loops alarm ringing continuously!
+              timeoutAfter:
+                  60000, // 60s (1 min) timeout: automatically stops ringing if not snoozed or dismissed!
               visibility: NotificationVisibility.public,
+              actions: <AndroidNotificationAction>[
+                AndroidNotificationAction(
+                  'snooze_action',
+                  'Snooze ${snoozeMinutes}m',
+                  showsUserInterface: false,
+                  cancelNotification: true,
+                ),
+                const AndroidNotificationAction(
+                  'complete_action',
+                  'Mark Complete ✓',
+                  showsUserInterface: false,
+                  cancelNotification: true,
+                ),
+                const AndroidNotificationAction(
+                  'dismiss_action',
+                  'Dismiss',
+                  showsUserInterface: false,
+                  cancelNotification: true,
+                ),
+                const AndroidNotificationAction(
+                  'open_action',
+                  'Open Alarm',
+                  showsUserInterface: true,
+                ),
+              ],
             ),
             iOS: DarwinNotificationDetails(
               presentAlert: true,
               presentBadge: true,
               presentSound: effectiveSound,
-              interruptionLevel: InterruptionLevel.critical,
+              interruptionLevel: InterruptionLevel.timeSensitive,
             ),
           ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          androidScheduleMode: scheduleMode,
           payload: alarmPayload,
         );
       } catch (e) {
@@ -408,21 +746,122 @@ class NotificationService {
     );
   }
 
-  Future<void> cancelNotification(String id) async {
-    _scheduledItems.removeWhere((item) => item.id == id);
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+  Future<void> showImmediateNotification({
+    required String id,
+    required String title,
+    required String body,
+    required NotificationChannelType channel,
+    String? payload,
+    bool sound = true,
+    bool vibration = true,
+  }) async {
+    await _ensureInitialized();
+    if (!_notificationsAllowed) return;
+
+    final inQuiet = isWithinQuietHours(DateTime.now());
+    final effectiveSound = sound && !inQuiet;
+    final effectiveVibration = vibration && !inQuiet;
+
+    final item = ScheduledNotificationItem(
+      id: id,
+      title: title,
+      body: body,
+      scheduledTime: DateTime.now(),
+      channel: channel,
+      payload: payload,
+      sound: effectiveSound,
+      vibration: effectiveVibration,
+    );
+
+    _scheduledItems.add(item);
+
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
-        final notifId = id.hashCode.abs() % 2147483647;
-        await _notificationsPlugin.cancel(id: notifId);
-      } catch (_) {}
+        final notifId = toNotificationId(id);
+        await _notificationsPlugin.show(
+          id: notifId,
+          title: title,
+          body: body,
+          notificationDetails: NotificationDetails(
+            android: AndroidNotificationDetails(
+              'fit_host_reminders',
+              'Fit Host Reminders',
+              channelDescription:
+                  'Notifications and alarms for workouts, meals, hydration, and setup',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: effectiveSound,
+              enableVibration: effectiveVibration,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: effectiveSound,
+              interruptionLevel: InterruptionLevel.timeSensitive,
+            ),
+          ),
+          payload: payload,
+        );
+      } catch (e) {
+        debugPrint('[NotificationService] show error: $e');
+      }
+    }
+    debugPrint(
+      '🔔 [NotificationService] Displayed immediate notification "$title"',
+    );
+  }
+
+  Future<void> cancelNotification(String id) async {
+    _scheduledItems.removeWhere((item) => item.id == id);
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
+    if (!isTest) {
+      final deterministicId = toNotificationId(id);
+      final legacyHashCodeId = id.hashCode.abs() % 2147483647;
+      try {
+        await _notificationsPlugin.cancel(id: deterministicId);
+      } catch (_) {
+        try {
+          await (_notificationsPlugin as dynamic).cancel(deterministicId);
+        } catch (_) {}
+      }
+      if (legacyHashCodeId != deterministicId) {
+        try {
+          await _notificationsPlugin.cancel(id: legacyHashCodeId);
+        } catch (_) {
+          try {
+            await (_notificationsPlugin as dynamic).cancel(legacyHashCodeId);
+          } catch (_) {}
+        }
+      }
     }
     debugPrint('🔔 [NotificationService] Cancelled notification: $id');
   }
 
+  /// Cancels any pending setup wizard reminder notifications for existing accounts or completed setups
+  Future<void> cancelWizardSetupNotifications() async {
+    try {
+      await cancelNotification(keyWizardSkipReminderId);
+      await cancelNotification(keyWizardFollowupReminderId);
+      debugPrint(
+        '🔔 [NotificationService] Cancelled wizard setup reminder notifications',
+      );
+    } catch (e) {
+      debugPrint(
+        '[NotificationService] Cancel wizard setup notifications error: $e',
+      );
+    }
+  }
+
   Future<void> cancelAllNotifications() async {
     _scheduledItems.clear();
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
         await _notificationsPlugin.cancelAll();
@@ -432,48 +871,72 @@ class NotificationService {
   }
 
   Future<void> snoozeNotification(String id, int snoozeMinutes) async {
-    final index = _scheduledItems.indexWhere((item) => item.id == id);
-    if (index != -1) {
-      final existing = _scheduledItems[index];
-      final newTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
-      _scheduledItems[index] = ScheduledNotificationItem(
-        id: existing.id,
-        title: '${existing.title} (Snoozed)',
-        body: existing.body,
-        scheduledTime: newTime,
-        channel: existing.channel,
-        payload: existing.payload,
-        sound: existing.sound,
-        vibration: existing.vibration,
-      );
-
-      await scheduleAlarm(
-        id: existing.id,
-        title: '${existing.title} (Snoozed)',
-        body: existing.body,
-        scheduledTime: newTime,
-        channel: existing.channel,
-        payload: existing.payload,
-        sound: existing.sound,
-        vibration: existing.vibration,
-      );
-
-      debugPrint(
-        '🔔 [NotificationService] Snoozed "$id" for $snoozeMinutes minutes to $newTime with full alarm popup',
-      );
-    } else {
-      final newTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
-      await scheduleAlarm(
-        id: id,
-        title: 'Fit Host Reminder (Snoozed)',
-        body: 'Snoozed health reminder',
-        scheduledTime: newTime,
-        channel: NotificationChannelType.habits,
-      );
-      debugPrint(
-        '🔔 [NotificationService] Fallback Snoozed "$id" for $snoozeMinutes minutes to $newTime',
-      );
+    final existingIndex = _scheduledItems.indexWhere((item) => item.id == id);
+    ScheduledNotificationItem? existing;
+    if (existingIndex != -1) {
+      existing = _scheduledItems[existingIndex];
+      _scheduledItems.removeAt(existingIndex);
     }
+
+    final fireTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
+    final title = existing?.title ?? 'Fit Host Reminder';
+    final body = existing?.body ?? 'Snoozed alert ($snoozeMinutes min)';
+    final channel = existing?.channel ?? NotificationChannelType.workouts;
+    final sound = existing?.sound ?? true;
+    final vibration = existing?.vibration ?? true;
+
+    await cancelNotification(id);
+
+    await scheduleAlarm(
+      id: id,
+      title: title,
+      body: body,
+      scheduledTime: fireTime,
+      channel: channel,
+      snoozeMinutes: snoozeMinutes,
+      sound: sound,
+      vibration: vibration,
+    );
+
+    debugPrint(
+      '🚨 [NotificationService] Reminder "$id" snoozed for $snoozeMinutes minutes until ${fireTime.toLocal()}',
+    );
+  }
+
+  Future<void> snoozeAlarmDirect({
+    required String id,
+    required String title,
+    required String body,
+    required int snoozeMinutes,
+    String channelName = 'workouts',
+  }) async {
+    final channel = NotificationChannelType.values.firstWhere(
+      (c) => c.name.toLowerCase() == channelName.toLowerCase(),
+      orElse: () => NotificationChannelType.workouts,
+    );
+    final targetTime = DateTime.now().add(Duration(minutes: snoozeMinutes));
+    await scheduleAlarm(
+      id: id,
+      title: title,
+      body: body,
+      scheduledTime: targetTime,
+      channel: channel,
+      snoozeMinutes: snoozeMinutes,
+    );
+  }
+
+  /// Helper to test 10-second background alarm execution with ringing popup
+  Future<void> testTenSecondAlarm() async {
+    final fireTime = DateTime.now().add(const Duration(seconds: 10));
+    await scheduleAlarm(
+      id: 'test_10s_alarm_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Fit Host 10-Second Test Alarm',
+      body:
+          'Verified: Real Android alarm fired on schedule with sound & vibration!',
+      scheduledTime: fireTime,
+      channel: NotificationChannelType.workouts,
+      snoozeMinutes: 5,
+    );
   }
 
   /// Helper to test 1-minute background notification execution with ringing popup
@@ -482,7 +945,8 @@ class NotificationService {
     await scheduleAlarm(
       id: 'test_1_min_timer',
       title: 'Fit Host 1-Min Alarm Test',
-      body: 'Your 1-minute reminder test completed successfully! Ringing alarm active.',
+      body:
+          'Your 1-minute reminder test completed successfully! Ringing alarm active.',
       scheduledTime: fireTime,
       channel: NotificationChannelType.habits,
       payload:
@@ -492,10 +956,13 @@ class NotificationService {
 
   /// Checks if the app was launched by tapping an alarm/notification when closed
   Future<String?> getInitialPayload() async {
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains(
+      'Test',
+    );
     if (!isTest) {
       try {
-        final details = await _notificationsPlugin.getNotificationAppLaunchDetails();
+        final details = await _notificationsPlugin
+            .getNotificationAppLaunchDetails();
         if (details != null &&
             details.didNotificationLaunchApp &&
             details.notificationResponse?.payload != null) {

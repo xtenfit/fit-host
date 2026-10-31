@@ -26,7 +26,9 @@ class DiarySearchQueryNotifier extends Notifier<String> {
 }
 
 final diarySearchQueryProvider =
-    NotifierProvider<DiarySearchQueryNotifier, String>(DiarySearchQueryNotifier.new);
+    NotifierProvider<DiarySearchQueryNotifier, String>(
+      DiarySearchQueryNotifier.new,
+    );
 
 final diaryEntriesStreamProvider = StreamProvider<List<DailyDiaryEntry>>((ref) {
   final repo = ref.watch(dailyDiaryRepositoryProvider);

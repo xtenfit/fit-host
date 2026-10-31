@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="workout"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_workout_short"
+        android:shortcutLongLabel="@string/shortcut_workout_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.fithost.fit_host"
+            android:targetClass="com.fithost.fit_host.MainActivity"
+            android:data="io.supabase.fithost://workout" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="hydration"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_hydration_short"
+        android:shortcutLongLabel="@string/shortcut_hydration_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.fithost.fit_host"
+            android:targetClass="com.fithost.fit_host.MainActivity"
+            android:data="io.supabase.fithost://hydration" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="steps"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_steps_short"
+        android:shortcutLongLabel="@string/shortcut_steps_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.fithost.fit_host"
+            android:targetClass="com.fithost.fit_host.MainActivity"
+            android:data="io.supabase.fithost://steps" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="nutrition"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_nutrition_short"
+        android:shortcutLongLabel="@string/shortcut_nutrition_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.fithost.fit_host"
+            android:targetClass="com.fithost.fit_host.MainActivity"
+            android:data="io.supabase.fithost://nutrition" />
+    </shortcut>
+</shortcuts>

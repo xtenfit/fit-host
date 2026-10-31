@@ -25,10 +25,8 @@ class DayDetailBottomSheet extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => DayDetailBottomSheet(
-        daySummary: daySummary,
-        onAddEvent: onAddEvent,
-      ),
+      builder: (ctx) =>
+          DayDetailBottomSheet(daySummary: daySummary, onAddEvent: onAddEvent),
     );
   }
 
@@ -36,7 +34,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final formattedDate = DateFormat('EEEE, MMMM d, yyyy').format(daySummary.date);
+    final formattedDate = DateFormat(
+      'EEEE, MMMM d, yyyy',
+    ).format(daySummary.date);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -89,11 +89,20 @@ class DayDetailBottomSheet extends ConsumerWidget {
                       Row(
                         children: [
                           if (daySummary.hasWorkout)
-                            _TagBadge(label: 'Workout Done', color: AppColors.electricBlue),
+                            _TagBadge(
+                              label: 'Workout Done',
+                              color: AppColors.electricBlue,
+                            ),
                           if (daySummary.hasMealLogged)
-                            _TagBadge(label: 'Meals Tracked', color: const Color(0xFF22C55E)),
+                            _TagBadge(
+                              label: 'Meals Tracked',
+                              color: const Color(0xFF22C55E),
+                            ),
                           if (daySummary.isStepsGoalMet())
-                            _TagBadge(label: 'Step Goal Met 🎯', color: const Color(0xFFF59E0B)),
+                            _TagBadge(
+                              label: 'Step Goal Met 🎯',
+                              color: const Color(0xFFF59E0B),
+                            ),
                         ],
                       ),
                     ],
@@ -111,10 +120,14 @@ class DayDetailBottomSheet extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFF8FAFC),
+                  color: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
                 child: Row(
@@ -127,12 +140,20 @@ class DayDetailBottomSheet extends ConsumerWidget {
                           height: 56,
                           child: CircularProgressIndicator(
                             value: (daySummary.steps / 10000.0).clamp(0.0, 1.0),
-                            backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
-                            valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981)),
+                            backgroundColor: isDark
+                                ? Colors.white12
+                                : Colors.grey[200],
+                            valueColor: const AlwaysStoppedAnimation(
+                              Color(0xFF10B981),
+                            ),
                             strokeWidth: 5,
                           ),
                         ),
-                        const Icon(Icons.directions_walk_rounded, color: Color(0xFF10B981), size: 24),
+                        const Icon(
+                          Icons.directions_walk_rounded,
+                          color: Color(0xFF10B981),
+                          size: 24,
+                        ),
                       ],
                     ),
                     const SizedBox(width: 16),
@@ -165,7 +186,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                             'Target: 10,000 steps • ${((daySummary.steps / 10000) * 100).toInt()}% completed',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                         ],
@@ -184,7 +207,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFF8FAFC),
+                        color: isDark
+                            ? AppColors.darkSurfaceElevated
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Column(
@@ -192,18 +217,29 @@ class DayDetailBottomSheet extends ConsumerWidget {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.fitness_center_rounded, size: 16, color: AppColors.electricBlue),
+                              Icon(
+                                Icons.fitness_center_rounded,
+                                size: 16,
+                                color: AppColors.electricBlue,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Workout',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.electricBlue),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.electricBlue,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '${daySummary.workoutCount} completed',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                           Text(
                             '${daySummary.workoutDurationMin} mins active',
@@ -221,7 +257,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFF8FAFC),
+                        color: isDark
+                            ? AppColors.darkSurfaceElevated
+                            : const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Column(
@@ -229,18 +267,29 @@ class DayDetailBottomSheet extends ConsumerWidget {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.local_fire_department_rounded, size: 16, color: Color(0xFFFF5252)),
+                              Icon(
+                                Icons.local_fire_department_rounded,
+                                size: 16,
+                                color: Color(0xFFFF5252),
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Calories Burned',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFFF5252)),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF5252),
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
                           Text(
                             '${daySummary.caloriesBurned} kcal',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                           Text(
                             'Workouts + movement',
@@ -286,10 +335,14 @@ class DayDetailBottomSheet extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFF8FAFC),
+                      color: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     child: Column(
@@ -300,7 +353,10 @@ class DayDetailBottomSheet extends ConsumerWidget {
                           children: [
                             const Text(
                               'Nutrition & Water Logged',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 14,
+                              ),
                             ),
                             Text(
                               '${daySummary.caloriesIn} kcal In',
@@ -316,9 +372,14 @@ class DayDetailBottomSheet extends ConsumerWidget {
 
                         // Calories In vs Out Balance
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF141923) : Colors.grey[200],
+                            color: isDark
+                                ? const Color(0xFF141923)
+                                : Colors.grey[200],
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -329,7 +390,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : Colors.black87,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black87,
                                 ),
                               ),
                               Text(
@@ -337,7 +400,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: daySummary.netCalories <= 0 ? const Color(0xFF22C55E) : const Color(0xFFFF9500),
+                                  color: daySummary.netCalories <= 0
+                                      ? const Color(0xFF22C55E)
+                                      : const Color(0xFFFF9500),
                                 ),
                               ),
                             ],
@@ -348,10 +413,26 @@ class DayDetailBottomSheet extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _MacroItem(label: 'Protein', value: '${daySummary.proteinG}g', color: const Color(0xFF3B82F6)),
-                            _MacroItem(label: 'Carbs', value: '${daySummary.carbsG}g', color: const Color(0xFFF59E0B)),
-                            _MacroItem(label: 'Fats', value: '${daySummary.fatsG}g', color: const Color(0xFFEC4899)),
-                            _MacroItem(label: 'Water', value: '${daySummary.waterMl}ml', color: const Color(0xFF06B6D4)),
+                            _MacroItem(
+                              label: 'Protein',
+                              value: '${daySummary.proteinG}g',
+                              color: const Color(0xFF3B82F6),
+                            ),
+                            _MacroItem(
+                              label: 'Carbs',
+                              value: '${daySummary.carbsG}g',
+                              color: const Color(0xFFF59E0B),
+                            ),
+                            _MacroItem(
+                              label: 'Fats',
+                              value: '${daySummary.fatsG}g',
+                              color: const Color(0xFFEC4899),
+                            ),
+                            _MacroItem(
+                              label: 'Water',
+                              value: '${daySummary.waterMl}ml',
+                              color: const Color(0xFF06B6D4),
+                            ),
                           ],
                         ),
 
@@ -362,7 +443,12 @@ class DayDetailBottomSheet extends ConsumerWidget {
                           const SizedBox(height: 10),
                           const Text(
                             'MEAL BREAKDOWN',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.8,
+                              color: Colors.grey,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Wrap(
@@ -370,13 +456,25 @@ class DayDetailBottomSheet extends ConsumerWidget {
                             runSpacing: 4,
                             children: [
                               if (breakfastCal > 0)
-                                _MealTypeChip(label: '🌅 Breakfast', calories: breakfastCal),
+                                _MealTypeChip(
+                                  label: '🌅 Breakfast',
+                                  calories: breakfastCal,
+                                ),
                               if (lunchCal > 0)
-                                _MealTypeChip(label: '☀️ Lunch', calories: lunchCal),
+                                _MealTypeChip(
+                                  label: '☀️ Lunch',
+                                  calories: lunchCal,
+                                ),
                               if (dinnerCal > 0)
-                                _MealTypeChip(label: '🌙 Dinner', calories: dinnerCal),
+                                _MealTypeChip(
+                                  label: '🌙 Dinner',
+                                  calories: dinnerCal,
+                                ),
                               if (snackCal > 0)
-                                _MealTypeChip(label: '🍎 Snacks', calories: snackCal),
+                                _MealTypeChip(
+                                  label: '🍎 Snacks',
+                                  calories: snackCal,
+                                ),
                             ],
                           ),
                           const SizedBox(height: 10),
@@ -389,24 +487,33 @@ class DayDetailBottomSheet extends ConsumerWidget {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           meal.name,
-                                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13,
+                                          ),
                                         ),
                                         Text(
                                           '${meal.portion} • P: ${meal.proteinGrams.toStringAsFixed(1)}g • ${meal.calories} kcal',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                            color: isDark
+                                                ? AppColors.darkTextSecondary
+                                                : AppColors.lightTextSecondary,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.edit_outlined, size: 16),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 16,
+                                    ),
                                     onPressed: () {
                                       Navigator.pop(context);
                                       context.push('/nutrition/diary');
@@ -433,14 +540,16 @@ class DayDetailBottomSheet extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        context.push('/workouts');
+                        context.go('/workouts');
                       },
                       icon: const Icon(Icons.add_rounded, size: 16),
                       label: const Text('Workout'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.electricBlue,
                         side: const BorderSide(color: AppColors.electricBlue),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -449,14 +558,16 @@ class DayDetailBottomSheet extends ConsumerWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        context.push('/nutrition');
+                        context.go('/nutrition');
                       },
                       icon: const Icon(Icons.restaurant_rounded, size: 16),
                       label: const Text('Meal'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF22C55E),
                         side: const BorderSide(color: Color(0xFF22C55E)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -472,7 +583,9 @@ class DayDetailBottomSheet extends ConsumerWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF06B6D4),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -537,10 +650,7 @@ class _MacroItem extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Colors.grey),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }

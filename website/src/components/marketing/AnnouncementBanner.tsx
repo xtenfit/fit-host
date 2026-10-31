@@ -1,9 +1,48 @@
 import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { getLatestMobileRelease } from "@/lib/github/releases";
+import { getActiveAnnouncement } from "@/lib/content/public";
 
 export default async function AnnouncementBanner() {
+  const managed = await getActiveAnnouncement();
   const latest = await getLatestMobileRelease();
+  if (managed) {
+    return (
+      <div
+        className="relative border-b px-4 py-2.5"
+        style={{ backgroundColor: managed.background_color, color: managed.text_color, borderColor: `${managed.accent_color}55` }}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 text-xs sm:text-sm">
+          <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+            <span
+              className="flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: managed.accent_color, borderColor: `${managed.accent_color}55`, backgroundColor: `${managed.accent_color}1a` }}
+            >
+              <Sparkles className="h-3 w-3" />
+              {managed.label}
+            </span>
+            <span className="truncate">
+              <strong className="hidden sm:inline">{managed.headline}</strong>
+              <span className="sm:hidden">{managed.message}</span>
+              <span className="hidden sm:inline"> — {managed.message}</span>
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-3">
+            {managed.primary_label && managed.primary_url && (
+              <a href={managed.primary_url} className="hidden font-bold sm:inline" style={{ color: managed.accent_color }}>
+                {managed.primary_label}
+              </a>
+            )}
+            {managed.secondary_label && managed.secondary_url && (
+              <a href={managed.secondary_url} className="font-bold" style={{ color: managed.accent_color }}>
+                {managed.secondary_label} <ArrowRight className="inline h-3 w-3" />
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!latest) return null;
 
   return (

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
-import 'package:fit_host/core/services/image_compression_service.dart';
+import 'package:fit_host/core/services/profile_avatar_service.dart';
 
 class AvatarOption {
   final String id;
@@ -62,17 +62,21 @@ List<AvatarOption> getAvailableAvatarOptions(String? userGender) {
   final g = (userGender ?? '').trim().toLowerCase();
   if (g == 'male') {
     return kAllAvatarOptions
-        .where((o) =>
-            o.genderCategory == 'male' ||
-            o.genderCategory == 'neutral' ||
-            o.genderCategory == 'dynamic')
+        .where(
+          (o) =>
+              o.genderCategory == 'male' ||
+              o.genderCategory == 'neutral' ||
+              o.genderCategory == 'dynamic',
+        )
         .toList();
   } else if (g == 'female') {
     return kAllAvatarOptions
-        .where((o) =>
-            o.genderCategory == 'female' ||
-            o.genderCategory == 'neutral' ||
-            o.genderCategory == 'dynamic')
+        .where(
+          (o) =>
+              o.genderCategory == 'female' ||
+              o.genderCategory == 'neutral' ||
+              o.genderCategory == 'dynamic',
+        )
         .toList();
   }
   return kAllAvatarOptions;
@@ -82,8 +86,9 @@ String? getAvatarAssetPath(String? avatarId) {
   if (avatarId == null || avatarId.isEmpty || avatarId == 'initial') {
     return null;
   }
-  final normalized =
-      avatarId.startsWith('avatar_') ? avatarId : 'avatar_$avatarId';
+  final normalized = avatarId.startsWith('avatar_')
+      ? avatarId
+      : 'avatar_$avatarId';
   for (final opt in kAllAvatarOptions) {
     if (opt.id == normalized || opt.id == avatarId) {
       return opt.assetPath;
@@ -126,12 +131,56 @@ class AppAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assetPath = getAvatarAssetPath(avatarId);
+    final resolvedUrlAsset = getAvatarAssetPath(avatarUrl);
+    final resolvedIdAsset = getAvatarAssetPath(avatarId);
+    final fallbackAsset = resolvedUrlAsset ?? resolvedIdAsset;
+    final cleanId = avatarId?.trim();
+    final cleanUrl = avatarUrl?.trim();
     final borderCol = borderColor ?? AppColors.limeGreen;
 
     Widget content;
-    if (avatarUrl != null && avatarUrl!.trim().isNotEmpty) {
-      final cleanUrl = avatarUrl!.trim();
+
+    // 1. Check if user selected/captured a local photo in avatarId
+    if (!kIsWeb &&
+        cleanId != null &&
+        cleanId.isNotEmpty &&
+        cleanId != 'initial' &&
+        File(cleanId).existsSync()) {
+      content = ClipOval(
+        child: Image.file(
+          File(cleanId),
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => resolvedIdAsset != null
+              ? _buildAsset(resolvedIdAsset)
+              : _buildInitialFallback(),
+        ),
+      );
+    }
+    // 2. Check if avatarId is a cloud network URL
+    else if (cleanId != null &&
+        (cleanId.startsWith('http://') || cleanId.startsWith('https://'))) {
+      content = ClipOval(
+        child: Image.network(
+          cleanId,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => resolvedIdAsset != null
+              ? _buildAsset(resolvedIdAsset)
+              : _buildInitialFallback(),
+        ),
+      );
+    }
+    // 3. Check if avatarId is a bundled asset
+    else if (cleanId != null &&
+        (cleanId.startsWith('assets/') || resolvedIdAsset != null)) {
+      final path = cleanId.startsWith('assets/') ? cleanId : resolvedIdAsset!;
+      content = _buildAsset(path);
+    }
+    // 4. Check if external avatarUrl is provided (e.g. Google profile)
+    else if (cleanUrl != null && cleanUrl.isNotEmpty) {
       if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
         content = ClipOval(
           child: Image.network(
@@ -139,8 +188,9 @@ class AppAvatar extends StatelessWidget {
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                assetPath != null ? _buildAsset(assetPath) : _buildInitialFallback(),
+            errorBuilder: (context, error, stackTrace) => fallbackAsset != null
+                ? _buildAsset(fallbackAsset)
+                : _buildInitialFallback(),
           ),
         );
       } else if (!kIsWeb && File(cleanUrl).existsSync()) {
@@ -150,27 +200,21 @@ class AppAvatar extends StatelessWidget {
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                assetPath != null ? _buildAsset(assetPath) : _buildInitialFallback(),
+            errorBuilder: (context, error, stackTrace) => fallbackAsset != null
+                ? _buildAsset(fallbackAsset)
+                : _buildInitialFallback(),
           ),
         );
-      } else {
+      } else if (cleanUrl.startsWith('assets/')) {
         content = _buildAsset(cleanUrl);
+      } else if (resolvedUrlAsset != null) {
+        content = _buildAsset(resolvedUrlAsset);
+      } else {
+        content = _buildInitialFallback();
       }
-    } else if (!kIsWeb && avatarId != null && avatarId!.isNotEmpty && File(avatarId!).existsSync()) {
-      content = ClipOval(
-        child: Image.file(
-          File(avatarId!),
-          width: radius * 2,
-          height: radius * 2,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              assetPath != null ? _buildAsset(assetPath) : _buildInitialFallback(),
-        ),
-      );
-    } else if (assetPath != null) {
-      content = _buildAsset(assetPath);
-    } else {
+    }
+    // 5. Fallback to initial monogram
+    else {
       content = _buildInitialFallback();
     }
 
@@ -192,10 +236,7 @@ class AppAvatar extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: container,
-      );
+      return GestureDetector(onTap: onTap, child: container);
     }
     return container;
   }
@@ -270,7 +311,9 @@ class AvatarPickerSheet extends StatelessWidget {
         color: isDark ? AppColors.darkBackground : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Column(
@@ -322,7 +365,9 @@ class AvatarPickerSheet extends StatelessWidget {
             'Select a profile persona or your dynamic monogram initials.',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 20),
@@ -340,8 +385,10 @@ class AvatarPickerSheet extends StatelessWidget {
             itemCount: options.length,
             itemBuilder: (context, index) {
               final opt = options[index];
-              final isSelected = selectedId == opt.id ||
-                  (selectedId.replaceFirst('avatar_', '') == opt.id.replaceFirst('avatar_', ''));
+              final isSelected =
+                  selectedId == opt.id ||
+                  (selectedId.replaceFirst('avatar_', '') ==
+                      opt.id.replaceFirst('avatar_', ''));
 
               return GestureDetector(
                 onTap: () => onSelected(opt.id),
@@ -351,14 +398,16 @@ class AvatarPickerSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isDark
                         ? (isSelected
-                            ? AppColors.limeGreen.withValues(alpha: 0.12)
-                            : AppColors.darkSurface)
+                              ? AppColors.limeGreen.withValues(alpha: 0.12)
+                              : AppColors.darkSurface)
                         : (isSelected
-                            ? AppColors.limeGreen.withValues(alpha: 0.15)
-                            : Colors.grey.shade100),
+                              ? AppColors.limeGreen.withValues(alpha: 0.15)
+                              : Colors.grey.shade100),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected ? AppColors.limeGreen : Colors.transparent,
+                      color: isSelected
+                          ? AppColors.limeGreen
+                          : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -372,7 +421,9 @@ class AvatarPickerSheet extends StatelessWidget {
                             avatarId: opt.id,
                             name: userName,
                             radius: 28,
-                            borderColor: isSelected ? AppColors.limeGreen : Colors.grey.shade600,
+                            borderColor: isSelected
+                                ? AppColors.limeGreen
+                                : Colors.grey.shade600,
                           ),
                           if (isSelected)
                             Positioned(
@@ -401,7 +452,9 @@ class AvatarPickerSheet extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                          fontWeight: isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w600,
                           color: isSelected
                               ? AppColors.limeGreen
                               : (isDark ? Colors.white70 : Colors.black87),
@@ -437,7 +490,9 @@ Future<String?> showPhotoOrAvatarPicker(
         color: isDark ? AppColors.darkBackground : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Column(
@@ -469,7 +524,9 @@ Future<String?> showPhotoOrAvatarPicker(
             'Capture with camera, upload from gallery, or choose an avatar',
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -483,11 +540,23 @@ Future<String?> showPhotoOrAvatarPicker(
                 color: AppColors.limeGreen.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.camera_alt_rounded, color: AppColors.limeGreen, size: 22),
+              child: const Icon(
+                Icons.camera_alt_rounded,
+                color: AppColors.limeGreen,
+                size: 22,
+              ),
             ),
-            title: const Text('Take Photo with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: const Text('Capture your athletic progress photo', style: TextStyle(fontSize: 12)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: const Text(
+              'Take Photo with Camera',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text(
+              'Capture your athletic progress photo',
+              style: TextStyle(fontSize: 12),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             onTap: () => Navigator.of(ctx).pop('camera'),
           ),
           const SizedBox(height: 6),
@@ -500,11 +569,23 @@ Future<String?> showPhotoOrAvatarPicker(
                 color: AppColors.electricCyan.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.photo_library_rounded, color: AppColors.electricCyan, size: 22),
+              child: const Icon(
+                Icons.photo_library_rounded,
+                color: AppColors.electricCyan,
+                size: 22,
+              ),
             ),
-            title: const Text('Upload from Photo Gallery', style: TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: const Text('Select a portrait from your device', style: TextStyle(fontSize: 12)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: const Text(
+              'Upload from Photo Gallery',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text(
+              'Select a portrait from your device',
+              style: TextStyle(fontSize: 12),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             onTap: () => Navigator.of(ctx).pop('gallery'),
           ),
           const SizedBox(height: 6),
@@ -517,11 +598,23 @@ Future<String?> showPhotoOrAvatarPicker(
                 color: Colors.purpleAccent.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.face_retouching_natural_rounded, color: Colors.purpleAccent, size: 22),
+              child: const Icon(
+                Icons.face_retouching_natural_rounded,
+                color: Colors.purpleAccent,
+                size: 22,
+              ),
             ),
-            title: const Text('Choose Stylized Avatar', style: TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: const Text('Select one of our illustrated athlete characters', style: TextStyle(fontSize: 12)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: const Text(
+              'Choose Stylized Avatar',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: const Text(
+              'Select one of our illustrated athlete characters',
+              style: TextStyle(fontSize: 12),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             onTap: () => Navigator.of(ctx).pop('avatar'),
           ),
         ],
@@ -539,8 +632,10 @@ Future<String?> showPhotoOrAvatarPicker(
         imageQuality: 85,
       );
       if (xFile != null) {
-        final compressed = await ImageCompressionService.compressImage(File(xFile.path));
-        return compressed.path;
+        final stored = await ProfileAvatarService.processAndStoreDeviceAvatar(
+          File(xFile.path),
+        );
+        return stored.path;
       }
     } catch (e) {
       debugPrint('[AvatarPicker] Camera capture error: $e');
@@ -555,23 +650,29 @@ Future<String?> showPhotoOrAvatarPicker(
         imageQuality: 85,
       );
       if (xFile != null) {
-        final compressed = await ImageCompressionService.compressImage(File(xFile.path));
-        return compressed.path;
+        final stored = await ProfileAvatarService.processAndStoreDeviceAvatar(
+          File(xFile.path),
+        );
+        return stored.path;
       }
     } catch (e) {
       debugPrint('[AvatarPicker] Gallery pick error: $e');
     }
   } else if (action == 'avatar') {
     if (context.mounted) {
-      return await AvatarPickerSheet.show(
+      final selected = await AvatarPickerSheet.show(
         context,
         currentAvatarId: currentAvatarId,
         userGender: userGender,
         userName: userName,
       );
+      if (selected != null) {
+        // User chose a bundled asset avatar: clean up any stored custom device photo
+        await ProfileAvatarService.clearDeviceAvatarStore();
+        return selected;
+      }
     }
   }
 
   return null;
 }
-

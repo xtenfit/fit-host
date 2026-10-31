@@ -29,8 +29,14 @@ class OnboardingState {
   final double? hipCm;
   final double? chestCm;
   final double? neckCm;
+  final double? armsCm;
+  final double? thighsCm;
+  final double? calvesCm;
+  final double? shouldersCm;
+  final String? measurementNotes;
   // Step 6: Main Goal
-  final List<String> goals; // 'lose_weight', 'build_muscle', 'recomp', 'maintain'
+  final List<String>
+  goals; // 'lose_weight', 'build_muscle', 'recomp', 'maintain'
   // Step 7: Target Timeline
   final int targetWeeks; // 4 to 52
   // Step 8: Focus Areas
@@ -50,7 +56,8 @@ class OnboardingState {
   final bool usesEveryDay;
   final int sessionDurationMinutes; // 15 to 120 or custom up to 180
   // Step 13: Diet
-  final String dietPreference; // 'vegetarian', 'non_vegetarian', 'eggetarian', 'vegan', 'pescatarian', 'other'
+  final String
+  dietPreference; // 'vegetarian', 'non_vegetarian', 'eggetarian', 'vegan', 'pescatarian', 'other'
   final String allergies;
   // Step 14: Meals
   final int mealsPerDay; // 2 to 6
@@ -64,7 +71,8 @@ class OnboardingState {
   final String quietHoursStart;
   final String quietHoursEnd;
   // Step 16: Lifestyle
-  final String activityLevel; // 'sedentary', 'lightly_active', 'moderately_active', 'very_active'
+  final String
+  activityLevel; // 'sedentary', 'lightly_active', 'moderately_active', 'very_active'
   final double sleepHours;
   final int workHours;
   final String stressLevel; // 'low', 'moderate', 'high'
@@ -78,16 +86,21 @@ class OnboardingState {
   const OnboardingState({
     this.currentStep = 1,
     this.gender,
-    this.age = 26,
-    this.heightCm = 175.0,
-    this.weightKg = 72.0,
-    this.targetWeightKg = 70.0,
+    this.age = 0,
+    this.heightCm = 0.0,
+    this.weightKg = 0.0,
+    this.targetWeightKg,
     this.useMetricUnits = true,
     this.bodyFatPercentage,
     this.waistCm,
     this.hipCm,
     this.chestCm,
     this.neckCm,
+    this.armsCm,
+    this.thighsCm,
+    this.calvesCm,
+    this.shouldersCm,
+    this.measurementNotes,
     this.goals = const ['build_muscle'],
     this.targetWeeks = 12,
     this.focusAreas = const ['Full Body'],
@@ -203,6 +216,11 @@ class OnboardingState {
     double? hipCm,
     double? chestCm,
     double? neckCm,
+    double? armsCm,
+    double? thighsCm,
+    double? calvesCm,
+    double? shouldersCm,
+    String? measurementNotes,
     List<String>? goals,
     int? targetWeeks,
     List<String>? focusAreas,
@@ -255,6 +273,11 @@ class OnboardingState {
       hipCm: hipCm ?? this.hipCm,
       chestCm: chestCm ?? this.chestCm,
       neckCm: neckCm ?? this.neckCm,
+      armsCm: armsCm ?? this.armsCm,
+      thighsCm: thighsCm ?? this.thighsCm,
+      calvesCm: calvesCm ?? this.calvesCm,
+      shouldersCm: shouldersCm ?? this.shouldersCm,
+      measurementNotes: measurementNotes ?? this.measurementNotes,
       goals: goals ?? this.goals,
       targetWeeks: targetWeeks ?? this.targetWeeks,
       focusAreas: focusAreas ?? this.focusAreas,
@@ -274,8 +297,7 @@ class OnboardingState {
       dailyWaterMl: dailyWaterMl ?? this.dailyWaterMl,
       waterUnit: waterUnit ?? this.waterUnit,
       drinkingFrequency: drinkingFrequency ?? this.drinkingFrequency,
-      enableWaterReminders:
-          enableWaterReminders ?? this.enableWaterReminders,
+      enableWaterReminders: enableWaterReminders ?? this.enableWaterReminders,
       reminderFrequencyHours:
           reminderFrequencyHours ?? this.reminderFrequencyHours,
       quietHoursStart: quietHoursStart ?? this.quietHoursStart,
@@ -308,6 +330,11 @@ class OnboardingState {
       'hipCm': hipCm,
       'chestCm': chestCm,
       'neckCm': neckCm,
+      'armsCm': armsCm,
+      'thighsCm': thighsCm,
+      'calvesCm': calvesCm,
+      'shouldersCm': shouldersCm,
+      'measurementNotes': measurementNotes,
       'goals': goals,
       'targetWeeks': targetWeeks,
       'focusAreas': focusAreas,
@@ -358,37 +385,47 @@ class OnboardingState {
     return OnboardingState(
       currentStep: json['currentStep'] as int? ?? 1,
       gender: json['gender'] as String?,
-      age: json['age'] as int? ?? 26,
-      heightCm: (json['heightCm'] as num?)?.toDouble() ?? 175.0,
-      weightKg: (json['weightKg'] as num?)?.toDouble() ?? 72.0,
-      targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble() ?? 70.0,
+      age: json['age'] as int? ?? 0,
+      heightCm: (json['heightCm'] as num?)?.toDouble() ?? 0.0,
+      weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0.0,
+      targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble(),
       useMetricUnits: json['useMetricUnits'] as bool? ?? true,
       bodyFatPercentage: (json['bodyFatPercentage'] as num?)?.toDouble(),
       waistCm: (json['waistCm'] as num?)?.toDouble(),
       hipCm: (json['hipCm'] as num?)?.toDouble(),
       chestCm: (json['chestCm'] as num?)?.toDouble(),
       neckCm: (json['neckCm'] as num?)?.toDouble(),
-      goals: (json['goals'] as List<dynamic>?)
+      armsCm: (json['armsCm'] as num?)?.toDouble(),
+      thighsCm: (json['thighsCm'] as num?)?.toDouble(),
+      calvesCm: (json['calvesCm'] as num?)?.toDouble(),
+      shouldersCm: (json['shouldersCm'] as num?)?.toDouble(),
+      measurementNotes: json['measurementNotes'] as String?,
+      goals:
+          (json['goals'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const ['build_muscle'],
       targetWeeks: json['targetWeeks'] as int? ?? 12,
-      focusAreas: (json['focusAreas'] as List<dynamic>?)
+      focusAreas:
+          (json['focusAreas'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const ['Full Body'],
-      genderSpecificGoals: (json['genderSpecificGoals'] as List<dynamic>?)
+      genderSpecificGoals:
+          (json['genderSpecificGoals'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
       experienceLevel: json['experienceLevel'] as String? ?? 'intermediate',
       workoutLocations: parsedLocations,
-      equipment: (json['equipment'] as List<dynamic>?)
+      equipment:
+          (json['equipment'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const ['Dumbbells', 'Barbells'],
       workoutDaysPerWeek: json['workoutDaysPerWeek'] as int? ?? 4,
-      selectedWeekdays: (json['selectedWeekdays'] as List<dynamic>?)
+      selectedWeekdays:
+          (json['selectedWeekdays'] as List<dynamic>?)
               ?.map((e) => (e as num).toInt())
               .toList() ??
           const [0, 1, 2, 3],
@@ -397,9 +434,12 @@ class OnboardingState {
       dietPreference: json['dietPreference'] as String? ?? 'non_vegetarian',
       allergies: json['allergies'] as String? ?? '',
       mealsPerDay: json['mealsPerDay'] as int? ?? 3,
-      mealSchedules: (json['mealSchedules'] as List<dynamic>?)
-              ?.map((e) =>
-                  OnboardingMealSchedule.fromJson(e as Map<String, dynamic>))
+      mealSchedules:
+          (json['mealSchedules'] as List<dynamic>?)
+              ?.map(
+                (e) =>
+                    OnboardingMealSchedule.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           const [
             OnboardingMealSchedule(name: 'Breakfast', time: '08:30 AM'),
@@ -408,7 +448,8 @@ class OnboardingState {
           ],
       dailyWaterMl: json['dailyWaterMl'] as int? ?? 2500,
       waterUnit: json['waterUnit'] as String? ?? 'ml',
-      drinkingFrequency: json['drinkingFrequency'] as String? ?? 'every_2_hours',
+      drinkingFrequency:
+          json['drinkingFrequency'] as String? ?? 'every_2_hours',
       enableWaterReminders: json['enableWaterReminders'] as bool? ?? false,
       reminderFrequencyHours: json['reminderFrequencyHours'] as int? ?? 2,
       quietHoursStart: json['quietHoursStart'] as String? ?? '10:00 PM',
@@ -421,7 +462,8 @@ class OnboardingState {
           json['workoutTimePreference'] as String? ?? 'morning',
       beveragePreferences:
           json['beveragePreferences'] as String? ?? 'Water, Coffee',
-      motivations: (json['motivations'] as List<dynamic>?)
+      motivations:
+          (json['motivations'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const ['improve_health'],

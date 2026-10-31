@@ -57,8 +57,12 @@ class AlarmSoundSettings {
       fullVolumeBoost: fullVolumeBoost ?? this.fullVolumeBoost,
       vibrationPattern: vibrationPattern ?? this.vibrationPattern,
       activitySounds: activitySounds ?? this.activitySounds,
-      customAudioPath: clearCustomAudio ? null : (customAudioPath ?? this.customAudioPath),
-      customAudioName: clearCustomAudio ? null : (customAudioName ?? this.customAudioName),
+      customAudioPath: clearCustomAudio
+          ? null
+          : (customAudioPath ?? this.customAudioPath),
+      customAudioName: clearCustomAudio
+          ? null
+          : (customAudioName ?? this.customAudioName),
     );
   }
 }
@@ -88,6 +92,15 @@ class AlarmSoundService {
       frequencies: [587.33, 880.0, 1174.66],
       durationSeconds: 1.4,
       category: 'Steps & Cardio',
+    ),
+    SoundPreset(
+      id: 'victory_fanfare',
+      name: 'Victory Fanfare',
+      description:
+          'Bright ascending fanfare for completed plans and milestones',
+      frequencies: [523.25, 659.25, 783.99, 1046.50],
+      durationSeconds: 1.8,
+      category: 'Achievements',
     ),
     SoundPreset(
       id: 'titan_horn',
@@ -208,10 +221,7 @@ class AlarmSoundService {
   }
 
   List<int> _int16ToBytes(int value) {
-    return [
-      value & 0xFF,
-      (value >> 8) & 0xFF,
-    ];
+    return [value & 0xFF, (value >> 8) & 0xFF];
   }
 
   /// Picks an audio file from the user's device and saves it to app storage
@@ -262,6 +272,9 @@ class AlarmSoundService {
 
   /// Plays preview of sound preset or custom audio
   Future<void> previewSound(String soundId, {bool boostVolume = false}) async {
+    if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
     try {
       await player.stop();
 
@@ -295,7 +308,10 @@ class AlarmSoundService {
   bool get isContinuousAlarmRinging => _isContinuousAlarmRinging;
 
   /// Starts continuous ringing of alarm sound in a loop until dismissed
-  Future<void> startContinuousAlarm({String? soundId, bool boostVolume = true}) async {
+  Future<void> startContinuousAlarm({
+    String? soundId,
+    bool boostVolume = true,
+  }) async {
     _isContinuousAlarmRinging = true;
     if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) {
       return;
@@ -365,7 +381,14 @@ class AlarmSoundService {
       customName = null;
     }
 
-    final activities = ['workout', 'hydration', 'nutrition', 'steps', 'diary', 'recovery'];
+    final activities = [
+      'workout',
+      'hydration',
+      'nutrition',
+      'steps',
+      'diary',
+      'recovery',
+    ];
     final Map<String, String> activitySounds = {};
 
     for (final act in activities) {
@@ -441,8 +464,8 @@ final alarmSoundServiceProvider = Provider<AlarmSoundService>((ref) {
 
 final alarmSoundSettingsProvider =
     AsyncNotifierProvider<AlarmSoundSettingsNotifier, AlarmSoundSettings>(
-  AlarmSoundSettingsNotifier.new,
-);
+      AlarmSoundSettingsNotifier.new,
+    );
 
 class AlarmSoundSettingsNotifier extends AsyncNotifier<AlarmSoundSettings> {
   @override
@@ -498,7 +521,9 @@ class AlarmSoundSettingsNotifier extends AsyncNotifier<AlarmSoundSettings> {
       final current = state.value;
       if (current != null) {
         final prefs = await SharedPreferences.getInstance();
-        final name = prefs.getString(AlarmSoundService.kCustomAudioNameKey) ?? 'Device Audio';
+        final name =
+            prefs.getString(AlarmSoundService.kCustomAudioNameKey) ??
+            'Device Audio';
         final updated = current.copyWith(
           customAudioPath: file.path,
           customAudioName: name,
@@ -506,7 +531,10 @@ class AlarmSoundSettingsNotifier extends AsyncNotifier<AlarmSoundSettings> {
         );
         state = AsyncValue.data(updated);
         await service.saveSettings(updated);
-        await service.previewSound(AlarmSoundService.customSoundId, boostVolume: updated.fullVolumeBoost);
+        await service.previewSound(
+          AlarmSoundService.customSoundId,
+          boostVolume: updated.fullVolumeBoost,
+        );
       }
       return true;
     }
@@ -520,7 +548,8 @@ class AlarmSoundSettingsNotifier extends AsyncNotifier<AlarmSoundSettings> {
     if (current != null) {
       final updated = current.copyWith(
         clearCustomAudio: true,
-        defaultSoundId: current.defaultSoundId == AlarmSoundService.customSoundId
+        defaultSoundId:
+            current.defaultSoundId == AlarmSoundService.customSoundId
             ? 'cyber_chime'
             : current.defaultSoundId,
       );

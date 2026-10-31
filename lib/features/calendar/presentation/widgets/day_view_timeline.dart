@@ -8,7 +8,8 @@ class DayViewTimeline extends StatelessWidget {
   final DateTime selectedDate;
   final List<CalendarEvent> dayEvents;
   final Function(CalendarEvent) onToggleComplete;
-  final Function(CalendarEvent, DateTime newDate, DateTime? newTime) onReschedule;
+  final Function(CalendarEvent, DateTime newDate, DateTime? newTime)
+  onReschedule;
   final Function(CalendarEvent) onEdit;
   final Function(CalendarEvent) onDelete;
   final Function(DateTime slotTime) onAddAtSlot;
@@ -34,7 +35,12 @@ class DayViewTimeline extends StatelessWidget {
 
     return Column(
       children: hours.map((hour) {
-        final slotTime = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, hour);
+        final slotTime = DateTime(
+          selectedDate.year,
+          selectedDate.month,
+          selectedDate.day,
+          hour,
+        );
 
         // Find events that fall in [hour, hour + 2)
         final slotEvents = dayEvents.where((e) {
@@ -59,7 +65,9 @@ class DayViewTimeline extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ),
@@ -73,13 +81,19 @@ class DayViewTimeline extends StatelessWidget {
                     height: 10,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: slotEvents.isNotEmpty ? AppColors.electricBlue : Colors.grey[400],
+                      color: slotEvents.isNotEmpty
+                          ? AppColors.electricBlue
+                          : Colors.grey[400],
                     ),
                   ),
                   Container(
                     width: 2,
-                    height: slotEvents.isNotEmpty ? (slotEvents.length * 130.0) : 40,
-                    color: isDark ? AppColors.darkSurfaceBorder : Colors.grey[300],
+                    height: slotEvents.isNotEmpty
+                        ? (slotEvents.length * 130.0)
+                        : 40,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : Colors.grey[300],
                   ),
                 ],
               ),
@@ -104,14 +118,21 @@ class DayViewTimeline extends StatelessWidget {
                         onTap: () => onAddAtSlot(slotTime),
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? AppColors.darkSurfaceElevated.withValues(alpha: 0.5)
+                                ? AppColors.darkSurfaceElevated.withValues(
+                                    alpha: 0.5,
+                                  )
                                 : Colors.grey[50],
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isDark ? AppColors.darkSurfaceBorder : Colors.grey[200]!,
+                              color: isDark
+                                  ? AppColors.darkSurfaceBorder
+                                  : Colors.grey[200]!,
                               style: BorderStyle.solid,
                             ),
                           ),
@@ -120,14 +141,18 @@ class DayViewTimeline extends StatelessWidget {
                               Icon(
                                 Icons.add_circle_outline_rounded,
                                 size: 16,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Available slot - tap to schedule',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],

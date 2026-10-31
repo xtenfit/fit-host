@@ -65,7 +65,8 @@ class _DietStepState extends State<DietStep> {
             runSpacing: 12,
             children: kDietTypes.map((diet) {
               final internalId = _mapToInternal(diet);
-              final isSelected = widget.selectedDiet == internalId ||
+              final isSelected =
+                  widget.selectedDiet == internalId ||
                   widget.selectedDiet == diet.toLowerCase();
 
               return ChoiceChip(
@@ -91,8 +92,10 @@ class _DietStepState extends State<DietStep> {
                         : Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
               );
             }).toList(),
           ),
@@ -113,10 +116,7 @@ class _DietStepState extends State<DietStep> {
           TextField(
             controller: _allergiesCtrl,
             maxLines: 3,
-            style: const TextStyle(
-              color: Color(0xFFF0F6F2),
-              fontSize: 15,
-            ),
+            style: const TextStyle(color: Color(0xFFF0F6F2), fontSize: 15),
             decoration: InputDecoration(
               hintText: 'e.g. lactose, gluten, nuts, shellfish...',
               hintStyle: TextStyle(
@@ -127,7 +127,9 @@ class _DietStepState extends State<DietStep> {
               fillColor: const Color(0xFF121A16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),

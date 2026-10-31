@@ -5,14 +5,17 @@ import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/core/theme/app_motion.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/nutrition/presentation/controllers/nutrition_controller.dart';
+import 'controllers/home_dashboard_controller.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_streak_date_strip.dart';
 import 'widgets/home_statistics_grid.dart';
 import 'widgets/home_today_workout_hero.dart';
+import 'widgets/home_quick_tools.dart';
 import 'widgets/home_step_card.dart';
 import 'widgets/home_diet_diary_card.dart';
 import 'widgets/home_activity_card.dart';
 import 'widgets/guest_upgrade_banner.dart';
+import 'widgets/setup_reminder_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -23,20 +26,28 @@ class HomeScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(workoutsStreamProvider);
             ref.invalidate(nutritionProvider);
+            ref.invalidate(homeDashboardSummaryProvider);
           },
           child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 120),
             children: [
               // 1. Top Header: Grid Menu, Greeting/Profile Name, Notification, Avatar
               HomeHeader(isDark: isDark),
               const SizedBox(height: 14),
+
+              // 1a. Wizard Incomplete Reminder Banner
+              SetupReminderBanner(isDark: isDark),
 
               // 1b. Non-blocking Guest -> Account Upgrade Banner
               GuestUpgradeBanner(isDark: isDark),
@@ -61,6 +72,10 @@ class HomeScreen extends ConsumerWidget {
 
               // 6. Your Activity / Realtime Analytics (Time Filters, Ring Timer, Walk & Sleep)
               HomeActivityCard(isDark: isDark),
+              const SizedBox(height: 24),
+
+              // 6b. Quick Tools Shortcuts
+              HomeQuickTools(isDark: isDark),
               const SizedBox(height: 24),
 
               // 7. Workout Categories Section
@@ -184,7 +199,6 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 120),
             ],
           ),
         ),
@@ -223,7 +237,9 @@ class _CategoryCard extends StatelessWidget {
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
           boxShadow: [
             BoxShadow(
@@ -247,9 +263,8 @@ class _CategoryCard extends StatelessWidget {
                   child: Image.asset(
                     imagePath,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Center(
-                      child: Icon(icon, color: color, size: 36),
-                    ),
+                    errorBuilder: (context, error, stackTrace) =>
+                        Center(child: Icon(icon, color: color, size: 36)),
                   ),
                 ),
                 Positioned(
@@ -285,7 +300,9 @@ class _CategoryCard extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

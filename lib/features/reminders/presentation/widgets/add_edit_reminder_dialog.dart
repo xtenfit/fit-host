@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/services/permission_service.dart';
 import '../../domain/models/reminder.dart';
 
 class AddEditReminderDialog extends StatefulWidget {
@@ -43,6 +42,7 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
   late bool _soundEnabled;
   late bool _vibrationEnabled;
   late int _snoozeMinutes;
+  late ReminderDeliveryMode _deliveryMode;
 
   @override
   void initState() {
@@ -62,6 +62,7 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
     _soundEnabled = rem?.soundEnabled ?? true;
     _vibrationEnabled = rem?.vibrationEnabled ?? true;
     _snoozeMinutes = rem?.snoozeDurationMinutes ?? 10;
+    _deliveryMode = rem?.deliveryMode ?? ReminderDeliveryMode.alarm;
   }
 
   @override
@@ -111,12 +112,14 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  isEditing ? 'Edit Reminder' : 'Set Smart Reminder',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
+                Expanded(
+                  child: Text(
+                    isEditing ? 'Edit Reminder' : 'Set Smart Reminder',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -201,7 +204,9 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                 labelText: 'Reminder Label *',
                 hintText: 'e.g. Morning Hydration, Pre-Workout Meal',
                 filled: true,
-                fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                fillColor: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -223,9 +228,14 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
               },
               borderRadius: BorderRadius.circular(18),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                  color: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : Colors.grey[100],
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                     color: AppColors.electricBlue.withValues(alpha: 0.3),
@@ -237,11 +247,17 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.alarm_rounded, color: AppColors.electricBlue),
+                        const Icon(
+                          Icons.alarm_rounded,
+                          color: AppColors.electricBlue,
+                        ),
                         const SizedBox(width: 12),
                         const Text(
                           'Alarm Time',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -265,17 +281,16 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
               decoration: InputDecoration(
                 labelText: 'Schedule / Repeat',
                 filled: true,
-                fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                fillColor: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
               ),
               items: ReminderRecurrence.values.map((r) {
-                return DropdownMenuItem(
-                  value: r,
-                  child: Text(r.label),
-                );
+                return DropdownMenuItem(value: r, child: Text(r.label));
               }).toList(),
               onChanged: (val) {
                 if (val != null) setState(() => _recurrence = val);
@@ -312,7 +327,9 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.electricBlue
-                            : (isDark ? AppColors.darkSurfaceElevated : Colors.grey[200]),
+                            : (isDark
+                                  ? AppColors.darkSurfaceElevated
+                                  : Colors.grey[200]),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -331,11 +348,175 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
             ],
             const SizedBox(height: 16),
 
+            // Delivery Mode Selection
+            const Text(
+              'Delivery Mode',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(
+                      () => _deliveryMode = ReminderDeliveryMode.alarm,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _deliveryMode == ReminderDeliveryMode.alarm
+                            ? AppColors.electricBlue.withValues(alpha: 0.15)
+                            : (isDark
+                                  ? AppColors.darkSurfaceElevated
+                                  : Colors.grey[100]),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _deliveryMode == ReminderDeliveryMode.alarm
+                              ? AppColors.electricBlue
+                              : (isDark
+                                    ? AppColors.darkSurfaceBorder
+                                    : Colors.transparent),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.alarm_rounded,
+                                size: 18,
+                                color:
+                                    _deliveryMode == ReminderDeliveryMode.alarm
+                                    ? AppColors.electricBlue
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Alarm-Style',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color:
+                                        _deliveryMode ==
+                                            ReminderDeliveryMode.alarm
+                                        ? AppColors.electricBlue
+                                        : null,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Full-screen popup with ringing sound, vibration & Snooze',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(
+                      () => _deliveryMode = ReminderDeliveryMode.notification,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            _deliveryMode == ReminderDeliveryMode.notification
+                            ? AppColors.electricBlue.withValues(alpha: 0.15)
+                            : (isDark
+                                  ? AppColors.darkSurfaceElevated
+                                  : Colors.grey[100]),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color:
+                              _deliveryMode == ReminderDeliveryMode.notification
+                              ? AppColors.electricBlue
+                              : (isDark
+                                    ? AppColors.darkSurfaceBorder
+                                    : Colors.transparent),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.notifications_active_rounded,
+                                size: 18,
+                                color:
+                                    _deliveryMode ==
+                                        ReminderDeliveryMode.notification
+                                    ? AppColors.electricBlue
+                                    : Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Standard',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color:
+                                        _deliveryMode ==
+                                            ReminderDeliveryMode.notification
+                                        ? AppColors.electricBlue
+                                        : null,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Normal Android notification banner and brief sound',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // Snooze & Sound Settings
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                color: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
@@ -348,7 +529,10 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                         children: [
                           Icon(Icons.volume_up_rounded, size: 20),
                           SizedBox(width: 10),
-                          Text('Sound Alert', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            'Sound Alert',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ),
                       Switch.adaptive(
@@ -368,13 +552,17 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                         children: [
                           Icon(Icons.vibration_rounded, size: 20),
                           SizedBox(width: 10),
-                          Text('Vibration', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text(
+                            'Vibration',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ],
                       ),
                       Switch.adaptive(
                         value: _vibrationEnabled,
                         activeTrackColor: AppColors.electricBlue,
-                        onChanged: (val) => setState(() => _vibrationEnabled = val),
+                        onChanged: (val) =>
+                            setState(() => _vibrationEnabled = val),
                       ),
                     ],
                   ),
@@ -384,12 +572,20 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.snooze_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Snooze Duration', style: TextStyle(fontWeight: FontWeight.w600)),
-                        ],
+                      const Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.snooze_rounded, size: 20),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                'Snooze Duration',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       DropdownButton<int>(
                         value: _snoozeMinutes,
@@ -420,14 +616,12 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                   final title = _titleController.text.trim();
                   if (title.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter a reminder label')),
+                      const SnackBar(
+                        content: Text('Please enter a reminder label'),
+                      ),
                     );
                     return;
                   }
-
-                  // Request OS permissions and battery optimization exemption
-                  await PermissionService.instance.requestReminderPermissions(context);
-                  if (!context.mounted) return;
 
                   final hStr = _timeOfDay.hour.toString().padLeft(2, '0');
                   final mStr = _timeOfDay.minute.toString().padLeft(2, '0');
@@ -450,6 +644,7 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                     isDismissed: widget.initialReminder?.isDismissed ?? false,
                     createdAt: widget.initialReminder?.createdAt ?? now,
                     updatedAt: now,
+                    deliveryMode: _deliveryMode,
                   );
 
                   widget.onSave(reminder);
@@ -464,7 +659,10 @@ class _AddEditReminderDialogState extends State<AddEditReminderDialog> {
                 ),
                 child: Text(
                   isEditing ? 'Save Reminder' : 'Set Reminder',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),

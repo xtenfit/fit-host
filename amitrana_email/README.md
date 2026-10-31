@@ -56,7 +56,7 @@ Copy [.env.example](.env.example) to `.env.local` and fill in values:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 RESEND_API_KEY=your-resend-api-key
-FROM_EMAIL=noreply@amitran.tech
+FROM_EMAIL=noreply@amitrana.tech
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 OTP_TTL_MINUTES=10
 ```

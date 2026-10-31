@@ -54,23 +54,31 @@ class FocusAreasStep extends StatelessWidget {
                 _buildMuscleHighlightIcon(
                   label: 'Upper Body',
                   icon: Icons.accessibility_new_rounded,
-                  isHighlighted: selectedFocusAreas.any((e) =>
-                      ['Chest', 'Back', 'Arms', 'Shoulders', 'Full Body']
-                          .contains(e)),
+                  isHighlighted: selectedFocusAreas.any(
+                    (e) => [
+                      'Chest',
+                      'Back',
+                      'Arms',
+                      'Shoulders',
+                      'Full Body',
+                    ].contains(e),
+                  ),
                 ),
                 const SizedBox(width: 32),
                 _buildMuscleHighlightIcon(
                   label: 'Core & Abs',
                   icon: Icons.crop_portrait_rounded,
-                  isHighlighted: selectedFocusAreas.any((e) =>
-                      ['Abs/Core', 'Full Body', 'Flexibility'].contains(e)),
+                  isHighlighted: selectedFocusAreas.any(
+                    (e) => ['Abs/Core', 'Full Body', 'Flexibility'].contains(e),
+                  ),
                 ),
                 const SizedBox(width: 32),
                 _buildMuscleHighlightIcon(
                   label: 'Lower Body',
                   icon: Icons.directions_run_rounded,
-                  isHighlighted: selectedFocusAreas.any((e) =>
-                      ['Legs', 'Glutes', 'Full Body'].contains(e)),
+                  isHighlighted: selectedFocusAreas.any(
+                    (e) => ['Legs', 'Glutes', 'Full Body'].contains(e),
+                  ),
                 ),
               ],
             ),
@@ -92,8 +100,10 @@ class FocusAreasStep extends StatelessWidget {
             spacing: 10,
             runSpacing: 12,
             children: kFocusAreas.map((area) {
-              final isSelected = selectedFocusAreas.contains(area) ||
-                  (area == 'Full Body' && selectedFocusAreas.contains('full_body'));
+              final isSelected =
+                  selectedFocusAreas.contains(area) ||
+                  (area == 'Full Body' &&
+                      selectedFocusAreas.contains('full_body'));
 
               return FilterChip(
                 label: Text(
@@ -119,7 +129,10 @@ class FocusAreasStep extends StatelessWidget {
                         : Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
               );
             }).toList(),
           ),

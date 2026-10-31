@@ -34,9 +34,7 @@ class CardShell extends StatelessWidget {
     const defaultBorder = Color(0xFF1F2D26);
 
     final bg = backgroundColor ?? defaultSurface;
-    final border = isSelected
-        ? brandGreen
-        : (borderColor ?? defaultBorder);
+    final border = isSelected ? brandGreen : (borderColor ?? defaultBorder);
 
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -63,11 +61,7 @@ class CardShell extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return BouncyTap(
-        onTap: onTap,
-        scaleDown: 0.98,
-        child: card,
-      );
+      return BouncyTap(onTap: onTap, scaleDown: 0.98, child: card);
     }
 
     return card;

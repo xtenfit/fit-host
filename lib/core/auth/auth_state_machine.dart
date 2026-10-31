@@ -98,7 +98,8 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
       status: AuthStatus.authenticated,
       user: currentUser,
       email: currentUser.email,
-      displayName: currentUser.userMetadata?['name'] as String? ??
+      displayName:
+          currentUser.userMetadata?['name'] as String? ??
           currentUser.email?.split('@').first,
     );
   }
@@ -120,7 +121,8 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
         status: AuthStatus.authenticated,
         user: user,
         email: user.email,
-        displayName: user.userMetadata?['name'] as String? ??
+        displayName:
+            user.userMetadata?['name'] as String? ??
             user.email?.split('@').first,
       ),
     );
@@ -128,7 +130,9 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
 
   /// Initiates token refresh. If refresh fails due to network outage,
   /// enters `offlineGrace` instead of downgrading to `guest`.
-  Future<void> refreshToken({required Future<bool> Function() refreshAction}) async {
+  Future<void> refreshToken({
+    required Future<bool> Function() refreshAction,
+  }) async {
     final current = state.value ?? const AuthState();
     if (current.status == AuthStatus.guest) return;
 
@@ -155,10 +159,12 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
           msg.contains('not found') ||
           msg.contains('expired')) {
         // Token revoked/invalid -> signedOut
-        state = AsyncData(current.copyWith(
-          status: AuthStatus.signedOut,
-          errorMessage: e.message,
-        ));
+        state = AsyncData(
+          current.copyWith(
+            status: AuthStatus.signedOut,
+            errorMessage: e.message,
+          ),
+        );
       } else {
         state = AsyncData(current.copyWith(status: AuthStatus.offlineGrace));
       }
@@ -170,10 +176,12 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
           str.contains('failed host lookup')) {
         state = AsyncData(current.copyWith(status: AuthStatus.offlineGrace));
       } else {
-        state = AsyncData(current.copyWith(
-          status: AuthStatus.signedOut,
-          errorMessage: e.toString(),
-        ));
+        state = AsyncData(
+          current.copyWith(
+            status: AuthStatus.signedOut,
+            errorMessage: e.toString(),
+          ),
+        );
       }
     }
   }
@@ -188,8 +196,9 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
 
   /// Explicit user sign out
   Future<void> signOut() async {
-    state = AsyncData((state.value ?? const AuthState())
-        .copyWith(status: AuthStatus.signedOut));
+    state = AsyncData(
+      (state.value ?? const AuthState()).copyWith(status: AuthStatus.signedOut),
+    );
 
     try {
       await Supabase.instance.client.auth.signOut();
@@ -213,5 +222,5 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
 
 final authStateMachineProvider =
     AsyncNotifierProvider<AuthStateMachineNotifier, AuthState>(
-  AuthStateMachineNotifier.new,
-);
+      AuthStateMachineNotifier.new,
+    );

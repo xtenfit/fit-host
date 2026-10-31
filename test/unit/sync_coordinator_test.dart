@@ -14,10 +14,7 @@ void main() {
 
     setUp(() {
       memoryDb = AppDatabase(NativeDatabase.memory());
-      coordinator = SyncCoordinator(
-        db: memoryDb,
-        supabase: null,
-      );
+      coordinator = SyncCoordinator(db: memoryDb, supabase: null);
     });
 
     tearDown(() async {
@@ -82,7 +79,9 @@ void main() {
 
     test('offline -> does not drain queued mutations', () async {
       final now = DateTime.now().toUtc();
-      await memoryDb.into(memoryDb.syncQueue).insert(
+      await memoryDb
+          .into(memoryDb.syncQueue)
+          .insert(
             SyncQueueCompanion.insert(
               id: 'queue-test-1',
               userId: const Value('auth-user-1'),
@@ -110,7 +109,9 @@ void main() {
 
     test('auth=guest -> does not drain queued mutations', () async {
       final now = DateTime.now().toUtc();
-      await memoryDb.into(memoryDb.syncQueue).insert(
+      await memoryDb
+          .into(memoryDb.syncQueue)
+          .insert(
             SyncQueueCompanion.insert(
               id: 'queue-test-2',
               userId: const Value('guest'),
@@ -154,41 +155,48 @@ void main() {
       expect(dHigh.inSeconds, lessThanOrEqualTo(360));
     });
 
-    test('network failure increases attempts, updates errorLog, and does not loop infinitely', () async {
-      final now = DateTime.now().toUtc();
-      await memoryDb.into(memoryDb.syncQueue).insert(
-            SyncQueueCompanion.insert(
-              id: 'queue-test-fail',
-              userId: const Value('auth-user-1'),
-              entityType: 'workout',
-              entityId: 'w-fail',
-              operation: 'upsert',
-              payload: jsonEncode({'id': 'w-fail', 'title': 'Back Day'}),
-              createdAt: now,
-              clientTimestamp: Value(now),
-              status: const Value('queued'),
-            ),
-          );
+    test(
+      'network failure increases attempts, updates errorLog, and does not loop infinitely',
+      () async {
+        final now = DateTime.now().toUtc();
+        await memoryDb
+            .into(memoryDb.syncQueue)
+            .insert(
+              SyncQueueCompanion.insert(
+                id: 'queue-test-fail',
+                userId: const Value('auth-user-1'),
+                entityType: 'workout',
+                entityId: 'w-fail',
+                operation: 'upsert',
+                payload: jsonEncode({'id': 'w-fail', 'title': 'Back Day'}),
+                createdAt: now,
+                clientTimestamp: Value(now),
+                status: const Value('queued'),
+              ),
+            );
 
-      // Drain will fail since supabase client is null (simulating network / connection failure)
-      final processed = await coordinator.drain(
-        overrideAuth: AuthStatus.authenticated,
-        overrideConnectivity: ConnectivityStatus.online,
-      );
+        // Drain will fail since supabase client is null (simulating network / connection failure)
+        final processed = await coordinator.drain(
+          overrideAuth: AuthStatus.authenticated,
+          overrideConnectivity: ConnectivityStatus.online,
+        );
 
-      expect(processed, equals(0));
+        expect(processed, equals(0));
 
-      final item = await memoryDb.select(memoryDb.syncQueue).getSingle();
-      expect(item.status, equals('failed'));
-      expect(item.attempts, equals(1));
-      expect(item.attemptCount, equals(1));
-      expect(item.errorLog, isNotNull);
-      expect(item.lastAttemptAt, isNotNull);
-    });
+        final item = await memoryDb.select(memoryDb.syncQueue).getSingle();
+        expect(item.status, equals('failed'));
+        expect(item.attempts, equals(1));
+        expect(item.attemptCount, equals(1));
+        expect(item.errorLog, isNotNull);
+        expect(item.lastAttemptAt, isNotNull);
+      },
+    );
 
     test('item exceeding max attempts moves to dead_letter status', () async {
       final now = DateTime.now().toUtc();
-      await memoryDb.into(memoryDb.syncQueue).insert(
+      await memoryDb
+          .into(memoryDb.syncQueue)
+          .insert(
             SyncQueueCompanion.insert(
               id: 'queue-test-max',
               userId: const Value('auth-user-1'),

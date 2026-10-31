@@ -14,13 +14,15 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('plugins.flutter.io/path_provider'),
-      (MethodCall methodCall) async => '.',
-    );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/path_provider'),
+          (MethodCall methodCall) async => '.',
+        );
   });
 
-  const framesDir = '/Users/amitrana/.gemini/antigravity-ide/brain/40f965a1-4177-4cc1-a2dd-eeb480561dea/scratch/frames';
+  const framesDir =
+      '/Users/amitrana/.gemini/antigravity-ide/brain/40f965a1-4177-4cc1-a2dd-eeb480561dea/scratch/frames';
 
   testWidgets('Record splash screen animation frames', (tester) async {
     tester.view.physicalSize = const Size(393, 852);
@@ -63,12 +65,15 @@ void main() {
 
     for (int i = 0; i < totalFrames; i++) {
       await tester.runAsync(() async {
-        final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        final boundary =
+            globalKey.currentContext!.findRenderObject()
+                as RenderRepaintBoundary;
         final image = await boundary.toImage(pixelRatio: 1.5);
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         final bytes = byteData!.buffer.asUint8List();
 
-        final fileName = '$framesDir/frame_${frameIndex.toString().padLeft(3, '0')}.png';
+        final fileName =
+            '$framesDir/frame_${frameIndex.toString().padLeft(3, '0')}.png';
         await File(fileName).writeAsBytes(bytes, flush: true);
       });
 
@@ -77,13 +82,17 @@ void main() {
     }
 
     // Save key milestone screenshots for documentation
-    final artifactsDir = '/Users/amitrana/.gemini/antigravity-ide/brain/40f965a1-4177-4cc1-a2dd-eeb480561dea';
+    final artifactsDir =
+        '/Users/amitrana/.gemini/antigravity-ide/brain/40f965a1-4177-4cc1-a2dd-eeb480561dea';
     await tester.runAsync(() async {
-      final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+      final boundary =
+          globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData!.buffer.asUint8List();
-      await File('$artifactsDir/evidence_splash_screen.png').writeAsBytes(bytes, flush: true);
+      await File(
+        '$artifactsDir/evidence_splash_screen.png',
+      ).writeAsBytes(bytes, flush: true);
     });
 
     expect(find.byType(SplashScreen), findsOneWidget);

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/data/workout_repository.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/models/workout_models.dart';
 import '../controllers/workout_providers.dart';
 
 class AllRoutinesScreen extends ConsumerStatefulWidget {
@@ -13,159 +15,123 @@ class AllRoutinesScreen extends ConsumerStatefulWidget {
 
 class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
   String _selectedCategory = 'All';
+  String _typeFilter = 'All'; // 'All', 'Templates', 'Custom'
   String _searchQuery = '';
 
-  final List<_RoutineItem> _allRoutines = [
-    _RoutineItem(
-      id: 'routine-push',
-      title: 'Push Day (Chest, Delts, Triceps)',
-      category: 'Strength',
-      duration: '45 mins',
-      difficulty: 'Intermediate',
-      description: 'Bench Press, Incline DB Press, Overhead Press, Cable Pushdowns',
-      imageAsset: 'assets/images/categories/strength.png',
-      color: AppColors.electricBlue,
-      exerciseIds: ['ex-bench-press', 'ex-incline-db-press', 'ex-overhead-press', 'ex-tricep-pushdown'],
-    ),
-    _RoutineItem(
-      id: 'routine-pull',
-      title: 'Pull Day (Back, Rear Delts, Biceps)',
-      category: 'Strength',
-      duration: '50 mins',
-      difficulty: 'Advanced',
-      description: 'Conventional Deadlift, Pull-Ups, Barbell Row, Bicep Curls',
-      imageAsset: 'assets/images/workouts/today_workout_athlete.png',
-      color: AppColors.electricCyan,
-      exerciseIds: ['ex-deadlift', 'ex-pullup', 'ex-barbell-row', 'ex-bicep-curl'],
-    ),
-    _RoutineItem(
-      id: 'routine-legs',
-      title: 'Leg Day (Quads, Hamstrings, Core)',
-      category: 'Strength',
-      duration: '55 mins',
-      difficulty: 'Intermediate',
-      description: 'Barbell Back Squats, Romanian Deadlifts, Walking Lunges, Plank',
-      imageAsset: 'assets/images/categories/bodyweight.png',
-      color: const Color(0xFFFF9E00),
-      exerciseIds: ['ex-barbell-squat', 'ex-romanian-deadlift', 'ex-lunges', 'ex-plank'],
-    ),
-    _RoutineItem(
-      id: 'routine-hiit-tabata',
-      title: 'Tabata Full Throttle',
-      category: 'HIIT',
-      duration: '20 mins',
-      difficulty: 'Advanced',
-      description: '8 sets of 20s explosive work / 10s rest across compound exercises',
-      imageAsset: 'assets/images/categories/hiit.png',
-      color: const Color(0xFFFF6D00),
-      exerciseIds: ['ex-pushup', 'ex-lunges', 'ex-plank'],
-    ),
-    _RoutineItem(
-      id: 'routine-fat-burn',
-      title: 'Zone 2 Fat Burn Intervals',
-      category: 'Cardio',
-      duration: '35 mins',
-      difficulty: 'Beginner',
-      description: 'Sub-maximal aerobic intervals for maximum fat oxidation',
-      imageAsset: 'assets/images/categories/cardio.png',
-      color: const Color(0xFFFF5252),
-      exerciseIds: ['ex-lunges', 'ex-plank'],
-    ),
-    _RoutineItem(
-      id: 'routine-calisthenics',
-      title: 'Calisthenics Core & Pull Mastery',
-      category: 'Bodyweight',
-      duration: '30 mins',
-      difficulty: 'Intermediate',
-      description: 'Zero equipment bodyweight circuit for tendon resilience and core power',
-      imageAsset: 'assets/images/categories/bodyweight.png',
-      color: AppColors.electricCyan,
-      exerciseIds: ['ex-pushup', 'ex-pullup', 'ex-plank'],
-    ),
-    _RoutineItem(
-      id: 'routine-morning-flow',
-      title: 'Morning Power Vinyasa',
-      category: 'Yoga',
-      duration: '25 mins',
-      difficulty: 'All Levels',
-      description: 'Spinal mobility, warrior flows, and hip openers for mindful strength',
-      imageAsset: 'assets/images/categories/yoga.png',
-      color: const Color(0xFF00E676),
-      exerciseIds: ['ex-plank'],
-    ),
-    _RoutineItem(
-      id: 'routine-speed-run',
-      title: 'Track Sprints & Locomotive Pace',
-      category: 'Running',
-      duration: '30 mins',
-      difficulty: 'Advanced',
-      description: '400m speed intervals with active recovery walk splits',
-      imageAsset: 'assets/images/categories/running.png',
-      color: AppColors.limeGreen,
-      exerciseIds: ['ex-lunges'],
-    ),
-    _RoutineItem(
-      id: 'routine-spine-rehab',
-      title: 'Total Spine & Joint Mobility',
-      category: 'Mobility',
-      duration: '20 mins',
-      difficulty: 'All Levels',
-      description: 'Dynamic joint flossing, cat-cows, and thoracic rotations for recovery',
-      imageAsset: 'assets/images/categories/mobility.png',
-      color: const Color(0xFF7C4DFF),
-      exerciseIds: ['ex-plank'],
-    ),
+  final List<String> _categories = [
+    'All',
+    'Strength',
+    'Hypertrophy',
+    'Cardio',
+    'HIIT',
+    'Bodyweight',
+    'Calisthenics',
+    'Mobility',
   ];
 
-  void _startRoutine(_RoutineItem routine) {
-    ref.read(workoutRepositoryProvider).getExercises().then((allExercises) {
-      final selected = allExercises
-          .where((e) => routine.exerciseIds.contains(e.id))
-          .toList();
+  void _startRoutine(RoutineEntity routine) {
+    ref.read(activeWorkoutProvider.notifier).startFromRoutine(routine);
+    if (mounted) {
+      context.push('/active-workout');
+    }
+  }
 
-      ref.read(activeWorkoutProvider.notifier).startNewWorkout(
-            title: routine.title,
-            initialExercises: selected.isNotEmpty ? selected : null,
-          );
-
+  Future<void> _duplicateRoutine(RoutineEntity routine) async {
+    try {
+      final copyName = '${routine.name} (Copy)';
+      await ref
+          .read(routineRepositoryProvider)
+          .duplicateRoutine(routine.id, newName: copyName);
       if (mounted) {
-        context.push('/active-workout');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Routine duplicated: "$copyName"'),
+            backgroundColor: AppColors.limeGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to duplicate routine: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteRoutine(RoutineEntity routine) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Routine?'),
+        content: Text(
+          'Are you sure you want to delete "${routine.name}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await ref.read(routineRepositoryProvider).deleteRoutine(routine.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Routine "${routine.name}" deleted.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting routine: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    final categories = [
-      'All',
-      'Strength',
-      'Cardio',
-      'HIIT',
-      'Bodyweight',
-      'Yoga',
-      'Running',
-      'Mobility',
-    ];
-
-    final filtered = _allRoutines.where((r) {
-      final matchesCategory = _selectedCategory == 'All' || r.category == _selectedCategory;
-      final matchesQuery = _searchQuery.isEmpty ||
-          r.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          r.description.toLowerCase().contains(_searchQuery.toLowerCase());
-      return matchesCategory && matchesQuery;
-    }).toList();
+    final routinesAsync = ref.watch(routinesStreamProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text(
           'Workout Routines & Plans',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: 'Create Routine',
+            onPressed: () => context.push('/routines/builder'),
+          ),
           IconButton(
             icon: const Icon(Icons.fitness_center_rounded),
             tooltip: 'Start Empty Workout',
@@ -176,6 +142,16 @@ class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.limeGreen,
+        foregroundColor: Colors.black,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'New Routine',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        onPressed: () => context.push('/routines/builder'),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -183,7 +159,7 @@ class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: TextField(
-                onChanged: (val) => setState(() => _searchQuery = val),
+                onChanged: (val) => setState(() => _searchQuery = val.trim()),
                 decoration: InputDecoration(
                   hintText: 'Search routines, splits or muscle targets...',
                   prefixIcon: const Icon(Icons.search_rounded),
@@ -194,32 +170,53 @@ class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
                         )
                       : null,
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                  fillColor: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                 ),
               ),
             ),
 
-            // 2. Category Filter Pills
+            // 2. Filter Tabs: All vs Templates vs Custom
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  _buildTypeTab('All', isDark),
+                  const SizedBox(width: 8),
+                  _buildTypeTab('Templates', isDark),
+                  const SizedBox(width: 8),
+                  _buildTypeTab('Custom', isDark),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+
+            // 3. Category Filter Pills
             SizedBox(
-              height: 48,
+              height: 40,
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
+                itemCount: _categories.length,
                 itemBuilder: (ctx, idx) {
-                  final cat = categories[idx];
+                  final cat = _categories[idx];
                   final isSelected = cat == _selectedCategory;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -231,15 +228,23 @@ class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
                         color: isSelected
                             ? Colors.black
                             : (isDark ? Colors.white70 : Colors.black87),
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
                         fontSize: 12,
                       ),
-                      backgroundColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       side: BorderSide(
                         color: isSelected
                             ? AppColors.limeGreen
-                            : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                            : (isDark
+                                  ? AppColors.darkSurfaceBorder
+                                  : AppColors.lightSurfaceBorder),
                       ),
                       onSelected: (val) {
                         setState(() => _selectedCategory = cat);
@@ -251,201 +256,397 @@ class _AllRoutinesScreenState extends ConsumerState<AllRoutinesScreen> {
             ),
             const SizedBox(height: 8),
 
-            // 3. Routines List
+            // 4. Routines List Stream
             Expanded(
-              child: filtered.isEmpty
-                  ? Center(
+              child: routinesAsync.when(
+                data: (allRoutines) {
+                  final filtered = allRoutines.where((r) {
+                    // Type filter
+                    if (_typeFilter == 'Templates' && !r.isTemplate) {
+                      return false;
+                    }
+                    if (_typeFilter == 'Custom' && r.isTemplate) return false;
+
+                    // Category filter
+                    if (_selectedCategory != 'All' &&
+                        r.category != _selectedCategory) {
+                      return false;
+                    }
+
+                    // Search query
+                    if (_searchQuery.isNotEmpty) {
+                      final q = _searchQuery.toLowerCase();
+                      final matchesName = r.name.toLowerCase().contains(q);
+                      final matchesDesc = (r.description ?? '')
+                          .toLowerCase()
+                          .contains(q);
+                      final matchesEx = r.exercises.any(
+                        (e) => e.exerciseName.toLowerCase().contains(q),
+                      );
+                      if (!matchesName && !matchesDesc && !matchesEx) {
+                        return false;
+                      }
+                    }
+
+                    return true;
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.search_off_rounded,
+                            Icons.fitness_center_outlined,
                             size: 48,
-                            color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                            color: isDark
+                                ? AppColors.darkTextTertiary
+                                : AppColors.lightTextTertiary,
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'No matching routines found',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(height: 4),
                           Text(
-                            'Try a different category filter or search term.',
+                            _searchQuery.isNotEmpty
+                                ? 'No matching routines found'
+                                : (_typeFilter == 'Custom'
+                                      ? 'No custom routines yet'
+                                      : 'No routines found'),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _typeFilter == 'Custom'
+                                ? 'Tap "+ New Routine" below to build your first routine.'
+                                : 'Try adjusting your search query or category filters.',
                             style: TextStyle(
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                               fontSize: 12,
                             ),
                           ),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
-                      itemCount: filtered.length,
-                      itemBuilder: (ctx, idx) {
-                        final r = filtered[idx];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => _startRoutine(r),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        width: 52,
-                                        height: 52,
-                                        decoration: BoxDecoration(
-                                          color: r.color.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(14),
-                                        ),
-                                        child: Image.asset(
-                                          r.imageAsset,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (context, error, stackTrace) => Icon(
-                                            Icons.fitness_center_rounded,
-                                            color: r.color,
-                                            size: 26,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 14),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              r.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: r.color.withValues(alpha: 0.15),
-                                                    borderRadius: BorderRadius.circular(6),
-                                                  ),
-                                                  child: Text(
-                                                    r.category,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: r.color,
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Text(
-                                                  '${r.duration} • ${r.difficulty}',
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    r.description,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  const Divider(height: 1),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        '${r.exerciseIds.length} compound exercises',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
-                                        ),
-                                      ),
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.limeGreen,
-                                          foregroundColor: Colors.black,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                        ),
-                                        icon: const Icon(Icons.play_arrow_rounded, size: 18, color: Colors.black),
-                                        label: const Text(
-                                          'Start Workout',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black),
-                                        ),
-                                        onPressed: () => _startRoutine(r),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                    itemCount: filtered.length,
+                    itemBuilder: (ctx, idx) {
+                      final r = filtered[idx];
+                      return _buildRoutineCard(r, isDark);
+                    },
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.limeGreen),
+                ),
+                error: (err, _) =>
+                    Center(child: Text('Error loading routines: $err')),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _RoutineItem {
-  final String id;
-  final String title;
-  final String category;
-  final String duration;
-  final String difficulty;
-  final String description;
-  final String imageAsset;
-  final Color color;
-  final List<String> exerciseIds;
+  Widget _buildTypeTab(String label, bool isDark) {
+    final isSelected = _typeFilter == label;
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => setState(() => _typeFilter = label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark
+                    ? AppColors.limeGreen.withValues(alpha: 0.2)
+                    : const Color(0xFFDCFCE7))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.limeGreen : Colors.transparent,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected
+                ? (isDark ? AppColors.limeGreen : const Color(0xFF166534))
+                : (isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary),
+          ),
+        ),
+      ),
+    );
+  }
 
-  const _RoutineItem({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.duration,
-    required this.difficulty,
-    required this.description,
-    required this.imageAsset,
-    required this.color,
-    required this.exerciseIds,
-  });
+  Widget _buildRoutineCard(RoutineEntity r, bool isDark) {
+    final exercisesPreview = r.exercises.isNotEmpty
+        ? r.exercises.map((e) => e.exerciseName).take(3).join(', ') +
+              (r.exercises.length > 3 ? ' +${r.exercises.length - 3} more' : '')
+        : 'Empty routine';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _startRoutine(r),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.limeGreen.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.fitness_center_rounded,
+                      color: AppColors.limeGreen,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                r.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            if (r.isTemplate)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                margin: const EdgeInsets.only(right: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.electricCyan.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'TEMPLATE',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.electricCyan,
+                                  ),
+                                ),
+                              ),
+                            PopupMenuButton<String>(
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                size: 20,
+                              ),
+                              padding: EdgeInsets.zero,
+                              onSelected: (action) {
+                                if (action == 'edit') {
+                                  context.push('/routines/builder?id=${r.id}');
+                                } else if (action == 'duplicate') {
+                                  _duplicateRoutine(r);
+                                } else if (action == 'delete') {
+                                  _deleteRoutine(r);
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_outlined, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Edit Routine'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'duplicate',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.copy_rounded, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Duplicate'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 18,
+                                        color: AppColors.error,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.limeGreen.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                r.category,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.limeGreen,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${r.estimatedMinutes} mins • ${r.exercises.length} exercises',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (r.description != null && r.description!.isNotEmpty) ...[
+                Text(
+                  r.description!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                exercisesPreview,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: isDark
+                      ? AppColors.darkTextTertiary
+                      : AppColors.lightTextTertiary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${r.exercises.fold<int>(0, (sum, e) => sum + e.sets.length)} total sets',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.darkTextTertiary
+                          : AppColors.lightTextTertiary,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.limeGreen,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                    ),
+                    icon: const Icon(
+                      Icons.play_arrow_rounded,
+                      size: 18,
+                      color: Colors.black,
+                    ),
+                    label: const Text(
+                      'Start Workout',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.black,
+                      ),
+                    ),
+                    onPressed: () => _startRoutine(r),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

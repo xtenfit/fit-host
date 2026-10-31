@@ -70,14 +70,13 @@ class _BouncyTapState extends State<BouncyTap>
       reverseDuration: const Duration(milliseconds: 180),
     );
 
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.scaleDown,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-      reverseCurve: AppMotion.iosSpringBounce,
-    ));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleDown).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+        reverseCurve: AppMotion.iosSpringBounce,
+      ),
+    );
   }
 
   @override
@@ -122,10 +121,7 @@ class _BouncyTapState extends State<BouncyTap>
                 widget.onLongPress?.call();
               }
             : null,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: widget.child,
-        ),
+        child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
       ),
     );
   }
@@ -161,14 +157,12 @@ class _FramerSlideInState extends State<FramerSlideIn>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: widget.curve),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: widget.curve));
 
     _slideAnimation = Tween<Offset>(
       begin: widget.beginOffset,
@@ -210,16 +204,26 @@ class _FramerSlideInState extends State<FramerSlideIn>
 
 /// AppleTransitions: Page transitions matching Apple iOS feel with Framer-motion physics.
 class AppleTransitions {
+  static int _pageCounter = 0;
+
+  static LocalKey _resolveUniqueKey(LocalKey? key) {
+    _pageCounter++;
+    if (key == null) {
+      return UniqueKey();
+    }
+    return ValueKey('${key}_$_pageCounter');
+  }
+
   /// Builds an authentic iOS-style page transition with Cupertino slide, parallax and barrier.
   static Page<T> iosPage<T>({
     required Widget child,
-    required LocalKey key,
+    LocalKey? key,
     String? name,
     Object? arguments,
     String? restorationId,
   }) {
     return CustomTransitionPage<T>(
-      key: key,
+      key: _resolveUniqueKey(key),
       name: name,
       arguments: arguments,
       restorationId: restorationId,
@@ -228,32 +232,34 @@ class AppleTransitions {
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         // Incoming screen slides from right with iOS deceleration
-        final primarySlide = Tween<Offset>(
-          begin: const Offset(1.0, 0.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: AppMotion.iosDecelerate,
-          reverseCurve: Curves.easeInCubic,
-        ));
+        final primarySlide =
+            Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: AppMotion.iosDecelerate,
+                reverseCurve: Curves.easeInCubic,
+              ),
+            );
 
         // Outgoing screen has iOS parallax shift to left and subtle fade
-        final secondarySlide = Tween<Offset>(
-          begin: Offset.zero,
-          end: const Offset(-0.25, 0.0),
-        ).animate(CurvedAnimation(
-          parent: secondaryAnimation,
-          curve: AppMotion.iosDecelerate,
-          reverseCurve: Curves.easeInCubic,
-        ));
+        final secondarySlide =
+            Tween<Offset>(
+              begin: Offset.zero,
+              end: const Offset(-0.25, 0.0),
+            ).animate(
+              CurvedAnimation(
+                parent: secondaryAnimation,
+                curve: AppMotion.iosDecelerate,
+                reverseCurve: Curves.easeInCubic,
+              ),
+            );
 
-        final secondaryFade = Tween<double>(
-          begin: 1.0,
-          end: 0.88,
-        ).animate(CurvedAnimation(
-          parent: secondaryAnimation,
-          curve: Curves.linear,
-        ));
+        final secondaryFade = Tween<double>(begin: 1.0, end: 0.88).animate(
+          CurvedAnimation(parent: secondaryAnimation, curve: Curves.linear),
+        );
 
         return SlideTransition(
           position: secondarySlide,
@@ -272,13 +278,13 @@ class AppleTransitions {
   /// Builds an authentic iOS modal sheet transition (slide from bottom with spring).
   static Page<T> iosModal<T>({
     required Widget child,
-    required LocalKey key,
+    LocalKey? key,
     String? name,
     Object? arguments,
     String? restorationId,
   }) {
     return CustomTransitionPage<T>(
-      key: key,
+      key: _resolveUniqueKey(key),
       name: name,
       arguments: arguments,
       restorationId: restorationId,
@@ -286,22 +292,22 @@ class AppleTransitions {
       reverseTransitionDuration: const Duration(milliseconds: 300),
       child: child,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final slideUp = Tween<Offset>(
-          begin: const Offset(0.0, 1.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: AppMotion.iosModal,
-          reverseCurve: Curves.easeInCubic,
-        ));
+        final slideUp =
+            Tween<Offset>(
+              begin: const Offset(0.0, 1.0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: AppMotion.iosModal,
+                reverseCurve: Curves.easeInCubic,
+              ),
+            );
 
         final fade = Tween<double>(
           begin: 0.0,
           end: 1.0,
-        ).animate(CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeOut,
-        ));
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
 
         return SlideTransition(
           position: slideUp,
@@ -320,26 +326,18 @@ class AppleTransitions {
     required Animation<double> animation,
   }) {
     final scale = Tween<double>(begin: 0.985, end: 1.0).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: AppMotion.iosDecelerate,
-      ),
+      CurvedAnimation(parent: animation, curve: AppMotion.iosDecelerate),
     );
 
-    final fade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOut,
-      ),
-    );
+    final fade = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut));
 
     return RepaintBoundary(
       child: FadeTransition(
         opacity: fade,
-        child: ScaleTransition(
-          scale: scale,
-          child: child,
-        ),
+        child: ScaleTransition(scale: scale, child: child),
       ),
     );
   }

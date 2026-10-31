@@ -7,13 +7,18 @@ class SoundSettingsScreen extends ConsumerStatefulWidget {
   const SoundSettingsScreen({super.key});
 
   @override
-  ConsumerState<SoundSettingsScreen> createState() => _SoundSettingsScreenState();
+  ConsumerState<SoundSettingsScreen> createState() =>
+      _SoundSettingsScreenState();
 }
 
 class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
   String? _currentlyPlayingId;
 
-  Future<void> _togglePreview(String soundId, bool isPlaying, bool boostVolume) async {
+  Future<void> _togglePreview(
+    String soundId,
+    bool isPlaying,
+    bool boostVolume,
+  ) async {
     final service = ref.read(alarmSoundServiceProvider);
     if (isPlaying) {
       await service.stopSound();
@@ -37,7 +42,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
     final settingsAsync = ref.watch(alarmSoundSettingsProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Alarm & Reminder Sounds'),
         leading: IconButton(
@@ -47,86 +54,21 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
       ),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error loading sound settings: $err')),
+        error: (err, _) =>
+            Center(child: Text('Error loading sound settings: $err')),
         data: (settings) {
           return SafeArea(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               children: [
-                // Header Card
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [const Color(0xFF261D10), const Color(0xFF131722)]
-                          : [const Color(0xFFFFF7E6), Colors.white],
-                    ),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: const Color(0xFFFFB300).withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFB300).withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.volume_up_rounded, color: Color(0xFFFFB300), size: 24),
-                          ),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Acoustic Alert Engine',
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                                ),
-                                Text(
-                                  '5 Built-in Tones + Activity Controls',
-                                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFB300).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'v1.2.2v2',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFFFB300)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Select default notification chimes, boost stream volume for loud gym environments, and customize alert sounds for workouts, hydration, and daily life diaries.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.45,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
                 // Section 1: Default Sounds
                 const Text(
                   'Default Alarm & Reminder Sounds',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -143,38 +85,67 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                         side: BorderSide(
                           color: isSelected
                               ? AppColors.limeGreen
-                              : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                              : (isDark
+                                    ? AppColors.darkSurfaceBorder
+                                    : AppColors.lightSurfaceBorder),
                           width: isSelected ? 1.5 : 1.0,
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      leading: IconButton(
-                        icon: Icon(
-                          isPlaying ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded,
-                          color: isPlaying ? Colors.redAccent : AppColors.limeGreen,
-                          size: 32,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
                         ),
-                        onPressed: () => _togglePreview(preset.id, isPlaying, settings.fullVolumeBoost),
-                      ),
-                      title: Text(preset.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                      subtitle: Text(
-                        '${preset.description} • ${preset.category}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        leading: IconButton(
+                          icon: Icon(
+                            isPlaying
+                                ? Icons.stop_circle_rounded
+                                : Icons.play_circle_fill_rounded,
+                            color: isPlaying
+                                ? Colors.redAccent
+                                : AppColors.limeGreen,
+                            size: 32,
+                          ),
+                          onPressed: () => _togglePreview(
+                            preset.id,
+                            isPlaying,
+                            settings.fullVolumeBoost,
+                          ),
                         ),
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(
-                          isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                          color: isSelected ? AppColors.limeGreen : Colors.grey,
+                        title: Text(
+                          preset.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
                         ),
-                        onPressed: () => ref.read(alarmSoundSettingsProvider.notifier).setDefaultSound(preset.id),
+                        subtitle: Text(
+                          '${preset.description} • ${preset.category}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(
+                            isSelected
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: isSelected
+                                ? AppColors.limeGreen
+                                : Colors.grey,
+                          ),
+                          onPressed: () => ref
+                              .read(alarmSoundSettingsProvider.notifier)
+                              .setDefaultSound(preset.id),
+                        ),
+                        onTap: () => ref
+                            .read(alarmSoundSettingsProvider.notifier)
+                            .setDefaultSound(preset.id),
                       ),
-                      onTap: () => ref.read(alarmSoundSettingsProvider.notifier).setDefaultSound(preset.id),
-                    ),
                     ),
                   );
                 }),
@@ -187,10 +158,18 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                     color: isDark ? AppColors.darkSurface : Colors.white,
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: settings.defaultSoundId == AlarmSoundService.customSoundId
+                      color:
+                          settings.defaultSoundId ==
+                              AlarmSoundService.customSoundId
                           ? AppColors.limeGreen
-                          : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
-                      width: settings.defaultSoundId == AlarmSoundService.customSoundId ? 1.5 : 1.0,
+                          : (isDark
+                                ? AppColors.darkSurfaceBorder
+                                : AppColors.lightSurfaceBorder),
+                      width:
+                          settings.defaultSoundId ==
+                              AlarmSoundService.customSoundId
+                          ? 1.5
+                          : 1.0,
                     ),
                   ),
                   child: Column(
@@ -201,7 +180,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.electricCyan.withValues(alpha: 0.15),
+                              color: AppColors.electricCyan.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -217,18 +198,26 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                               children: [
                                 const Text(
                                   'Custom Device Audio',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 Text(
-                                  settings.customAudioName ?? 'Select any MP3, WAV, AAC from your phone',
+                                  settings.customAudioName ??
+                                      'Select any MP3, WAV, AAC from your phone',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: settings.customAudioName != null
                                         ? AppColors.limeGreen
-                                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                                    fontWeight: settings.customAudioName != null ? FontWeight.w600 : FontWeight.normal,
+                                        : (isDark
+                                              ? AppColors.darkTextSecondary
+                                              : AppColors.lightTextSecondary),
+                                    fontWeight: settings.customAudioName != null
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               ],
@@ -238,33 +227,42 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                             IconButton(
                               tooltip: 'Preview custom audio',
                               icon: Icon(
-                                _currentlyPlayingId == AlarmSoundService.customSoundId
+                                _currentlyPlayingId ==
+                                        AlarmSoundService.customSoundId
                                     ? Icons.stop_circle_rounded
                                     : Icons.play_circle_fill_rounded,
-                                color: _currentlyPlayingId == AlarmSoundService.customSoundId
+                                color:
+                                    _currentlyPlayingId ==
+                                        AlarmSoundService.customSoundId
                                     ? Colors.redAccent
                                     : AppColors.electricCyan,
                                 size: 28,
                               ),
                               onPressed: () => _togglePreview(
                                 AlarmSoundService.customSoundId,
-                                _currentlyPlayingId == AlarmSoundService.customSoundId,
+                                _currentlyPlayingId ==
+                                    AlarmSoundService.customSoundId,
                                 settings.fullVolumeBoost,
                               ),
                             ),
                             IconButton(
                               tooltip: 'Set as default alarm',
                               icon: Icon(
-                                settings.defaultSoundId == AlarmSoundService.customSoundId
+                                settings.defaultSoundId ==
+                                        AlarmSoundService.customSoundId
                                     ? Icons.check_circle_rounded
                                     : Icons.radio_button_unchecked_rounded,
-                                color: settings.defaultSoundId == AlarmSoundService.customSoundId
+                                color:
+                                    settings.defaultSoundId ==
+                                        AlarmSoundService.customSoundId
                                     ? AppColors.limeGreen
                                     : Colors.grey,
                               ),
                               onPressed: () => ref
                                   .read(alarmSoundSettingsProvider.notifier)
-                                  .setDefaultSound(AlarmSoundService.customSoundId),
+                                  .setDefaultSound(
+                                    AlarmSoundService.customSoundId,
+                                  ),
                             ),
                           ],
                         ],
@@ -281,7 +279,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                                 if (picked && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Custom device sound loaded and set!'),
+                                      content: Text(
+                                        'Custom device sound loaded and set!',
+                                      ),
                                       backgroundColor: AppColors.limeGreen,
                                     ),
                                   );
@@ -297,12 +297,19 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                                 settings.customAudioName == null
                                     ? 'Select Audio File from Device'
                                     : 'Change Custom Sound',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: isDark ? Colors.white : Colors.black87,
+                                foregroundColor: isDark
+                                    ? Colors.white
+                                    : Colors.black87,
                                 side: BorderSide(
-                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                                  color: isDark
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFFCBD5E1),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -314,9 +321,14 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                             const SizedBox(width: 8),
                             IconButton(
                               tooltip: 'Remove custom audio',
-                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                              onPressed: () =>
-                                  ref.read(alarmSoundSettingsProvider.notifier).removeCustomAudio(),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.redAccent,
+                                size: 20,
+                              ),
+                              onPressed: () => ref
+                                  .read(alarmSoundSettingsProvider.notifier)
+                                  .removeCustomAudio(),
                             ),
                           ],
                         ],
@@ -333,43 +345,73 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
-                        color: settings.defaultSoundId == AlarmSoundService.deviceDefaultId
+                        color:
+                            settings.defaultSoundId ==
+                                AlarmSoundService.deviceDefaultId
                             ? AppColors.limeGreen
-                            : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
-                        width: settings.defaultSoundId == AlarmSoundService.deviceDefaultId ? 1.5 : 1.0,
+                            : (isDark
+                                  ? AppColors.darkSurfaceBorder
+                                  : AppColors.lightSurfaceBorder),
+                        width:
+                            settings.defaultSoundId ==
+                                AlarmSoundService.deviceDefaultId
+                            ? 1.5
+                            : 1.0,
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
                       ),
-                      child: const Icon(Icons.phonelink_ring_rounded, color: Colors.blueAccent, size: 20),
-                    ),
-                    title: const Text('Device System Default Sound', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                    subtitle: Text(
-                      'Use standard OS notification tone configured in system settings',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.phonelink_ring_rounded,
+                          color: Colors.blueAccent,
+                          size: 20,
+                        ),
                       ),
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(
-                        settings.defaultSoundId == AlarmSoundService.deviceDefaultId
-                            ? Icons.check_circle_rounded
-                            : Icons.radio_button_unchecked_rounded,
-                        color: settings.defaultSoundId == AlarmSoundService.deviceDefaultId
-                            ? AppColors.limeGreen
-                            : Colors.grey,
+                      title: const Text(
+                        'Device System Default Sound',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                       ),
-                      onPressed: () => ref.read(alarmSoundSettingsProvider.notifier).setDefaultSound(AlarmSoundService.deviceDefaultId),
-                    ),
-                    onTap: () => ref.read(alarmSoundSettingsProvider.notifier).setDefaultSound(AlarmSoundService.deviceDefaultId),
+                      subtitle: Text(
+                        'Use standard OS notification tone configured in system settings',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(
+                          settings.defaultSoundId ==
+                                  AlarmSoundService.deviceDefaultId
+                              ? Icons.check_circle_rounded
+                              : Icons.radio_button_unchecked_rounded,
+                          color:
+                              settings.defaultSoundId ==
+                                  AlarmSoundService.deviceDefaultId
+                              ? AppColors.limeGreen
+                              : Colors.grey,
+                        ),
+                        onPressed: () => ref
+                            .read(alarmSoundSettingsProvider.notifier)
+                            .setDefaultSound(AlarmSoundService.deviceDefaultId),
+                      ),
+                      onTap: () => ref
+                          .read(alarmSoundSettingsProvider.notifier)
+                          .setDefaultSound(AlarmSoundService.deviceDefaultId),
                     ),
                   ),
                 ),
@@ -378,7 +420,11 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                 // Section 2: Volume Boost & Vibration Controls
                 const Text(
                   'Sound & Volume Control',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -389,7 +435,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
                       side: BorderSide(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
@@ -398,79 +446,119 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                       child: Column(
                         children: [
                           SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        value: settings.fullVolumeBoost,
-                        activeTrackColor: AppColors.limeGreen,
-                        title: const Text('Full Volume Boost (Gym Mode)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        subtitle: Text(
-                          'Forces reminder audio streams to full volume to penetrate gym background noise',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                          ),
-                        ),
-                        onChanged: (val) => ref.read(alarmSoundSettingsProvider.notifier).toggleVolumeBoost(val),
-                      ),
-                      const Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Haptic Vibration Pattern',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  'Tactile alert feedback on notification',
-                                  style: TextStyle(fontSize: 11, color: Colors.grey),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                            contentPadding: EdgeInsets.zero,
+                            value: settings.fullVolumeBoost,
+                            activeTrackColor: AppColors.limeGreen,
+                            title: const Text(
+                              'Full Volume Boost (Gym Mode)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
+                            subtitle: Text(
+                              'Forces reminder audio streams to full volume to penetrate gym background noise',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                            onChanged: (val) => ref
+                                .read(alarmSoundSettingsProvider.notifier)
+                                .toggleVolumeBoost(val),
                           ),
-                          const SizedBox(width: 8),
-                          DropdownButton<String>(
-                            value: settings.vibrationPattern,
-                            underline: const SizedBox(),
-                            dropdownColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                            items: const [
-                              DropdownMenuItem(value: 'gentle', child: Text('Gentle Pulse')),
-                              DropdownMenuItem(value: 'standard', child: Text('Standard')),
-                              DropdownMenuItem(value: 'double_pulse', child: Text('Double Pulse')),
-                              DropdownMenuItem(value: 'strong', child: Text('Gym Strong')),
+                          const Divider(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Haptic Vibration Pattern',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      'Tactile alert feedback on notification',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              DropdownButton<String>(
+                                value: settings.vibrationPattern,
+                                underline: const SizedBox(),
+                                dropdownColor: isDark
+                                    ? AppColors.darkSurfaceElevated
+                                    : Colors.white,
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'gentle',
+                                    child: Text('Gentle Pulse'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'standard',
+                                    child: Text('Standard'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'double_pulse',
+                                    child: Text('Double Pulse'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'strong',
+                                    child: Text('Gym Strong'),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    ref
+                                        .read(
+                                          alarmSoundSettingsProvider.notifier,
+                                        )
+                                        .setVibrationPattern(val);
+                                  }
+                                },
+                              ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                ref.read(alarmSoundSettingsProvider.notifier).setVibrationPattern(val);
-                              }
-                            },
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Section 3: Activity-Specific Sound Mapping
                 const Text(
                   'Activity-Specific Sound Assignment',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Assign distinctive sound signatures to different health actions',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -519,7 +607,8 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                     color: Colors.indigoAccent,
                   ),
                 ].map((act) {
-                  final currentSoundId = settings.activitySounds[act.key] ?? 'cyber_chime';
+                  final currentSoundId =
+                      settings.activitySounds[act.key] ?? 'cyber_chime';
                   final isPlaying = _currentlyPlayingId == 'act_${act.key}';
 
                   return Container(
@@ -529,7 +618,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                       color: isDark ? AppColors.darkSurface : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     child: Column(
@@ -554,7 +645,10 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                                     act.title,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -563,7 +657,9 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
                                     ),
                                   ),
                                 ],
@@ -576,49 +672,79 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                           children: [
                             Expanded(
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isDark ? AppColors.darkSurfaceElevated : const Color(0xFFF1F5F9),
+                                  color: isDark
+                                      ? AppColors.darkSurfaceElevated
+                                      : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                                    color: isDark
+                                        ? AppColors.darkSurfaceBorder
+                                        : AppColors.lightSurfaceBorder,
                                   ),
                                 ),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     isExpanded: true,
-                                    value: (currentSoundId == AlarmSoundService.customSoundId && settings.customAudioName == null)
+                                    value:
+                                        (currentSoundId ==
+                                                AlarmSoundService
+                                                    .customSoundId &&
+                                            settings.customAudioName == null)
                                         ? 'cyber_chime'
                                         : currentSoundId,
-                                    dropdownColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                                    dropdownColor: isDark
+                                        ? AppColors.darkSurfaceElevated
+                                        : Colors.white,
                                     items: [
                                       ...AlarmSoundService.defaultPresets.map(
                                         (p) => DropdownMenuItem(
                                           value: p.id,
                                           child: Text(
                                             p.name,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ),
                                       if (settings.customAudioName != null)
                                         DropdownMenuItem(
-                                          value: AlarmSoundService.customSoundId,
+                                          value:
+                                              AlarmSoundService.customSoundId,
                                           child: Text(
                                             'Custom: ${settings.customAudioName}',
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.limeGreen),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.limeGreen,
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       const DropdownMenuItem(
-                                        value: AlarmSoundService.deviceDefaultId,
-                                        child: Text('Device Default', style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                                        value:
+                                            AlarmSoundService.deviceDefaultId,
+                                        child: Text(
+                                          'Device Default',
+                                          style: TextStyle(fontSize: 12),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ],
                                     onChanged: (val) {
                                       if (val != null) {
-                                        ref.read(alarmSoundSettingsProvider.notifier).setActivitySound(act.key, val);
+                                        ref
+                                            .read(
+                                              alarmSoundSettingsProvider
+                                                  .notifier,
+                                            )
+                                            .setActivitySound(act.key, val);
                                       }
                                     },
                                   ),
@@ -628,11 +754,17 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                             const SizedBox(width: 8),
                             IconButton(
                               icon: Icon(
-                                isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                                isPlaying
+                                    ? Icons.stop_rounded
+                                    : Icons.play_arrow_rounded,
                                 color: isPlaying ? Colors.redAccent : act.color,
                                 size: 22,
                               ),
-                              onPressed: () => _togglePreview(currentSoundId, isPlaying, settings.fullVolumeBoost),
+                              onPressed: () => _togglePreview(
+                                currentSoundId,
+                                isPlaying,
+                                settings.fullVolumeBoost,
+                              ),
                             ),
                           ],
                         ),
@@ -644,7 +776,7 @@ class _SoundSettingsScreenState extends ConsumerState<SoundSettingsScreen> {
                 const SizedBox(height: 24),
                 Center(
                   child: Text(
-                    '© 2026 amitrana. All rights reserved.\nFit Host Acoustic Alert Engine v1.2.2v2',
+                    '© 2026 amitrana. All rights reserved.\nFit Host Acoustic Alert Engine v1.3.0',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

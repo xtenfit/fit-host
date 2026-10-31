@@ -41,10 +41,14 @@ class OnboardingProgressHeader extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceElevated,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : AppColors.lightSurfaceElevated,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   child: Icon(
@@ -61,7 +65,9 @@ class OnboardingProgressHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.electricBlueSurface : AppColors.electricBlueSurfaceLight,
+                color: isDark
+                    ? AppColors.electricBlueSurface
+                    : AppColors.electricBlueSurfaceLight,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: AppColors.electricBlue.withValues(alpha: 0.3),
@@ -85,7 +91,9 @@ class OnboardingProgressHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               )
@@ -101,8 +109,12 @@ class OnboardingProgressHeader extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 5,
-            backgroundColor: isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceElevated,
-            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.electricBlue),
+            backgroundColor: isDark
+                ? AppColors.darkSurfaceElevated
+                : AppColors.lightSurfaceElevated,
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppColors.electricBlue,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -122,7 +134,9 @@ class OnboardingProgressHeader extends StatelessWidget {
           subtitle,
           style: TextStyle(
             fontSize: 13,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
             height: 1.4,
           ),
         ),

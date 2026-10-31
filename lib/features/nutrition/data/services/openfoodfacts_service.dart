@@ -6,7 +6,8 @@ import '../../domain/models/food_item.dart';
 class OpenFoodFactsService {
   final http.Client _client;
 
-  OpenFoodFactsService([http.Client? client]) : _client = client ?? http.Client();
+  OpenFoodFactsService([http.Client? client])
+    : _client = client ?? http.Client();
 
   static const String _userAgent = 'FitHostApp - Android/iOS - Version 1.0';
 
@@ -15,11 +16,12 @@ class OpenFoodFactsService {
       final cleanBarcode = barcode.trim();
       if (cleanBarcode.isEmpty) return null;
 
-      final url = Uri.parse('https://world.openfoodfacts.org/api/v2/product/$cleanBarcode.json');
-      final response = await _client.get(
-        url,
-        headers: {'User-Agent': _userAgent},
-      ).timeout(const Duration(seconds: 8));
+      final url = Uri.parse(
+        'https://world.openfoodfacts.org/api/v2/product/$cleanBarcode.json',
+      );
+      final response = await _client
+          .get(url, headers: {'User-Agent': _userAgent})
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode != 200) {
         return null;
@@ -31,7 +33,10 @@ class OpenFoodFactsService {
         return null;
       }
 
-      return parseProductJson(data['product'] as Map<String, dynamic>, cleanBarcode);
+      return parseProductJson(
+        data['product'] as Map<String, dynamic>,
+        cleanBarcode,
+      );
     } catch (e) {
       debugPrint('OpenFoodFactsService fetch error: $e');
       return null;
@@ -40,17 +45,19 @@ class OpenFoodFactsService {
 
   Future<List<FoodItem>> searchProducts(String query, {int limit = 15}) async {
     try {
-      final cleanQuery = Uri.encodeComponent(query.trim());
+      final normalizedQuery = query.trim();
+      if (normalizedQuery.isEmpty) return [];
+      final safeLimit = limit.clamp(1, 50);
+      final cleanQuery = Uri.encodeQueryComponent(normalizedQuery);
       if (cleanQuery.isEmpty) return [];
 
       final url = Uri.parse(
-        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=$cleanQuery&search_simple=1&action=process&json=1&page_size=$limit',
+        'https://world.openfoodfacts.org/cgi/search.pl?search_terms=$cleanQuery&search_simple=1&action=process&json=1&page_size=$safeLimit',
       );
 
-      final response = await _client.get(
-        url,
-        headers: {'User-Agent': _userAgent},
-      ).timeout(const Duration(seconds: 8));
+      final response = await _client
+          .get(url, headers: {'User-Agent': _userAgent})
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode != 200) return [];
 
@@ -73,7 +80,10 @@ class OpenFoodFactsService {
     }
   }
 
-  FoodItem? parseProductJson(Map<String, dynamic>? data, [String? fallbackBarcode]) {
+  FoodItem? parseProductJson(
+    Map<String, dynamic>? data, [
+    String? fallbackBarcode,
+  ]) {
     if (data == null || data.isEmpty) return null;
     try {
       final Map<String, dynamic> product;
@@ -88,7 +98,8 @@ class OpenFoodFactsService {
         product = data;
       }
 
-      final name = (product['product_name'] as String?)?.trim() ??
+      final name =
+          (product['product_name'] as String?)?.trim() ??
           (product['product_name_en'] as String?)?.trim() ??
           '';
       if (name.isEmpty) return null;
@@ -98,13 +109,25 @@ class OpenFoodFactsService {
       final nutriments = product['nutriments'] as Map<String, dynamic>? ?? {};
 
       final protein = _extractNum(nutriments, ['proteins_100g', 'proteins']);
-      final carbs = _extractNum(nutriments, ['carbohydrates_100g', 'carbohydrates']);
+      final carbs = _extractNum(nutriments, [
+        'carbohydrates_100g',
+        'carbohydrates',
+      ]);
       final fat = _extractNum(nutriments, ['fat_100g', 'fat']);
 
       // Calories: energy-kcal_100g or convert from kJ (energy_100g / 4.184)
-      double calories = _extractNum(nutriments, ['energy-kcal_100g', 'energy-kcal', 'energy_kcal']);
+      double calories = _extractNum(nutriments, [
+        'energy-kcal_100g',
+        'energy-kcal',
+        'energy_kcal',
+      ]);
       if (calories <= 0) {
-        final kj = _extractNum(nutriments, ['energy-kj_100g', 'energy-kj', 'energy_100g', 'energy']);
+        final kj = _extractNum(nutriments, [
+          'energy-kj_100g',
+          'energy-kj',
+          'energy_100g',
+          'energy',
+        ]);
         if (kj > 0) {
           calories = kj / 4.184;
         } else {
@@ -113,7 +136,8 @@ class OpenFoodFactsService {
         }
       }
 
-      final imageUrl = (product['image_front_url'] as String?) ??
+      final imageUrl =
+          (product['image_front_url'] as String?) ??
           (product['image_url'] as String?);
 
       return FoodItem(

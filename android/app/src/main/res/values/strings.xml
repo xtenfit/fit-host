@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Fit Host</string>
+    <string name="shortcut_workout_short">Workouts</string>
+    <string name="shortcut_workout_long">Start Workout</string>
+    <string name="shortcut_hydration_short">Hydration</string>
+    <string name="shortcut_hydration_long">Log Water</string>
+    <string name="shortcut_steps_short">Steps</string>
+    <string name="shortcut_steps_long">Daily Steps</string>
+    <string name="shortcut_nutrition_short">Nutrition</string>
+    <string name="shortcut_nutrition_long">Log Meal</string>
 </resources>

@@ -40,37 +40,40 @@ class _FakeProfileRepository implements UserProfileRepository {
 }
 
 void main() {
-  testWidgets('ProfileSetupScreen(isInitialSetup: true) displays only display name and avatar picker, with NO gender selection', (tester) async {
-    final inMemoryDb = AppDatabase(NativeDatabase.memory());
-    final fakeRepo = _FakeProfileRepository();
+  testWidgets(
+    'ProfileSetupScreen(isInitialSetup: true) displays only display name and avatar picker, with NO gender selection',
+    (tester) async {
+      final inMemoryDb = AppDatabase(NativeDatabase.memory());
+      final fakeRepo = _FakeProfileRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(inMemoryDb),
-          userProfileRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
-        child: const MaterialApp(
-          home: ProfileSetupScreen(isInitialSetup: true),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(inMemoryDb),
+            userProfileRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(
+            home: ProfileSetupScreen(isInitialSetup: true),
+          ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Verify initial setup headers
-    expect(find.text('Complete Your Profile'), findsWidgets);
-    expect(find.text('What should we call you?'), findsOneWidget);
-    expect(find.text('Athlete Name'), findsOneWidget);
-    expect(find.text('Change Avatar'), findsOneWidget);
-    expect(find.text('Complete Setup & Start'), findsOneWidget);
+      // Verify initial setup headers
+      expect(find.text('Complete Your Profile'), findsWidgets);
+      expect(find.text('What should we call you?'), findsOneWidget);
+      expect(find.text('Athlete Name'), findsOneWidget);
+      expect(find.text('Change Avatar'), findsOneWidget);
+      expect(find.text('Complete Setup & Start'), findsOneWidget);
 
-    // Verify ABSOLUTELY NO gender selector widget or biological sex form input
-    expect(find.text('Biological Sex'), findsNothing);
-    expect(find.text('Select Gender'), findsNothing);
-    expect(find.text('Non-binary'), findsNothing);
-    expect(find.byType(Radio), findsNothing);
+      // Verify ABSOLUTELY NO gender selector widget or biological sex form input
+      expect(find.text('Biological Sex'), findsNothing);
+      expect(find.text('Select Gender'), findsNothing);
+      expect(find.text('Non-binary'), findsNothing);
+      expect(find.byType(Radio), findsNothing);
 
-    await inMemoryDb.close();
-  });
+      await inMemoryDb.close();
+    },
+  );
 }

@@ -22,19 +22,41 @@ class HomeActivityCard extends ConsumerWidget {
     final workoutsAsync = ref.watch(workoutsStreamProvider);
     final profile = ref.watch(userProfileProvider);
 
+    final stepState = ref.watch(stepControllerProvider);
+    final now = DateTime.now();
+    final filter = dashboard.selectedActivityFilter;
+    final rangeStart = _rangeStart(now, filter);
+
     final completedWorkouts = workoutsAsync.maybeWhen(
-      data: (workouts) => workouts.where((w) => w.status == 'completed').toList(),
+      data: (workouts) => workouts
+          .where(
+            (w) =>
+                w.status == 'completed' &&
+                _isInRange(w.startedAt.toLocal(), rangeStart, now),
+          )
+          .toList(),
       orElse: () => <WorkoutEntity>[],
     );
 
+    final historySteps = stepState.history
+        .where((record) => _isInRange(record.date, rangeStart, now))
+        .fold<int>(0, (sum, record) => sum + record.steps);
+    final displayedSteps = historySteps == 0 && filter == 'Today'
+        ? stepState.todaySteps
+        : historySteps;
     final totalActiveMinutes = completedWorkouts.fold<int>(
       0,
       (sum, w) => sum + (w.durationSeconds ~/ 60),
     );
 
-    final goalMinutes = profile.dailyWorkoutMinutes > 0 ? profile.dailyWorkoutMinutes : 45;
+    final goalMinutes = profile.dailyWorkoutMinutes > 0
+        ? profile.dailyWorkoutMinutes
+        : 45;
     final progress = (totalActiveMinutes / goalMinutes).clamp(0.0, 1.0);
-    final leftMinutes = (goalMinutes - totalActiveMinutes).clamp(0, goalMinutes);
+    final leftMinutes = (goalMinutes - totalActiveMinutes).clamp(
+      0,
+      goalMinutes,
+    );
     final restMinutes = (totalActiveMinutes * 0.15).round();
 
     const filters = ['Today', 'Weekly', 'Monthly', 'Yearly', 'All Time'];
@@ -64,7 +86,9 @@ class HomeActivityCard extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.limeGreen : AppColors.limeGreenDark,
+                    color: isDark
+                        ? AppColors.limeGreen
+                        : AppColors.limeGreenDark,
                   ),
                 ),
               ),
@@ -89,16 +113,23 @@ class HomeActivityCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(18),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? const Color(0xFFFF6B4A)
-                        : (isDark ? AppColors.darkSurfaceElevated : Colors.white),
+                        : (isDark
+                              ? AppColors.darkSurfaceElevated
+                              : Colors.white),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
                           ? const Color(0xFFFF6B4A)
-                          : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                          : (isDark
+                                ? AppColors.darkSurfaceBorder
+                                : AppColors.lightSurfaceBorder),
                     ),
                   ),
                   child: Center(
@@ -109,7 +140,9 @@ class HomeActivityCard extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         color: isSelected
                             ? Colors.white
-                            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                            : (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary),
                       ),
                     ),
                   ),
@@ -127,7 +160,9 @@ class HomeActivityCard extends ConsumerWidget {
             color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+              color: isDark
+                  ? AppColors.darkSurfaceBorder
+                  : AppColors.lightSurfaceBorder,
             ),
             boxShadow: [
               BoxShadow(
@@ -161,13 +196,17 @@ class HomeActivityCard extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Today\'s Workout',
+                            filter == 'Today'
+                                ? 'Today\'s Workout'
+                                : '$filter Activity',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.lightTextPrimary,
                             ),
                           ),
                         ),
@@ -180,7 +219,9 @@ class HomeActivityCard extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.limeGreen : AppColors.limeGreenDark,
+                      color: isDark
+                          ? AppColors.limeGreen
+                          : AppColors.limeGreenDark,
                     ),
                   ),
                 ],
@@ -198,7 +239,9 @@ class HomeActivityCard extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -217,7 +260,9 @@ class HomeActivityCard extends ConsumerWidget {
                             'min.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                              color: isDark
+                                  ? AppColors.darkTextTertiary
+                                  : AppColors.lightTextTertiary,
                             ),
                           ),
                         ],
@@ -247,7 +292,9 @@ class HomeActivityCard extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.lightTextPrimary,
                                 letterSpacing: -0.5,
                               ),
                             ),
@@ -256,7 +303,9 @@ class HomeActivityCard extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -272,7 +321,9 @@ class HomeActivityCard extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -291,7 +342,9 @@ class HomeActivityCard extends ConsumerWidget {
                             'min.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                              color: isDark
+                                  ? AppColors.darkTextTertiary
+                                  : AppColors.lightTextTertiary,
                             ),
                           ),
                         ],
@@ -309,7 +362,8 @@ class HomeActivityCard extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _WorkoutActivityTile(
                       title: w.title,
-                      subtitle: '${w.totalVolumeKg.toInt()} kg volume • ${w.completedSets} sets completed',
+                      subtitle:
+                          '${w.totalVolumeKg.toInt()} kg volume • ${w.completedSets} sets completed',
                       duration: '${(w.durationSeconds ~/ 60)} min.',
                       icon: Icons.fitness_center_rounded,
                       iconColor: const Color(0xFFFFB300),
@@ -322,12 +376,18 @@ class HomeActivityCard extends ConsumerWidget {
                   onTap: () => context.go('/workouts'),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
-                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.04),
+                      color: (isDark ? Colors.white : Colors.black).withValues(
+                        alpha: 0.04,
+                      ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.08),
                       ),
                     ),
                     child: Row(
@@ -354,14 +414,18 @@ class HomeActivityCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
-                                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.lightTextPrimary,
                                 ),
                               ),
                               Text(
                                 'Start a workout routine to record real volume and duration',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],
@@ -393,10 +457,14 @@ class HomeActivityCard extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   child: Column(
@@ -410,7 +478,9 @@ class HomeActivityCard extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.lightTextPrimary,
                             ),
                           ),
                           const Icon(
@@ -425,18 +495,22 @@ class HomeActivityCard extends ConsumerWidget {
                         child: Column(
                           children: [
                             Text(
-                              '${dashboard.walkSteps}',
+                              '$displayedSteps',
                               style: TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.lightTextPrimary,
                               ),
                             ),
                             Text(
                               'Steps',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -449,18 +523,23 @@ class HomeActivityCard extends ConsumerWidget {
             ),
             const SizedBox(width: 12),
 
-            // Sleep Card
+            // Sleep Card (Honest state: shows -- if unrecorded)
             Expanded(
               child: InkWell(
-                onTap: () => _showLogSleepDialog(context, ref, dashboard.sleepHours),
+                onTap: () =>
+                    _showLogSleepDialog(context, ref, dashboard.sleepHours),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   child: Column(
@@ -474,7 +553,9 @@ class HomeActivityCard extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                              color: isDark
+                                  ? Colors.white
+                                  : AppColors.lightTextPrimary,
                             ),
                           ),
                           const Text('🌙', style: TextStyle(fontSize: 14)),
@@ -485,7 +566,9 @@ class HomeActivityCard extends ConsumerWidget {
                         child: Column(
                           children: [
                             Text(
-                              dashboard.sleepHours.toStringAsFixed(2),
+                              dashboard.sleepHours > 0
+                                  ? dashboard.sleepHours.toStringAsFixed(1)
+                                  : '--',
                               style: const TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w900,
@@ -493,10 +576,12 @@ class HomeActivityCard extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              'Hours',
+                              dashboard.sleepHours > 0 ? 'Hours' : 'Tap to log',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -513,6 +598,29 @@ class HomeActivityCard extends ConsumerWidget {
     );
   }
 
+  DateTime _rangeStart(DateTime now, String filter) {
+    final today = DateTime(now.year, now.month, now.day);
+    switch (filter) {
+      case 'Weekly':
+        return today.subtract(const Duration(days: 6));
+      case 'Monthly':
+        return DateTime(today.year, today.month, 1);
+      case 'Yearly':
+        return DateTime(today.year);
+      case 'All Time':
+        return DateTime(2000);
+      case 'Today':
+      default:
+        return today;
+    }
+  }
+
+  bool _isInRange(DateTime value, DateTime start, DateTime now) {
+    final date = DateTime(value.year, value.month, value.day);
+    final end = DateTime(now.year, now.month, now.day);
+    return !date.isBefore(start) && !date.isAfter(end);
+  }
+
   void _showLogStepsDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
     showDialog(
@@ -522,16 +630,27 @@ class HomeActivityCard extends ConsumerWidget {
           builder: (context, setDialogState) {
             final textVal = controller.text.trim();
             final parsed = int.tryParse(textVal) ?? 0;
-            final dist = StepCalculator.distanceKm(steps: parsed, strideCm: 72.6);
+            final dist = StepCalculator.distanceKm(
+              steps: parsed,
+              strideCm: 72.6,
+            );
             final cal = StepCalculator.estimateCalories(parsed);
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
               title: const Row(
                 children: [
-                  Icon(Icons.directions_walk_rounded, color: AppColors.limeGreen),
+                  Icon(
+                    Icons.directions_walk_rounded,
+                    color: AppColors.limeGreen,
+                  ),
                   SizedBox(width: 10),
-                  Text('Log Walk Steps', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                  Text(
+                    'Log Walk Steps',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                  ),
                 ],
               ),
               content: Column(
@@ -550,15 +669,23 @@ class HomeActivityCard extends ConsumerWidget {
                     decoration: InputDecoration(
                       hintText: 'e.g. 2500',
                       labelText: 'Actual Steps',
-                      prefixIcon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      prefixIcon: const Icon(
+                        Icons.add_circle_outline_rounded,
+                        size: 20,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     onChanged: (_) => setDialogState(() {}),
                   ),
                   if (parsed > 0) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.limeGreen.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
@@ -566,8 +693,21 @@ class HomeActivityCard extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Est. Distance: ${dist.toStringAsFixed(2)} km', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                          Text('Est. Burn: $cal kcal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.limeGreen)),
+                          Text(
+                            'Est. Distance: ${dist.toStringAsFixed(2)} km',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'Est. Burn: $cal kcal',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.limeGreen,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -590,8 +730,12 @@ class HomeActivityCard extends ConsumerWidget {
                   onPressed: parsed <= 0
                       ? null
                       : () {
-                          ref.read(homeDashboardProvider.notifier).logSteps(parsed);
-                          ref.read(stepControllerProvider.notifier).addSimulatedSteps(parsed);
+                          ref
+                              .read(homeDashboardProvider.notifier)
+                              .logSteps(parsed);
+                          ref
+                              .read(stepControllerProvider.notifier)
+                              .addSimulatedSteps(parsed);
                           Navigator.pop(ctx);
                         },
                   style: ElevatedButton.styleFrom(
@@ -608,37 +752,204 @@ class HomeActivityCard extends ConsumerWidget {
     );
   }
 
-  void _showLogSleepDialog(BuildContext context, WidgetRef ref, double current) {
+  void _showLogSleepDialog(
+    BuildContext context,
+    WidgetRef ref,
+    double current,
+  ) {
+    double selected = (current > 0 ? current : 7.5).clamp(4.0, 14.0);
+    final ctrl = TextEditingController(
+      text: selected % 1 == 0
+          ? selected.toInt().toString()
+          : selected.toStringAsFixed(1),
+    );
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log Sleep Duration', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('7.5 Hours (Optimal Recovery)'),
-              onTap: () {
-                ref.read(homeDashboardProvider.notifier).setSleepHours(7.5);
-                Navigator.pop(ctx);
-              },
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          void updateHours(double val) {
+            final clamped = val.clamp(4.0, 14.0);
+            setDialogState(() {
+              selected = clamped;
+              ctrl.text = clamped % 1 == 0
+                  ? clamped.toInt().toString()
+                  : clamped.toStringAsFixed(1);
+            });
+          }
+
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF161F1A) : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
             ),
-            ListTile(
-              title: const Text('8.0 Hours (Deep Sleep)'),
-              onTap: () {
-                ref.read(homeDashboardProvider.notifier).setSleepHours(8.0);
-                Navigator.pop(ctx);
-              },
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.limeGreen.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.bedtime_rounded,
+                    color: AppColors.limeGreen,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Log Sleep Duration',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ],
             ),
-            ListTile(
-              title: const Text('6.5 Hours (Short Rest)'),
-              onTap: () {
-                ref.read(homeDashboardProvider.notifier).setSleepHours(6.5);
-                Navigator.pop(ctx);
-              },
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 8),
+                  // Big display with stepper buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selected > 4.0
+                            ? () => updateHours(selected - 0.5)
+                            : null,
+                        icon: const Icon(
+                          Icons.remove_circle_outline_rounded,
+                          size: 32,
+                        ),
+                        color: AppColors.limeGreen,
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.limeGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.limeGreen.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          '${selected % 1 == 0 ? selected.toInt() : selected.toStringAsFixed(1)} hrs',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.limeGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      IconButton(
+                        onPressed: selected < 14.0
+                            ? () => updateHours(selected + 0.5)
+                            : null,
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 32,
+                        ),
+                        color: AppColors.limeGreen,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Interactive Slider
+                  Slider(
+                    value: selected,
+                    min: 4.0,
+                    max: 14.0,
+                    divisions: 20, // 0.5 hr increments
+                    activeColor: AppColors.limeGreen,
+                    onChanged: (v) => updateHours(v),
+                  ),
+                  const SizedBox(height: 12),
+                  // Quick Presets
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [6.0, 7.0, 7.5, 8.0, 8.5, 9.0].map((preset) {
+                      final isSelected = (selected - preset).abs() < 0.1;
+                      return ChoiceChip(
+                        label: Text(
+                          '${preset % 1 == 0 ? preset.toInt() : preset}h',
+                        ),
+                        selected: isSelected,
+                        selectedColor: AppColors.limeGreen,
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? Colors.black
+                              : (isDark ? Colors.white70 : Colors.black87),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        onSelected: (_) => updateHours(preset),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  // Direct number input
+                  TextField(
+                    controller: ctrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Or enter custom hours',
+                      suffixText: 'hrs',
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onSubmitted: (txt) {
+                      final val = double.tryParse(txt.trim());
+                      if (val != null) updateHours(val);
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.white54),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.limeGreen,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  final parsed = double.tryParse(ctrl.text.trim());
+                  final finalHours = (parsed ?? selected).clamp(4.0, 14.0);
+                  ref
+                      .read(homeDashboardProvider.notifier)
+                      .setSleepHours(finalHours);
+                  Navigator.pop(ctx);
+                },
+                child: const Text(
+                  'Save Sleep',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -699,7 +1010,9 @@ class _WorkoutActivityTile extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -710,7 +1023,9 @@ class _WorkoutActivityTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.06),
+              color: (isDark ? Colors.white : Colors.black).withValues(
+                alpha: 0.06,
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -718,7 +1033,9 @@ class _WorkoutActivityTile extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
           ),
@@ -732,10 +1049,7 @@ class _ActivityGaugePainter extends CustomPainter {
   final double progress;
   final bool isDark;
 
-  const _ActivityGaugePainter({
-    required this.progress,
-    required this.isDark,
-  });
+  const _ActivityGaugePainter({required this.progress, required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {

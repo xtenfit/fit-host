@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_motion.dart';
+import '../../../workouts/presentation/controllers/workout_providers.dart';
+import '../../../workouts/domain/models/workout_models.dart';
 import '../controllers/home_dashboard_controller.dart';
 
 class HomeStreakDateStrip extends ConsumerWidget {
@@ -11,30 +13,71 @@ class HomeStreakDateStrip extends ConsumerWidget {
 
   const HomeStreakDateStrip({super.key, required this.isDark});
 
+  int _calculateStreak(List<WorkoutEntity> completed) {
+    if (completed.isEmpty) return 0;
+
+    final workoutDates = completed.map((w) {
+      final d = w.startedAt;
+      return DateTime(d.year, d.month, d.day);
+    }).toSet();
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    DateTime checkDate;
+    if (workoutDates.contains(today)) {
+      checkDate = today;
+    } else if (workoutDates.contains(yesterday)) {
+      checkDate = yesterday;
+    } else {
+      return 0;
+    }
+
+    int streak = 0;
+    while (workoutDates.contains(checkDate)) {
+      streak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboard = ref.watch(homeDashboardProvider);
     final notifier = ref.read(homeDashboardProvider.notifier);
+    final workoutsAsync = ref.watch(workoutsStreamProvider);
     final now = DateTime.now();
 
-    // Generate 5 days: past 3 days from current date, today, and 1 next day
-    // e.g. If today is Oct 18, generates [15, 16, 17, 18, 19]
-    final today = DateTime(now.year, now.month, now.day);
-    final days = List.generate(5, (index) => today.add(Duration(days: index - 3)));
+    final completedWorkouts = workoutsAsync.maybeWhen(
+      data: (workouts) =>
+          workouts.where((w) => w.status == 'completed').toList(),
+      orElse: () => <WorkoutEntity>[],
+    );
+    final streakDays = _calculateStreak(completedWorkouts);
+
+    final selectedDay = calendarDate(dashboard.selectedDate);
+    final today = calendarDate(now);
+    final days = List.generate(
+      5,
+      (index) => selectedDay.add(Duration(days: index - 3)),
+    );
 
     return Column(
       children: [
         // Top row: Streak Pill & Status Pill
         Row(
           children: [
-            // Streak Pill: 🔥 21 Strikes
+            // Streak Pill: 🔥 Real Streak
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -50,7 +93,7 @@ class HomeStreakDateStrip extends ConsumerWidget {
                   const Text('🔥', style: TextStyle(fontSize: 14)),
                   const SizedBox(width: 6),
                   Text(
-                    '${dashboard.streakDays}',
+                    '$streakDays',
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 14,
@@ -58,11 +101,13 @@ class HomeStreakDateStrip extends ConsumerWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Strikes',
+                    streakDays == 1 ? 'Day Streak' : 'Days Streak',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -75,24 +120,34 @@ class HomeStreakDateStrip extends ConsumerWidget {
               child: BouncyTap(
                 onTap: () => context.push('/calendar'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.limeGreen,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Text(
-                          DateFormat('E').format(now),
+                          DateFormat('E').format(selectedDay),
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 11,
@@ -124,6 +179,14 @@ class HomeStreakDateStrip extends ConsumerWidget {
             ),
           ],
         ),
+        if (!isSameCalendarDate(selectedDay, today))
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => notifier.selectDate(today),
+              child: const Text('Today'),
+            ),
+          ),
         const SizedBox(height: 12),
 
         // Mini Horizontal Date Selector (5 days: past 3 days, today, next day)
@@ -157,12 +220,12 @@ class HomeStreakDateStrip extends ConsumerWidget {
     required DateTime now,
     required bool isDark,
   }) {
-    final isSelected = date.year == dashboard.selectedDate.year &&
+    final isSelected =
+        date.year == dashboard.selectedDate.year &&
         date.month == dashboard.selectedDate.month &&
         date.day == dashboard.selectedDate.day;
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
 
     return BouncyTap(
       scaleDown: 0.94,
@@ -177,16 +240,18 @@ class HomeStreakDateStrip extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark
-                  ? AppColors.limeGreen.withValues(alpha: 0.15)
-                  : AppColors.limeGreen.withValues(alpha: 0.2))
+                    ? AppColors.limeGreen.withValues(alpha: 0.15)
+                    : AppColors.limeGreen.withValues(alpha: 0.2))
               : (isDark ? AppColors.darkSurfaceElevated : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.limeGreen
                 : (isToday
-                    ? AppColors.electricCyan.withValues(alpha: 0.6)
-                    : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder)),
+                      ? AppColors.electricCyan.withValues(alpha: 0.6)
+                      : (isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder)),
             width: isSelected ? 1.8 : (isToday ? 1.4 : 1),
           ),
         ),
@@ -201,8 +266,10 @@ class HomeStreakDateStrip extends ConsumerWidget {
                 color: isSelected
                     ? (isDark ? AppColors.limeGreen : AppColors.limeGreenDark)
                     : (isToday
-                        ? AppColors.electricCyan
-                        : (isDark ? Colors.white : AppColors.lightTextPrimary)),
+                          ? AppColors.electricCyan
+                          : (isDark
+                                ? Colors.white
+                                : AppColors.lightTextPrimary)),
               ),
             ),
             const SizedBox(height: 2),
@@ -214,8 +281,10 @@ class HomeStreakDateStrip extends ConsumerWidget {
                 color: isSelected
                     ? (isDark ? AppColors.limeGreen : AppColors.limeGreenDark)
                     : (isToday
-                        ? AppColors.electricCyan
-                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)),
+                          ? AppColors.electricCyan
+                          : (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary)),
               ),
             ),
             Container(

@@ -1,3 +1,4 @@
+import { PostHog } from 'posthog-node';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface IngredientDraft {
@@ -56,6 +57,73 @@ function parseNumberWords(text: string): number {
   return map[text.toLowerCase()] || parseFloat(text) || 1;
 }
 
+interface AiGenerationCapture {
+  distinctId: string;
+  traceId: string;
+  sessionId: string | null;
+  prompt: string;
+  latency: number;
+  httpStatus?: number;
+  output?: string;
+  isError?: boolean;
+  error?: string;
+}
+
+async function captureGeminiGeneration({
+  distinctId,
+  traceId,
+  sessionId,
+  prompt,
+  latency,
+  httpStatus,
+  output,
+  isError = false,
+  error,
+}: AiGenerationCapture): Promise<void> {
+  const projectToken = process.env.POSTHOG_PROJECT_TOKEN;
+  const host = process.env.POSTHOG_HOST;
+
+  if (!projectToken || !host) {
+    const missingVariable = projectToken ? 'POSTHOG_HOST' : 'POSTHOG_PROJECT_TOKEN';
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(
+        `${missingVariable} variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once ${missingVariable} is configured`
+      );
+    }
+    return;
+  }
+
+  const posthog = new PostHog(projectToken, {
+    host,
+    flushAt: 1,
+    flushInterval: 0,
+    enableExceptionAutocapture: true,
+    privacyMode: false,
+  });
+
+  posthog.capture({
+    distinctId,
+    event: '$ai_generation',
+    properties: {
+      $ai_trace_id: traceId,
+      $ai_session_id: sessionId,
+      $ai_span_name: 'nutrition_meal_analysis',
+      $ai_model: 'gemini-1.5-flash',
+      $ai_provider: 'gemini',
+      $ai_input: [{ role: 'user', content: prompt }],
+      $ai_output_choices: output
+        ? [{ role: 'assistant', content: output }]
+        : undefined,
+      $ai_latency: latency,
+      $ai_temperature: 0.2,
+      $ai_http_status: httpStatus,
+      $ai_is_error: isError,
+      $ai_error: error,
+    },
+  });
+  await posthog.shutdown();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -81,6 +149,12 @@ export async function POST(request: NextRequest) {
 
     // If Gemini API Key is configured on the server, call Gemini 1.5 Flash
     if (apiKey) {
+      const traceId = crypto.randomUUID();
+      const sessionId = request.headers.get('x-posthog-ai-session-id');
+      const distinctId = request.headers.get('x-posthog-distinct-id') || 'anonymous';
+      const generationStartedAt = Date.now();
+      let generationCaptured = false;
+
       try {
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
@@ -119,6 +193,17 @@ export async function POST(request: NextRequest) {
           const rawOutput =
             geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (rawOutput) {
+            await captureGeminiGeneration({
+              distinctId,
+              traceId,
+              sessionId,
+              prompt,
+              output: rawOutput,
+              latency: (Date.now() - generationStartedAt) / 1000,
+              httpStatus: geminiResponse.status,
+            });
+            generationCaptured = true;
+
             let clean = rawOutput.trim();
             if (clean.startsWith('```json')) clean = clean.substring(7);
             if (clean.startsWith('```')) clean = clean.substring(3);
@@ -146,7 +231,29 @@ export async function POST(request: NextRequest) {
             });
           }
         }
+
+        await captureGeminiGeneration({
+          distinctId,
+          traceId,
+          sessionId,
+          prompt,
+          latency: (Date.now() - generationStartedAt) / 1000,
+          httpStatus: geminiResponse.status,
+          isError: true,
+          error: 'Gemini response did not contain generated content',
+        });
       } catch (geminiErr) {
+        if (!generationCaptured) {
+          await captureGeminiGeneration({
+            distinctId,
+            traceId,
+            sessionId,
+            prompt: text ? `Parse this meal text description: "${text}".` : 'Analyze this meal photo.',
+            latency: (Date.now() - generationStartedAt) / 1000,
+            isError: true,
+            error: 'Gemini request failed',
+          });
+        }
         console.warn('[AI Parse] Gemini API call failed, falling back to deterministic parser:', geminiErr);
       }
     }
@@ -171,6 +278,12 @@ export async function POST(request: NextRequest) {
           count = parseNumberWords(match[1] || '1');
           unit = (match[2] || '').toLowerCase();
           foodName = (match[3] || '').toLowerCase().trim();
+        }
+
+        const explicitGramMatch = seg.match(/(\d+(?:\.\d+)?)\s*(g|grams|ml)\b/i);
+        if (explicitGramMatch) {
+          count = parseFloat(explicitGramMatch[1]) || 1;
+          unit = explicitGramMatch[2].toLowerCase();
         }
 
         // Find match in benchmark food knowledge base

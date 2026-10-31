@@ -10,6 +10,11 @@ abstract class WorkoutRepository {
     String? query,
     String? category,
     String? genderFilter,
+    String? bodyPart,
+    String? equipment,
+    bool includeArchived = false,
+    int? limit,
+    int offset = 0,
   });
   Future<ExerciseEntity?> getExerciseById(String id);
   Future<void> seedDefaultExercises();

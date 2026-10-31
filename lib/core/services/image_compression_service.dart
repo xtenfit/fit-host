@@ -42,7 +42,9 @@ class ImageCompressionService {
       );
 
       if (result == null) {
-        debugPrint('[ImageCompression] Warning: Compression returned null, using original file.');
+        debugPrint(
+          '[ImageCompression] Warning: Compression returned null, using original file.',
+        );
         return sourceFile;
       }
 
@@ -57,14 +59,17 @@ class ImageCompressionService {
         return sourceFile;
       }
 
-      final savedPercent = ((1 - compressedSize / originalSize) * 100).toStringAsFixed(1);
+      final savedPercent = ((1 - compressedSize / originalSize) * 100)
+          .toStringAsFixed(1);
       debugPrint(
         '[ImageCompression] Successfully compressed image: ${(originalSize / 1024).toStringAsFixed(0)}KB -> ${(compressedSize / 1024).toStringAsFixed(0)}KB ($savedPercent% smaller)',
       );
 
       return compressedFile;
     } catch (e) {
-      debugPrint('[ImageCompression] Error during compression: $e. Falling back to original.');
+      debugPrint(
+        '[ImageCompression] Error during compression: $e. Falling back to original.',
+      );
       return sourceFile;
     }
   }
@@ -117,7 +122,9 @@ class ImageCompressionService {
 
     try {
       final client = Supabase.instance.client;
-      await client.storage.from(bucketName).upload(
+      await client.storage
+          .from(bucketName)
+          .upload(
             pathInBucket,
             compressed,
             fileOptions: const FileOptions(
@@ -127,7 +134,9 @@ class ImageCompressionService {
           );
       return client.storage.from(bucketName).getPublicUrl(pathInBucket);
     } catch (e) {
-      debugPrint('[ImageCompression] Supabase storage upload skipped or failed: $e');
+      debugPrint(
+        '[ImageCompression] Supabase storage upload skipped or failed: $e',
+      );
       return null;
     }
   }

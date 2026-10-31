@@ -22,6 +22,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -30,9 +32,17 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.text = ref.read(authProvider).email ?? '';
+  }
+
+  @override
   void dispose() {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _emailController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -73,11 +83,61 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = e
-              .toString()
-              .replaceFirst('Exception:', '')
-              .replaceFirst('AuthException:', '')
-              .trim();
+          _errorMessage = formatAuthError(e);
+        });
+      }
+    }
+  }
+
+  Future<void> _handleResetWithOtp() async {
+    final email = _emailController.text.trim();
+    final code = _otpController.text.replaceAll(RegExp(r'\s+|-'), '').trim();
+    final newPass = _passwordController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _errorMessage = 'Please enter a valid account email.');
+      return;
+    }
+    if (code.length < 6) {
+      setState(
+        () => _errorMessage = 'Enter the complete code from your email.',
+      );
+      return;
+    }
+    if (newPass.length < 6) {
+      setState(() => _errorMessage = 'Password must be at least 6 characters.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final success = await ref
+          .read(authProvider.notifier)
+          .resetPasswordWithOtp(
+            email: email,
+            otpCode: code,
+            newPassword: newPass,
+          );
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = success;
+          if (!success) {
+            _errorMessage =
+                ref.read(authProvider).errorMessage ??
+                'Failed to reset password.';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = formatAuthError(e);
         });
       }
     }
@@ -90,8 +150,9 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
     final hasSession = _hasActiveSession();
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -113,8 +174,8 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             child: !hasSession
                 ? _buildExpiredSessionView(isDark)
                 : _isSuccess
-                    ? _buildSuccessView(isDark)
-                    : _buildFormView(isDark),
+                ? _buildSuccessView(isDark)
+                : _buildFormView(isDark),
           ),
         ),
       ),
@@ -132,19 +193,19 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.error.withValues(alpha: 0.15),
-              border: Border.all(color: AppColors.error, width: 2),
+              color: AppColors.electricCyan.withValues(alpha: 0.15),
+              border: Border.all(color: AppColors.electricCyan, width: 2),
             ),
             child: const Icon(
-              Icons.link_off_rounded,
-              color: AppColors.error,
+              Icons.password_rounded,
+              color: AppColors.electricCyan,
               size: 36,
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Text(
-          'Recovery Link Expired',
+          'Reset Your Password',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 24,
@@ -152,21 +213,115 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             color: isDark ? Colors.white : AppColors.lightTextPrimary,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
-          'This password reset link is invalid or has expired. Please request a new recovery link to reset your password.',
+          'Enter the recovery code from your email along with your new password below:',
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             height: 1.4,
             color: isDark
                 ? AppColors.darkTextSecondary
                 : AppColors.lightTextSecondary,
           ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 20),
+
+        if (_errorMessage != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.error,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: AppColors.error,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        // Email field
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            labelText: 'Account Email',
+            hintText: 'athlete@example.com',
+            prefixIcon: const Icon(Icons.email_outlined),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Recovery code field (supports 6 or 8 digits)
+        TextField(
+          controller: _otpController,
+          keyboardType: TextInputType.number,
+          maxLength: 8,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 5,
+          ),
+          decoration: InputDecoration(
+            counterText: '',
+            hintText: 'Enter code',
+            labelText: 'Reset Code',
+            prefixIcon: const Icon(Icons.pin_rounded),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // New password field
+        TextField(
+          controller: _passwordController,
+          obscureText: _obscurePassword,
+          decoration: InputDecoration(
+            labelText: 'New Password',
+            hintText: 'Minimum 6 characters',
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
+            ),
+            filled: true,
+            fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
+        const SizedBox(height: 20),
+
         SizedBox(
-          height: 52,
+          height: 50,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.limeGreen,
@@ -176,10 +331,30 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
               ),
               elevation: 0,
             ),
+            onPressed: _isLoading ? null : _handleResetWithOtp,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  )
+                : const Text(
+                    'Update Password & Sign In',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        Center(
+          child: TextButton(
             onPressed: () => context.go('/auth/forgot-password'),
             child: const Text(
-              'Request New Reset Link',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              'Need a fresh code? Send new reset email',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -313,8 +488,11 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded,
-                      color: AppColors.error, size: 20),
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -376,7 +554,9 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
             ),
             validator: (val) {
               if (val == null || val.isEmpty) return 'Enter new password';
-              if (val.length < 8) return 'Password must be at least 8 characters';
+              if (val.length < 8) {
+                return 'Password must be at least 8 characters';
+              }
               if (!val.contains(RegExp(r'[0-9]'))) {
                 return 'Include at least one digit';
               }
@@ -465,8 +645,10 @@ class _UpdatePasswordScreenState extends ConsumerState<UpdatePasswordScreen> {
                     )
                   : const Text(
                       'Update Password',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
             ),
           ),

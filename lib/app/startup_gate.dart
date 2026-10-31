@@ -7,22 +7,30 @@ class StartupGateNotifier extends AsyncNotifier<String> {
   @override
   Future<String> build() async {
     final gateService = ref.watch(startupGateServiceProvider);
-    final authStatus = ref.watch(authStatusProvider);
+    final authState = ref.watch(authProvider);
+    final authStatus = authState.status;
+    final user = authState.user;
     final profile = ref.watch(userProfileProvider);
 
     if (authStatus == AuthStatus.initialLoading) {
       return '/startup-gate';
     }
 
+    final isAuth =
+        authStatus == AuthStatus.authenticated ||
+        authStatus == AuthStatus.offlineGrace;
+
     return gateService.determineInitialRoute(
-      isAuthenticated: authStatus == AuthStatus.authenticated ||
-          authStatus == AuthStatus.offlineGrace,
+      isAuthenticated: isAuth,
       isProfileSetupCompleted: profile.isProfileSetupCompleted,
+      userId: user?.id,
     );
   }
 
   Future<void> setFirstLaunchCompleted(bool completed) async {
-    await ref.read(startupGateServiceProvider).setFirstLaunchCompleted(completed);
+    await ref
+        .read(startupGateServiceProvider)
+        .setFirstLaunchCompleted(completed);
     ref.invalidateSelf();
   }
 

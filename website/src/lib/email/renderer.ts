@@ -118,11 +118,9 @@ export function wrapInFitHostEmailLayout(
               <a href="${siteUrl}" target="_blank" style="text-decoration: none; display: inline-flex; align-items: center;">
                 <table border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td style="vertical-align: middle; padding-right: 12px;">
-                      <!-- Fit Host Hex Logo / Badge -->
-                      <div style="width: 40px; height: 40px; background-color: #00E676; border-radius: 10px; text-align: center; line-height: 40px; font-weight: 900; font-size: 20px; color: #000000;">
-                        ⚡
-                      </div>
+                    <td style="vertical-align: middle; padding-right: 14px;">
+                      <!-- Fit Host Logo -->
+                      <img src="${siteUrl}/fit_host_icon.png" width="40" height="40" alt="Fit Host" style="width: 40px; height: 40px; display: block; border: 0; outline: none; background: transparent;" />
                     </td>
                     <td style="vertical-align: middle;">
                       <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #FFFFFF; display: block; line-height: 24px;">FIT HOST</span>

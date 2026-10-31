@@ -13,8 +13,9 @@ class EquipmentStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasFullGym = selectedEquipment.any((e) =>
-        e.toLowerCase() == 'full gym' || e.toLowerCase() == 'full_gym');
+    final bool hasFullGym = selectedEquipment.any(
+      (e) => e.toLowerCase() == 'full gym' || e.toLowerCase() == 'full_gym',
+    );
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -47,7 +48,8 @@ class EquipmentStep extends StatelessWidget {
             runSpacing: 12,
             children: kAvailableEquipment.map((eq) {
               final isFullGymChip = eq == 'Full Gym';
-              final isSelected = hasFullGym ||
+              final isSelected =
+                  hasFullGym ||
                   selectedEquipment.contains(eq) ||
                   selectedEquipment.contains(eq.toLowerCase());
 
@@ -77,7 +79,10 @@ class EquipmentStep extends StatelessWidget {
                         : Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
               );
             }).toList(),
           ),
@@ -95,16 +100,16 @@ class EquipmentStep extends StatelessWidget {
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.check_circle_rounded,
-                      color: Color(0xFF00E676), size: 20),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF00E676),
+                    size: 20,
+                  ),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Full Gym selected: All equipment options unlocked for your programming.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFFF0F6F2),
-                      ),
+                      style: TextStyle(fontSize: 13, color: Color(0xFFF0F6F2)),
                     ),
                   ),
                 ],

@@ -7,10 +7,7 @@ import '../../../../core/services/supabase_service.dart';
 class GuestUpgradeBanner extends ConsumerWidget {
   final bool isDark;
 
-  const GuestUpgradeBanner({
-    super.key,
-    required this.isDark,
-  });
+  const GuestUpgradeBanner({super.key, required this.isDark});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,10 +72,13 @@ class GuestUpgradeBanner extends ConsumerWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color:
-                                  AppColors.limeGreen.withValues(alpha: 0.15),
+                              color: AppColors.limeGreen.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(

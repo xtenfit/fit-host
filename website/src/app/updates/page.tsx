@@ -4,6 +4,7 @@ import ReleaseHistory from "@/components/releases/ReleaseHistory";
 import DownloadCTA from "@/components/marketing/DownloadCTA";
 import { getAllMobileReleases } from "@/lib/github/releases";
 import { releasesConfig } from "@/lib/config/releases";
+import { getPublishedUpdates } from "@/lib/content/public";
 
 export const metadata: Metadata = {
   title: "What's New — Fit Host Release Notes & Updates",
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default async function UpdatesPage() {
-  const releases = await getAllMobileReleases();
+  const [releases, managedUpdates] = await Promise.all([
+    getAllMobileReleases(),
+    getPublishedUpdates(),
+  ]);
 
   return (
     <div className="relative overflow-hidden py-12 md:py-20">
@@ -38,6 +42,22 @@ export default async function UpdatesPage() {
         </div>
 
         {/* Releases Stream */}
+        {managedUpdates.length > 0 && (
+          <section className="space-y-4">
+            <div className="text-xs font-bold uppercase tracking-wider text-zinc-400">Fit Host updates</div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {managedUpdates.map((update) => (
+                <a key={update.id} href={`/updates/${update.slug}`} className="rounded-2xl border border-brand-green/25 bg-brand-surface/70 p-5 transition hover:border-brand-green/60">
+                  <div className="text-xs font-bold uppercase tracking-wider text-brand-green">
+                    {update.version || "Product update"}
+                  </div>
+                  <h2 className="mt-2 text-xl font-black text-white">{update.title}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">{update.summary}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
         <ReleaseHistory releases={releases} />
 
         {/* Publishing Disclaimer */}

@@ -41,7 +41,7 @@ export const siteConfig: SiteConfig = {
   tagline: "The High-Performance Mobile Fitness & Wellness Engine",
   description:
     "Fit Host is a fast, offline-capable fitness and wellness mobile app for iOS and Android. Log workouts, track hydration, manage macro nutrition, and synchronize your progress seamlessly across devices.",
-  version: "v2.1.0",
+  version: "v1.3.0",
   releaseDate: "October 2026",
   storeLinks: {
     appStore: {
@@ -55,10 +55,10 @@ export const siteConfig: SiteConfig = {
       label: "Coming Soon to Google Play",
     },
     directApk: {
-      available: false,
-      url: null,
-      label: "Android APK: Release Soon",
-      fileSize: "",
+      available: true,
+      url: "/downloads/FitHost-v1.3.0-arm64-v8a.apk",
+      label: "Download Android APK (v1.3.0)",
+      fileSize: "44.5 MB",
     },
   },
   support: {

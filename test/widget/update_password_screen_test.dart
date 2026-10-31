@@ -5,48 +5,58 @@ import 'package:fit_host/features/auth/presentation/screens/update_password_scre
 
 void main() {
   group('UpdatePasswordScreen Widget Tests', () {
-    testWidgets('Shows expired session view when no active recovery session exists', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: UpdatePasswordScreen(forceActiveSessionForTesting: false),
+    testWidgets(
+      'Shows recovery code reset view when no active recovery session exists',
+      (tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: UpdatePasswordScreen(forceActiveSessionForTesting: false),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Recovery Link Expired'), findsOneWidget);
-      expect(find.text('Request New Reset Link'), findsOneWidget);
-      expect(find.byIcon(Icons.link_off_rounded), findsOneWidget);
-    });
+        expect(find.text('Reset Your Password'), findsOneWidget);
+        expect(find.text('Update Password & Sign In'), findsOneWidget);
+        expect(find.byIcon(Icons.password_rounded), findsOneWidget);
+      },
+    );
 
-    testWidgets('Renders update password form with security inputs and button when active session exists', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: UpdatePasswordScreen(forceActiveSessionForTesting: true),
+    testWidgets(
+      'Renders update password form with security inputs and button when active session exists',
+      (tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(
+            child: MaterialApp(
+              home: UpdatePasswordScreen(forceActiveSessionForTesting: true),
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Check title and description
-      expect(find.text('Set New Password'), findsOneWidget);
-      expect(
-        find.text('Choose a strong password with at least 8 characters, including numbers and letters.'),
-        findsOneWidget,
-      );
+        // Check title and description
+        expect(find.text('Set New Password'), findsOneWidget);
+        expect(
+          find.text(
+            'Choose a strong password with at least 8 characters, including numbers and letters.',
+          ),
+          findsOneWidget,
+        );
 
-      // Check text fields
-      expect(find.byType(TextFormField), findsNWidgets(2));
-      expect(find.text('New Password'), findsOneWidget);
-      expect(find.text('Confirm New Password'), findsOneWidget);
+        // Check text fields
+        expect(find.byType(TextFormField), findsNWidgets(2));
+        expect(find.text('New Password'), findsOneWidget);
+        expect(find.text('Confirm New Password'), findsOneWidget);
 
-      // Check update password button
-      expect(find.text('Update Password'), findsOneWidget);
-    });
+        // Check update password button
+        expect(find.text('Update Password'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Shows error if password is less than 8 characters', (tester) async {
+    testWidgets('Shows error if password is less than 8 characters', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
@@ -63,7 +73,10 @@ void main() {
       await tester.tap(find.text('Update Password'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Password must be at least 8 characters'), findsOneWidget);
+      expect(
+        find.text('Password must be at least 8 characters'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Shows error if passwords do not match', (tester) async {
@@ -86,7 +99,9 @@ void main() {
       expect(find.text('Passwords do not match'), findsOneWidget);
     });
 
-    testWidgets('Password visibility toggle toggles obscureText property', (tester) async {
+    testWidgets('Password visibility toggle toggles obscureText property', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const ProviderScope(
           child: MaterialApp(

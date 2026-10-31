@@ -1,6 +1,8 @@
+import 'calorie_adjustment.dart';
 export 'food_item.dart';
 export 'meal_entry.dart';
 export 'photo_meal_draft.dart';
+export 'calorie_adjustment.dart';
 
 class MealItem {
   final String id;
@@ -58,13 +60,7 @@ class MealItem {
   }
 }
 
-enum LiquidDrinkType {
-  water,
-  creatine,
-  glucose,
-  protein,
-  custom,
-}
+enum LiquidDrinkType { water, creatine, glucose, protein, custom }
 
 class LiquidDrinkEntry {
   final String id;
@@ -112,10 +108,12 @@ class DailyNutritionState {
   final int waterGlasses;
   final int targetWater;
   final List<LiquidDrinkEntry> loggedDrinks;
-  final int manualCaloriesBurned;
+  final int _legacyManualCaloriesBurned;
+  final List<CalorieAdjustment> manualAdjustments;
   final int workoutCaloriesBurned;
   final String dietFilter; // 'all', 'vegan', 'non_veg'
-  final String goalMode; // 'hypertrophy', 'cutting', 'recomp'
+  final String goalMode; // 'hypertrophy', 'cutting', 'recomp', 'maintenance'
+  final bool isPersonalized;
 
   const DailyNutritionState({
     this.targetCalories = 2250,
@@ -127,16 +125,26 @@ class DailyNutritionState {
     this.waterGlasses = 0,
     this.targetWater = 10,
     this.loggedDrinks = const [],
-    this.manualCaloriesBurned = 0,
+    int manualCaloriesBurned = 0,
+    this.manualAdjustments = const [],
     this.workoutCaloriesBurned = 0,
     this.dietFilter = 'all',
     this.goalMode = 'maintenance',
-  });
+    this.isPersonalized = false,
+  }) : _legacyManualCaloriesBurned = manualCaloriesBurned;
+
+  int get manualCaloriesBurned =>
+      manualAdjustments
+          .where((a) => !a.isDeleted)
+          .fold<int>(0, (sum, a) => sum + a.caloriesBurned) +
+      _legacyManualCaloriesBurned;
 
   int get totalCaloriesGained =>
       loggedMeals.fold<int>(0, (sum, m) => sum + m.calories);
 
   int get totalCaloriesBurned => manualCaloriesBurned + workoutCaloriesBurned;
+
+  int get netCalories => totalCaloriesGained - totalCaloriesBurned;
 
   int get remainingCalories =>
       targetCalories - totalCaloriesGained + totalCaloriesBurned;
@@ -180,9 +188,11 @@ class DailyNutritionState {
     int? targetWater,
     List<LiquidDrinkEntry>? loggedDrinks,
     int? manualCaloriesBurned,
+    List<CalorieAdjustment>? manualAdjustments,
     int? workoutCaloriesBurned,
     String? dietFilter,
     String? goalMode,
+    bool? isPersonalized,
   }) {
     return DailyNutritionState(
       targetCalories: targetCalories ?? this.targetCalories,
@@ -194,11 +204,13 @@ class DailyNutritionState {
       waterGlasses: waterGlasses ?? this.waterGlasses,
       targetWater: targetWater ?? this.targetWater,
       loggedDrinks: loggedDrinks ?? this.loggedDrinks,
-      manualCaloriesBurned: manualCaloriesBurned ?? this.manualCaloriesBurned,
-      workoutCaloriesBurned: workoutCaloriesBurned ?? this.workoutCaloriesBurned,
+      manualCaloriesBurned: manualCaloriesBurned ?? _legacyManualCaloriesBurned,
+      manualAdjustments: manualAdjustments ?? this.manualAdjustments,
+      workoutCaloriesBurned:
+          workoutCaloriesBurned ?? this.workoutCaloriesBurned,
       dietFilter: dietFilter ?? this.dietFilter,
       goalMode: goalMode ?? this.goalMode,
+      isPersonalized: isPersonalized ?? this.isPersonalized,
     );
   }
 }
-

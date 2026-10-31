@@ -10,7 +10,8 @@ class HydrationStep extends StatelessWidget {
     int? reminderFrequencyHours,
     String? quietHoursStart,
     String? quietHoursEnd,
-  }) onChanged;
+  })
+  onChanged;
 
   const HydrationStep({
     super.key,
@@ -100,10 +101,14 @@ class HydrationStep extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('1.0 L',
-                    style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                Text('5.0 L',
-                    style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                Text(
+                  '1.0 L',
+                  style: TextStyle(color: Color(0xFF8FA396), fontSize: 11),
+                ),
+                Text(
+                  '5.0 L',
+                  style: TextStyle(color: Color(0xFF8FA396), fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -178,8 +183,11 @@ class HydrationStep extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.nightlight_round,
-                            size: 18, color: Color(0xFF00E676)),
+                        const Icon(
+                          Icons.nightlight_round,
+                          size: 18,
+                          color: Color(0xFF00E676),
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'From $quietHoursStart',
@@ -191,8 +199,11 @@ class HydrationStep extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Icon(Icons.arrow_forward_rounded,
-                        size: 16, color: Color(0xFF8FA396)),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: Color(0xFF8FA396),
+                    ),
                     Text(
                       'To $quietHoursEnd',
                       style: const TextStyle(

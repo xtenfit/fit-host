@@ -35,14 +35,16 @@ class OnboardingSelectionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark
-                  ? AppColors.electricBlueSurface
-                  : AppColors.electricBlueSurfaceLight)
+                    ? AppColors.electricBlueSurface
+                    : AppColors.electricBlueSurfaceLight)
               : (isDark ? AppColors.darkSurfaceElevated : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.electricBlue
-                : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                : (isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder),
             width: isSelected ? 1.8 : 1.0,
           ),
           boxShadow: isSelected
@@ -65,7 +67,9 @@ class OnboardingSelectionCard extends StatelessWidget {
                 margin: const EdgeInsets.only(right: 14),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceElevated,
+                  color: isDark
+                      ? AppColors.darkSurface
+                      : AppColors.lightSurfaceElevated,
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -86,14 +90,18 @@ class OnboardingSelectionCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: isSelected
                       ? AppColors.electricBlue.withValues(alpha: 0.2)
-                      : (isDark ? AppColors.darkSurface : AppColors.lightSurfaceElevated),
+                      : (isDark
+                            ? AppColors.darkSurface
+                            : AppColors.lightSurfaceElevated),
                 ),
                 child: Icon(
                   icon,
                   size: 20,
                   color: isSelected
                       ? AppColors.electricBlue
-                      : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      : (isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary),
                 ),
               ),
 
@@ -107,10 +115,14 @@ class OnboardingSelectionCard extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       color: isSelected
                           ? (isDark ? Colors.white : AppColors.electricBlueDark)
-                          : (isDark ? Colors.white : AppColors.lightTextPrimary),
+                          : (isDark
+                                ? Colors.white
+                                : AppColors.lightTextPrimary),
                     ),
                   ),
                   if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -119,7 +131,9 @@ class OnboardingSelectionCard extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -140,7 +154,9 @@ class OnboardingSelectionCard extends StatelessWidget {
                 border: Border.all(
                   color: isSelected
                       ? AppColors.electricBlue
-                      : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                      : (isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder),
                   width: 1.5,
                 ),
               ),

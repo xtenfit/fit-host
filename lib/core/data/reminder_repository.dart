@@ -17,8 +17,11 @@ class LocalReminderRepository implements ReminderRepository {
   final AppDatabase db;
   final ReminderRepositoryImpl _impl;
 
-  LocalReminderRepository(this.db, NotificationService notificationService)
-      : _impl = ReminderRepositoryImpl(db, notificationService);
+  LocalReminderRepository(
+    this.db,
+    NotificationService notificationService, {
+    String userId = 'guest',
+  }) : _impl = ReminderRepositoryImpl(db, notificationService, userId: userId);
 
   @override
   Stream<List<Reminder>> watchAllReminders() => _impl.watchAllReminders();
@@ -33,10 +36,12 @@ class LocalReminderRepository implements ReminderRepository {
   Future<Reminder?> getReminder(String id) => _impl.getReminder(id);
 
   @override
-  Future<void> createReminder(Reminder reminder) => _impl.createReminder(reminder);
+  Future<void> createReminder(Reminder reminder) =>
+      _impl.createReminder(reminder);
 
   @override
-  Future<void> updateReminder(Reminder reminder) => _impl.updateReminder(reminder);
+  Future<void> updateReminder(Reminder reminder) =>
+      _impl.updateReminder(reminder);
 
   @override
   Future<void> deleteReminder(String id) => _impl.deleteReminder(id);
@@ -63,6 +68,9 @@ class LocalReminderRepository implements ReminderRepository {
 
   @override
   Future<void> clearAllReminders() => _impl.clearAllReminders();
+
+  @override
+  Future<void> reconcileSchedules() => _impl.reconcileSchedules();
 }
 
 class CloudReminderRepository implements ReminderRepository {
@@ -76,7 +84,11 @@ class CloudReminderRepository implements ReminderRepository {
     required this.userId,
     required NotificationService notificationService,
     this.supabase,
-  }) : _local = LocalReminderRepository(db, notificationService);
+  }) : _local = LocalReminderRepository(
+         db,
+         notificationService,
+         userId: userId,
+       );
 
   @override
   Stream<List<Reminder>> watchAllReminders() {
@@ -119,20 +131,21 @@ class CloudReminderRepository implements ReminderRepository {
 
     if (supabase != null) {
       try {
-        await supabase!.from('reminders').update({
-          'is_deleted': true,
-          'deleted_at': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        }).match({'id': id, 'user_id': userId});
+        await supabase!.from('reminder_schedules').delete().match({
+          'id': id,
+          'user_id': userId,
+        });
         return;
       } catch (_) {}
     }
 
-    await db.into(db.syncQueue).insertOnConflictUpdate(
+    await db
+        .into(db.syncQueue)
+        .insertOnConflictUpdate(
           SyncQueueCompanion.insert(
             id: 'delete_reminder_$id',
             userId: drift.Value(userId),
-            entityType: 'reminders',
+            entityType: 'reminder_schedules',
             entityId: id,
             operation: 'DELETE',
             payload: jsonEncode({'id': id, 'user_id': userId}),
@@ -169,45 +182,45 @@ class CloudReminderRepository implements ReminderRepository {
   @override
   Future<void> clearAllReminders() => _local.clearAllReminders();
 
+  @override
+  Future<void> reconcileSchedules() => _local.reconcileSchedules();
+
   Future<void> _uploadReminder(Reminder r) async {
     // Only attempt cloud upload if authenticated with valid UUID
     if (!isValidUuid(userId)) {
       return;
     }
 
+    // Schedule time and days only are preserved in cloud DB (all alarm engine execution is strictly local)
     final payload = {
       'id': r.id,
       'user_id': userId,
-      'title': r.title,
       'category': r.category.name,
       'time_of_day': r.timeOfDay,
       'is_enabled': r.isEnabled,
-      'recurrence': r.recurrence.name,
       'repeat_days': r.repeatDays.join(','),
-      'sound_enabled': r.soundEnabled,
-      'vibration_enabled': r.vibrationEnabled,
-      'snooze_duration_minutes': r.snoozeDurationMinutes,
-      'last_triggered_at': r.lastTriggeredAt?.toUtc().toIso8601String(),
-      'last_completed_at': r.lastCompletedAt?.toUtc().toIso8601String(),
-      'is_dismissed': r.isDismissed,
       'created_at': r.createdAt.toUtc().toIso8601String(),
       'updated_at': r.updatedAt.toUtc().toIso8601String(),
     };
 
     if (supabase != null) {
       try {
-        await supabase!.from('reminders').upsert(payload, onConflict: 'id');
+        await supabase!
+            .from('reminder_schedules')
+            .upsert(payload, onConflict: 'id');
         return;
       } catch (e) {
         debugPrint('[CloudReminderRepository] Write error: $e');
       }
     }
 
-    await db.into(db.syncQueue).insertOnConflictUpdate(
+    await db
+        .into(db.syncQueue)
+        .insertOnConflictUpdate(
           SyncQueueCompanion.insert(
             id: 'sync_reminder_${r.id}',
             userId: drift.Value(userId),
-            entityType: 'reminders',
+            entityType: 'reminder_schedules',
             entityId: r.id,
             operation: 'upsert',
             payload: jsonEncode(payload),
@@ -221,29 +234,37 @@ class CloudReminderRepository implements ReminderRepository {
   Future<void> _backgroundRefresh() async {
     if (supabase == null) return;
     try {
-      final rows = await supabase!
-          .from('reminders')
-          .select()
-          .match({'user_id': userId})
-          .isFilter('deleted_at', null);
+      final rows = await supabase!.from('reminder_schedules').select().match({
+        'user_id': userId,
+      });
 
       for (final r in rows) {
-        await db.into(db.reminders).insertOnConflictUpdate(
+        final id = r['id'] as String;
+        final categoryStr = r['category'] as String? ?? 'workout';
+        final category = ReminderCategory.fromString(categoryStr);
+        final timeOfDay = r['time_of_day'] as String? ?? '08:00';
+        final isEnabled = r['is_enabled'] as bool? ?? true;
+        final repeatDaysStr = r['repeat_days'] as String?;
+        final createdAt =
+            DateTime.tryParse(r['created_at'] as String? ?? '') ??
+            DateTime.now();
+        final updatedAt =
+            DateTime.tryParse(r['updated_at'] as String? ?? '') ??
+            DateTime.now();
+
+        await db
+            .into(db.reminders)
+            .insertOnConflictUpdate(
               RemindersCompanion.insert(
-                id: r['id'] as String,
+                id: id,
                 userId: drift.Value(userId),
-                title: r['title'] as String,
-                category: r['category'] as String,
-                timeOfDay: r['time_of_day'] as String,
-                isEnabled: drift.Value(r['is_enabled'] as bool? ?? true),
-                recurrence: drift.Value(r['recurrence'] as String? ?? 'daily'),
-                repeatDays: drift.Value(r['repeat_days'] as String?),
-                soundEnabled: drift.Value(r['sound_enabled'] as bool? ?? true),
-                vibrationEnabled: drift.Value(r['vibration_enabled'] as bool? ?? true),
-                snoozeDurationMinutes: drift.Value(r['snooze_duration_minutes'] as int? ?? 10),
-                isDismissed: drift.Value(r['is_dismissed'] as bool? ?? false),
-                createdAt: DateTime.parse(r['created_at'] as String),
-                updatedAt: DateTime.parse(r['updated_at'] as String),
+                title: '${category.name.toUpperCase()} Reminder',
+                category: category.name,
+                timeOfDay: timeOfDay,
+                isEnabled: drift.Value(isEnabled),
+                repeatDays: drift.Value(repeatDaysStr),
+                createdAt: createdAt,
+                updatedAt: updatedAt,
                 syncStatus: const drift.Value('synced'),
               ),
             );
@@ -253,25 +274,15 @@ class CloudReminderRepository implements ReminderRepository {
 }
 
 final reminderRepositoryProvider = Provider<ReminderRepository>((ref) {
-  final status = ref.watch(authProvider).status;
   final db = ref.watch(databaseProvider);
   final notificationService = ref.watch(notificationServiceProvider);
+  final user = ref.watch(authProvider).user;
+  final currentUserId = user?.id ?? 'guest';
 
-  if (status == AuthStatus.authenticated) {
-    final user = ref.watch(authProvider).user;
-    if (user != null) {
-      SupabaseClient? client;
-      try {
-        client = Supabase.instance.client;
-      } catch (_) {}
-      return CloudReminderRepository(
-        db: db,
-        userId: user.id,
-        notificationService: notificationService,
-        supabase: client,
-      );
-    }
-  }
-
-  return LocalReminderRepository(db, notificationService);
+  // Alarms and reminders are strictly managed on-device and never stored in the remote/cloud database
+  return LocalReminderRepository(
+    db,
+    notificationService,
+    userId: currentUserId,
+  );
 });

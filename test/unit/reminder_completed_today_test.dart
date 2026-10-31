@@ -24,56 +24,62 @@ void main() {
       expect(reminder.isCompletedToday, isTrue);
     });
 
-    test('isCompletedToday returns false when lastCompletedAt is yesterday', () {
-      final now = DateTime.now();
-      final reminder = Reminder(
-        id: 'rem_2',
-        title: 'Hydration Break',
-        timeOfDay: '10:00',
-        recurrence: ReminderRecurrence.daily,
-        category: ReminderCategory.hydration,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        isEnabled: true,
-        snoozeDurationMinutes: 10,
-        createdAt: now.subtract(const Duration(days: 5)),
-        updatedAt: now,
-        lastCompletedAt: now.subtract(const Duration(days: 1)),
-      );
+    test(
+      'isCompletedToday returns false when lastCompletedAt is yesterday',
+      () {
+        final now = DateTime.now();
+        final reminder = Reminder(
+          id: 'rem_2',
+          title: 'Hydration Break',
+          timeOfDay: '10:00',
+          recurrence: ReminderRecurrence.daily,
+          category: ReminderCategory.hydration,
+          soundEnabled: true,
+          vibrationEnabled: true,
+          isEnabled: true,
+          snoozeDurationMinutes: 10,
+          createdAt: now.subtract(const Duration(days: 5)),
+          updatedAt: now,
+          lastCompletedAt: now.subtract(const Duration(days: 1)),
+        );
 
-      expect(reminder.isCompletedToday, isFalse);
-    });
+        expect(reminder.isCompletedToday, isFalse);
+      },
+    );
 
-    test('nextOccurrence advances to tomorrow when completed before set time today', () {
-      // Current time is 07:00, alarm set for 09:00, but user clicks complete before set time at 07:00
-      final now = DateTime.now();
-      final today7am = DateTime(now.year, now.month, now.day, 7, 0);
-      final reminder = Reminder(
-        id: 'rem_3',
-        title: 'Morning Workout',
-        timeOfDay: '09:00',
-        recurrence: ReminderRecurrence.daily,
-        category: ReminderCategory.workout,
-        soundEnabled: true,
-        vibrationEnabled: true,
-        isEnabled: true,
-        snoozeDurationMinutes: 10,
-        createdAt: now.subtract(const Duration(days: 2)),
-        updatedAt: now,
-        lastCompletedAt: today7am,
-      );
+    test(
+      'nextOccurrence advances to tomorrow when completed before set time today',
+      () {
+        // Current time is 07:00, alarm set for 09:00, but user clicks complete before set time at 07:00
+        final now = DateTime.now();
+        final today7am = DateTime(now.year, now.month, now.day, 7, 0);
+        final reminder = Reminder(
+          id: 'rem_3',
+          title: 'Morning Workout',
+          timeOfDay: '09:00',
+          recurrence: ReminderRecurrence.daily,
+          category: ReminderCategory.workout,
+          soundEnabled: true,
+          vibrationEnabled: true,
+          isEnabled: true,
+          snoozeDurationMinutes: 10,
+          createdAt: now.subtract(const Duration(days: 2)),
+          updatedAt: now,
+          lastCompletedAt: today7am,
+        );
 
-      expect(reminder.isCompletedToday, isTrue);
+        expect(reminder.isCompletedToday, isTrue);
 
-      final next = reminder.nextOccurrence(today7am);
-      final expectedTomorrow = today7am.add(const Duration(days: 1));
-      // Next occurrence MUST be tomorrow at 09:00, not today at 09:00!
-      expect(next.year, expectedTomorrow.year);
-      expect(next.month, expectedTomorrow.month);
-      expect(next.day, expectedTomorrow.day);
-      expect(next.hour, 9);
-      expect(next.minute, 0);
-    });
+        final next = reminder.nextOccurrence(today7am);
+        final expectedTomorrow = today7am.add(const Duration(days: 1));
+        // Next occurrence MUST be tomorrow at 09:00, not today at 09:00!
+        expect(next.year, expectedTomorrow.year);
+        expect(next.month, expectedTomorrow.month);
+        expect(next.day, expectedTomorrow.day);
+        expect(next.hour, 9);
+        expect(next.minute, 0);
+      },
+    );
 
     test('AlarmSoundSettings supports custom audio and clearCustomAudio', () {
       const initial = AlarmSoundSettings(

@@ -43,7 +43,9 @@ class CalendarEventCard extends StatelessWidget {
         border: Border.all(
           color: event.isCompleted
               ? AppColors.limeGreen.withValues(alpha: 0.5)
-              : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+              : (isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder),
           width: event.isCompleted ? 1.5 : 1.0,
         ),
         boxShadow: [
@@ -64,7 +66,10 @@ class CalendarEventCard extends StatelessWidget {
               children: [
                 // Category Chip
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: catColor.withValues(alpha: isDark ? 0.2 : 0.12),
                     borderRadius: BorderRadius.circular(10),
@@ -89,9 +94,14 @@ class CalendarEventCard extends StatelessWidget {
 
                 // Status Badge (Completed / Missed / Today / Upcoming)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: event.statusColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                    color: event.statusColor.withValues(
+                      alpha: isDark ? 0.2 : 0.12,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -110,7 +120,9 @@ class CalendarEventCard extends StatelessWidget {
                   icon: Icon(
                     Icons.more_horiz_rounded,
                     size: 20,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   padding: EdgeInsets.zero,
                   onSelected: (value) async {
@@ -171,7 +183,11 @@ class CalendarEventCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 10),
                           Text('Delete', style: TextStyle(color: Colors.red)),
                         ],
@@ -197,16 +213,24 @@ class CalendarEventCard extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 2, right: 12),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: event.isCompleted ? AppColors.limeGreen : Colors.transparent,
+                      color: event.isCompleted
+                          ? AppColors.limeGreen
+                          : Colors.transparent,
                       border: Border.all(
                         color: event.isCompleted
                             ? AppColors.limeGreen
-                            : (isDark ? AppColors.darkSurfaceBorder : Colors.grey[400]!),
+                            : (isDark
+                                  ? AppColors.darkSurfaceBorder
+                                  : Colors.grey[400]!),
                         width: 2,
                       ),
                     ),
                     child: event.isCompleted
-                        ? const Icon(Icons.check_rounded, size: 16, color: Colors.black)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            size: 16,
+                            color: Colors.black,
+                          )
                         : null,
                   ),
                 ),
@@ -221,19 +245,26 @@ class CalendarEventCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          decoration: event.isCompleted ? TextDecoration.lineThrough : null,
+                          decoration: event.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
                           color: event.isCompleted
-                              ? (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
+                              ? (isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary)
                               : null,
                         ),
                       ),
-                      if (event.description != null && event.description!.isNotEmpty) ...[
+                      if (event.description != null &&
+                          event.description!.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           event.description!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -252,7 +283,9 @@ class CalendarEventCard extends StatelessWidget {
                 Icon(
                   Icons.schedule_rounded,
                   size: 14,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -260,7 +293,9 @@ class CalendarEventCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
                 if (event.recurrenceRule != RecurrenceRule.none) ...[
@@ -268,23 +303,33 @@ class CalendarEventCard extends StatelessWidget {
                   Icon(
                     Icons.repeat_rounded,
                     size: 14,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     event.recurrenceRule.label,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
                 const Spacer(),
-                if (event.targetMetrics != null && event.targetMetrics!.isNotEmpty)
+                if (event.targetMetrics != null &&
+                    event.targetMetrics!.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF202430) : Colors.grey[100],
+                      color: isDark
+                          ? const Color(0xFF202430)
+                          : Colors.grey[100],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

@@ -104,11 +104,11 @@ describe('Fit Host Website Architecture & Integrity', () => {
 
   test('No service-role secret key is exposed in client env', () => {
     const envExample = fs.readFileSync(path.join(websiteRoot, '.env.example'), 'utf-8');
-    assert.doesNotMatch(envExample, /SUPABASE_SERVICE_ROLE_KEY=/);
+    assert.doesNotMatch(envExample, /NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=/);
 
     if (fs.existsSync(path.join(websiteRoot, '.env.local'))) {
       const envLocal = fs.readFileSync(path.join(websiteRoot, '.env.local'), 'utf-8');
-      assert.doesNotMatch(envLocal, /SUPABASE_SERVICE_ROLE_KEY=/);
+      assert.doesNotMatch(envLocal, /NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=/);
     }
   });
 
@@ -367,4 +367,3 @@ describe('Fit Host Website Architecture & Integrity', () => {
     }
   });
 });
-

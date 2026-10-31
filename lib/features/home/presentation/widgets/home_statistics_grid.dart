@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../workouts/domain/models/workout_models.dart';
-import '../../../workouts/presentation/controllers/workout_providers.dart';
-import '../../../nutrition/presentation/controllers/nutrition_controller.dart';
 import '../../../nutrition/presentation/widgets/custom_meal_routine_sheet.dart';
+import '../controllers/home_dashboard_controller.dart';
 
 class HomeStatisticsGrid extends ConsumerWidget {
   final bool isDark;
@@ -14,36 +12,26 @@ class HomeStatisticsGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final nutrition = ref.watch(nutritionProvider);
-    final workoutsAsync = ref.watch(workoutsStreamProvider);
+    final selectedDate = ref.watch(homeDashboardProvider).selectedDate;
+    final summaryAsync = ref.watch(homeDashboardSummaryProvider(selectedDate));
 
-    // Compute 100% REAL metrics from SQLite database & active state
-    final completedWorkouts = workoutsAsync.maybeWhen(
-      data: (workouts) => workouts.where((w) => w.status == 'completed').toList(),
-      orElse: () => <WorkoutEntity>[],
+    return summaryAsync.when(
+      loading: () => const SizedBox(
+        height: 160,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (summary) => _buildMetrics(context, summary),
     );
+  }
 
-    final completedWorkoutsCount = completedWorkouts.length;
-
-    final totalVolumeKg = completedWorkouts.fold<double>(
-      0.0,
-      (sum, w) => sum + w.totalVolumeKg,
-    );
-
-    final totalMinutes = completedWorkouts.fold<int>(
-      0,
-      (sum, w) => sum + (w.durationSeconds ~/ 60),
-    );
-
-    final caloriesBurned = (totalMinutes * 7.5).round();
-
-    final volumeDisplay = totalVolumeKg >= 1000
-        ? '${(totalVolumeKg / 1000).toStringAsFixed(1)}k kg'
-        : '${totalVolumeKg.toInt()} kg';
-
-    final durationDisplay = totalMinutes >= 60
-        ? '${totalMinutes ~/ 60}h ${totalMinutes % 60}m'
-        : '$totalMinutes min';
+  Widget _buildMetrics(BuildContext context, HomeDashboardSummary summary) {
+    final volumeDisplay = summary.totalVolumeKg >= 1000
+        ? '${(summary.totalVolumeKg / 1000).toStringAsFixed(1)}k kg'
+        : '${summary.totalVolumeKg.toInt()} kg';
+    final durationDisplay = summary.totalMinutes >= 60
+        ? '${summary.totalMinutes ~/ 60}h ${summary.totalMinutes % 60}m'
+        : '${summary.totalMinutes} min';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +61,11 @@ class HomeStatisticsGrid extends ConsumerWidget {
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, size: 12, color: AppColors.limeGreen),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    size: 12,
+                    color: AppColors.limeGreen,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'Real Data',
@@ -95,8 +87,10 @@ class HomeStatisticsGrid extends ConsumerWidget {
             Expanded(
               child: _StatGridCard(
                 title: 'Calories Logged',
-                value: '${nutrition.totalCaloriesGained} kcal',
-                subtitle: caloriesBurned > 0 ? '$caloriesBurned kcal burned' : 'Track daily fuel',
+                value: '${summary.nutrition.totalCaloriesGained} kcal',
+                subtitle: summary.caloriesBurned > 0
+                    ? '${summary.caloriesBurned} kcal burned'
+                    : 'No workout calories recorded',
                 icon: Icons.local_fire_department_rounded,
                 accentColor: AppColors.limeGreen,
                 isDark: isDark,
@@ -140,7 +134,7 @@ class HomeStatisticsGrid extends ConsumerWidget {
             Expanded(
               child: _StatGridCard(
                 title: 'Workouts',
-                value: '$completedWorkoutsCount sessions',
+                value: '${summary.workoutCount} sessions',
                 subtitle: 'Verified history',
                 icon: Icons.emoji_events_rounded,
                 accentColor: const Color(0xFFA855F7),
@@ -185,7 +179,9 @@ class _StatGridCard extends StatelessWidget {
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
           boxShadow: [
             BoxShadow(
@@ -207,17 +203,15 @@ class _StatGridCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Icon(
-                  icon,
-                  size: 16,
-                  color: accentColor,
-                ),
+                Icon(icon, size: 16, color: accentColor),
               ],
             ),
             const SizedBox(height: 6),
@@ -238,7 +232,9 @@ class _StatGridCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                color: isDark
+                    ? AppColors.darkTextTertiary
+                    : AppColors.lightTextTertiary,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

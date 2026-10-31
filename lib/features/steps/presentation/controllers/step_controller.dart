@@ -8,6 +8,8 @@ import '../../data/step_permission_service.dart';
 import '../../domain/step_calculator.dart';
 import '../../domain/daily_step_record.dart';
 
+import '../../data/health_platform_service.dart';
+
 class StepState {
   final int todaySteps;
   final int targetSteps;
@@ -20,6 +22,8 @@ class StepState {
   final bool isGuest;
   final StepPermissionState permissionState;
   final bool isInitialized;
+  final StepDataSource dataSource;
+  final DateTime? lastSyncedAt;
 
   const StepState({
     this.todaySteps = 0,
@@ -33,6 +37,8 @@ class StepState {
     this.isGuest = true,
     this.permissionState = StepPermissionState.unknown,
     this.isInitialized = false,
+    this.dataSource = StepDataSource.hardwareSensor,
+    this.lastSyncedAt,
   });
 
   double get progressPercentage {
@@ -56,6 +62,8 @@ class StepState {
     bool? isGuest,
     StepPermissionState? permissionState,
     bool? isInitialized,
+    StepDataSource? dataSource,
+    DateTime? lastSyncedAt,
   }) {
     return StepState(
       todaySteps: todaySteps ?? this.todaySteps,
@@ -69,6 +77,8 @@ class StepState {
       isGuest: isGuest ?? this.isGuest,
       permissionState: permissionState ?? this.permissionState,
       isInitialized: isInitialized ?? this.isInitialized,
+      dataSource: dataSource ?? this.dataSource,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     );
   }
 }
@@ -107,7 +117,10 @@ class StepController extends Notifier<StepState> {
     // Initial load from today's steps in service
     final initialSteps = stepService.todaySteps;
     final stride = state.strideLengthCm;
-    final dist = StepCalculator.distanceKm(steps: initialSteps, strideCm: stride);
+    final dist = StepCalculator.distanceKm(
+      steps: initialSteps,
+      strideCm: stride,
+    );
     final cal = StepCalculator.estimateCalories(initialSteps);
     final mins = StepCalculator.estimateActiveMinutes(initialSteps);
 
@@ -127,8 +140,10 @@ class StepController extends Notifier<StepState> {
     // Listen to real-time step increments
     _stepsSub?.cancel();
     _stepsSub = stepService.todayStepsStream.listen((steps) {
-      final updatedDist =
-          StepCalculator.distanceKm(steps: steps, strideCm: state.strideLengthCm);
+      final updatedDist = StepCalculator.distanceKm(
+        steps: steps,
+        strideCm: state.strideLengthCm,
+      );
       final updatedCal = StepCalculator.estimateCalories(steps);
       final updatedMins = StepCalculator.estimateActiveMinutes(steps);
 
@@ -188,10 +203,7 @@ class StepController extends Notifier<StepState> {
       strideCm: strideCm,
     );
 
-    state = state.copyWith(
-      strideLengthCm: strideCm,
-      distanceKm: newDist,
-    );
+    state = state.copyWith(strideLengthCm: strideCm, distanceKm: newDist);
 
     ref.read(stepServiceProvider).updateStrideAndGoal(strideCm: strideCm);
   }
@@ -199,9 +211,39 @@ class StepController extends Notifier<StepState> {
   void addSimulatedSteps(int steps) {
     ref.read(stepServiceProvider).addSteps(steps);
   }
+
+  /// Manually synchronizes step count with Android Health Connect or Apple HealthKit
+  Future<bool> refreshFromHealthPlatform() async {
+    final stepService = ref.read(stepServiceProvider);
+    await stepService.syncHealthPlatformHistory(days: 30);
+    final success = await stepService.syncHealthPlatform();
+    if (success) {
+      final history = await ref
+          .read(stepsRepositoryProvider)
+          .getStepsHistory(days: 30);
+      final newDist = StepCalculator.distanceKm(
+        steps: stepService.todaySteps,
+        strideCm: state.strideLengthCm,
+      );
+      final newCal = StepCalculator.estimateCalories(stepService.todaySteps);
+      final newMin = StepCalculator.estimateActiveMinutes(
+        stepService.todaySteps,
+      );
+
+      state = state.copyWith(
+        todaySteps: stepService.todaySteps,
+        distanceKm: newDist,
+        calories: newCal,
+        activeMinutes: newMin,
+        history: history,
+        dataSource: stepService.currentSource,
+        lastSyncedAt: stepService.lastSyncedAt,
+      );
+    }
+    return success;
+  }
 }
 
-final stepControllerProvider =
-    NotifierProvider<StepController, StepState>(
+final stepControllerProvider = NotifierProvider<StepController, StepState>(
   StepController.new,
 );

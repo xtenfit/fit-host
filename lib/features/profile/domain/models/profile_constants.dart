@@ -96,17 +96,9 @@ const List<String> kAvailableEquipment = [
   'Full Gym',
 ];
 
-const List<String> kTrainingLocations = [
-  'Gym',
-  'Home',
-  'Outdoors',
-];
+const List<String> kTrainingLocations = ['Gym', 'Home', 'Outdoors'];
 
-const List<String> kExperienceLevels = [
-  'Beginner',
-  'Intermediate',
-  'Advanced',
-];
+const List<String> kExperienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
 
 const List<String> kWeekdayLabels = [
   'Mon',

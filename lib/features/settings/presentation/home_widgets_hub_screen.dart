@@ -12,7 +12,8 @@ class HomeWidgetsHubScreen extends ConsumerStatefulWidget {
   const HomeWidgetsHubScreen({super.key});
 
   @override
-  ConsumerState<HomeWidgetsHubScreen> createState() => _HomeWidgetsHubScreenState();
+  ConsumerState<HomeWidgetsHubScreen> createState() =>
+      _HomeWidgetsHubScreenState();
 }
 
 class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
@@ -43,14 +44,18 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
     final dashboard = ref.watch(homeDashboardProvider);
 
     final currentSteps = stepState.todaySteps;
-    final stepGoal = profile.dailyStepsGoal > 0 ? profile.dailyStepsGoal : 10000;
+    final stepGoal = profile.dailyStepsGoal > 0
+        ? profile.dailyStepsGoal
+        : 10000;
     final stepProgress = (currentSteps / stepGoal).clamp(0.0, 1.0);
     final caloriesBurned = stepState.calories;
     final waterGlasses = nutrition.waterGlasses;
     final targetWater = nutrition.targetWater > 0 ? nutrition.targetWater : 8;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Home Screen Widgets'),
         centerTitle: true,
@@ -75,7 +80,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                 ),
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: AppColors.electricCyan.withValues(alpha: isDark ? 0.3 : 0.4),
+                  color: AppColors.electricCyan.withValues(
+                    alpha: isDark ? 0.3 : 0.4,
+                  ),
                 ),
               ),
               child: Row(
@@ -148,7 +155,11 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
             const SizedBox(height: 8),
             Row(
               children: [
-                _buildSizeChip(3, 'Lock Screen Accessory', Icons.screen_lock_portrait_rounded),
+                _buildSizeChip(
+                  3,
+                  'Lock Screen Accessory',
+                  Icons.screen_lock_portrait_rounded,
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -210,15 +221,18 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        backgroundColor:
-                            success ? const Color(0xFF131722) : Colors.red[900],
+                        backgroundColor: success
+                            ? const Color(0xFF131722)
+                            : Colors.red[900],
                         content: Row(
                           children: [
                             Icon(
                               success
                                   ? Icons.check_circle_rounded
                                   : Icons.error_rounded,
-                              color: success ? AppColors.limeGreen : Colors.white,
+                              color: success
+                                  ? AppColors.limeGreen
+                                  : Colors.white,
                               size: 20,
                             ),
                             const SizedBox(width: 10),
@@ -276,7 +290,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Column(
@@ -286,22 +302,27 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                     color: AppColors.limeGreen,
                     title: 'Start Live Workout',
                     subtitle: 'Launch active resistance or HIIT timer',
-                    onTap: () => context.push('/workouts'),
+                    onTap: () => context.go('/workouts'),
                   ),
                   Divider(
                     height: 1,
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                   _buildShortcutTile(
                     icon: Icons.directions_walk_rounded,
                     color: AppColors.electricCyan,
                     title: 'Log Steps & Activity',
-                    subtitle: 'Record treadmill, outdoor walk or stride distance',
+                    subtitle:
+                        'Record treadmill, outdoor walk or stride distance',
                     onTap: () => context.push('/steps'),
                   ),
                   Divider(
                     height: 1,
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                   _buildShortcutTile(
                     icon: Icons.water_drop_rounded,
@@ -312,7 +333,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                   ),
                   Divider(
                     height: 1,
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                   _buildShortcutTile(
                     icon: Icons.mic_rounded,
@@ -332,7 +355,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Column(
@@ -341,7 +366,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                     controller: _tabController,
                     indicatorColor: AppColors.electricCyan,
                     labelColor: isDark ? Colors.white : Colors.black87,
-                    unselectedLabelColor: isDark ? Colors.white54 : Colors.black45,
+                    unselectedLabelColor: isDark
+                        ? Colors.white54
+                        : Colors.black45,
                     tabs: const [
                       Tab(text: 'iOS (iPhone / iPad)'),
                       Tab(text: 'Android (Home Screen)'),
@@ -381,11 +408,13 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
               child: Column(
                 children: [
                   Text(
-                    'FitHost v1.2.2v2 Widget Engine',
+                    'FitHost v1.3.0 Widget Engine',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -393,7 +422,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                     'Powered by amitrana • Managed by amitrana team',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                      color: isDark
+                          ? AppColors.darkTextTertiary
+                          : AppColors.lightTextTertiary,
                     ),
                   ),
                 ],
@@ -422,8 +453,8 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
               color: isSelected
                   ? AppColors.electricCyan
                   : (Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.darkSurfaceBorder
-                      : AppColors.lightSurfaceBorder),
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder),
               width: isSelected ? 1.5 : 1.0,
             ),
           ),
@@ -468,12 +499,7 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
             width: isSelected ? 2.5 : 1,
           ),
           boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.6),
-                    blurRadius: 8,
-                  ),
-                ]
+              ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)]
               : null,
         ),
       ),
@@ -608,7 +634,11 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.directions_walk_rounded, color: accent, size: 18),
+                        Icon(
+                          Icons.directions_walk_rounded,
+                          color: accent,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'DAILY STEPS',
@@ -641,7 +671,9 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                       child: LinearProgressIndicator(
                         value: stepProgress,
                         minHeight: 6,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.black12,
                         valueColor: AlwaysStoppedAnimation(accent),
                       ),
                     ),
@@ -663,8 +695,11 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.local_fire_department_rounded,
-                            color: Color(0xFFF97316), size: 18),
+                        const Icon(
+                          Icons.local_fire_department_rounded,
+                          color: Color(0xFFF97316),
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,13 +707,16 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                             Text(
                               '$calories kcal',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 13),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                             Text(
                               'Burned',
                               style: TextStyle(
-                                  fontSize: 10,
-                                  color: isDark ? Colors.white54 : Colors.black45),
+                                fontSize: 10,
+                                color: isDark ? Colors.white54 : Colors.black45,
+                              ),
                             ),
                           ],
                         ),
@@ -686,8 +724,11 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.water_drop_rounded,
-                            color: AppColors.electricCyan, size: 18),
+                        const Icon(
+                          Icons.water_drop_rounded,
+                          color: AppColors.electricCyan,
+                          size: 18,
+                        ),
                         const SizedBox(width: 6),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,13 +736,16 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                             Text(
                               '$waterGlasses / $targetWater cups',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 13),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
                             ),
                             Text(
                               'Hydration',
                               style: TextStyle(
-                                  fontSize: 10,
-                                  color: isDark ? Colors.white54 : Colors.black45),
+                                fontSize: 10,
+                                color: isDark ? Colors.white54 : Colors.black45,
+                              ),
                             ),
                           ],
                         ),
@@ -750,7 +794,11 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                           color: accent.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.fitness_center_rounded, color: accent, size: 16),
+                        child: Icon(
+                          Icons.fitness_center_rounded,
+                          color: accent,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -894,10 +942,7 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
                   ),
                   Text(
                     '${(stepProgress * 100).toInt()}% of $stepGoal',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 10, color: Colors.white70),
                   ),
                 ],
               ),
@@ -908,7 +953,12 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
   }
 
   Widget _buildMetricMini(
-      IconData icon, Color color, String value, String label, bool isDark) {
+    IconData icon,
+    Color color,
+    String value,
+    String label,
+    bool isDark,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 20),
@@ -948,11 +998,12 @@ class _HomeWidgetsHubScreenState extends ConsumerState<HomeWidgetsHubScreen>
         title,
         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(fontSize: 12),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      trailing: const Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 14,
+        color: Colors.grey,
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
       onTap: onTap,
     );
   }

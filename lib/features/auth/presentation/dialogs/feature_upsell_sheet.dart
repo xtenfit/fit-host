@@ -37,13 +37,15 @@ class FeatureUpsellSheet extends StatelessWidget {
         title: title,
         description: description,
         icon: icon,
-        benefits: benefits ?? const [
-          'Automatic end-to-end cloud backup for all your logs',
-          'Multi-device synchronization and instant restoration',
-          'Full monthly calendar trends and custom range aggregations',
-          'Advanced progress analytics and volume progression (>7d)',
-          'Data export archives (CSV, PDF, JSON)',
-        ],
+        benefits:
+            benefits ??
+            const [
+              'Automatic end-to-end cloud backup for all your logs',
+              'Multi-device synchronization and instant restoration',
+              'Full monthly calendar trends and custom range aggregations',
+              'Advanced progress analytics and volume progression (>7d)',
+              'Data export archives (CSV, PDF, JSON)',
+            ],
       ),
     );
   }
@@ -92,11 +94,7 @@ class FeatureUpsellSheet extends StatelessWidget {
                     color: AppColors.limeGreen.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    icon,
-                    color: AppColors.limeGreen,
-                    size: 26,
-                  ),
+                  child: Icon(icon, color: AppColors.limeGreen, size: 26),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -105,7 +103,9 @@ class FeatureUpsellSheet extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.limeGreen.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
@@ -215,10 +215,7 @@ class FeatureUpsellSheet extends StatelessWidget {
                 },
                 child: const Text(
                   'Create Free Account',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                 ),
               ),
             ),

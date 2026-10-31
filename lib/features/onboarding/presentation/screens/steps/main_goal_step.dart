@@ -90,7 +90,8 @@ class MainGoalStep extends StatelessWidget {
     required String subtitle,
     required IconData icon,
   }) {
-    final isSelected = selectedGoals.contains(id) ||
+    final isSelected =
+        selectedGoals.contains(id) ||
         (id == 'maintain' && selectedGoals.contains('maintain_weight'));
 
     return InkWell(

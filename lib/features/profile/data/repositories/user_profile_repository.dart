@@ -10,60 +10,91 @@ abstract class UserProfileRepository {
 
 class UserProfileRepositoryImpl implements UserProfileRepository {
   final FlutterSecureStorage _storage;
-  static const _profileKey = 'fit_host_user_profile';
+  final String? userId;
 
-  // Memory cache fallback for tests and instant reads
-  static UserProfile? _memoryCache;
+  static const _legacyProfileKey = 'fit_host_user_profile';
 
-  UserProfileRepositoryImpl({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+  String get _effectiveKey =>
+      (userId != null && userId!.isNotEmpty && userId != 'guest')
+      ? 'fit_host_user_profile_$userId'
+      : 'fit_host_user_profile_guest';
+
+  // Memory cache fallback scoped by storage key
+  static final Map<String, UserProfile> _memoryCaches = {};
+
+  UserProfileRepositoryImpl({FlutterSecureStorage? storage, this.userId})
+    : _storage = storage ?? const FlutterSecureStorage();
 
   @override
   Future<UserProfile> loadProfile() async {
-    if (_memoryCache != null) return _memoryCache!;
+    final key = _effectiveKey;
+    if (_memoryCaches.containsKey(key)) return _memoryCaches[key]!;
+
     try {
-      final jsonStr = await _storage.read(key: _profileKey);
+      var jsonStr = await _storage.read(key: key);
+      if (jsonStr == null || jsonStr.isEmpty) {
+        // Fallback migration from legacy unscoped key
+        final legacyStr = await _storage.read(key: _legacyProfileKey);
+        if (legacyStr != null && legacyStr.isNotEmpty) {
+          jsonStr = legacyStr;
+          // Migrate to scoped key
+          await _storage.write(key: key, value: legacyStr);
+        }
+      }
+
       if (jsonStr != null && jsonStr.isNotEmpty) {
-        _memoryCache = UserProfile.fromJsonString(jsonStr);
-        return _memoryCache!;
+        final loaded = UserProfile.fromJsonString(jsonStr);
+        _memoryCaches[key] = loaded;
+        return loaded;
       }
     } catch (e) {
-      debugPrint('UserProfileRepository: storage read error (falling back to default): $e');
+      debugPrint(
+        'UserProfileRepository: storage read error (falling back to default): $e',
+      );
     }
 
-    // Default suggested profile for Guest Athlete
+    // Default suggested profile for athlete
+    final isGuest = userId == null || userId!.isEmpty || userId == 'guest';
     final defaultProfile = UserProfile.calculateSuggestedTargets(
-      name: 'Guest Athlete',
-      age: 26,
+      id: userId ?? 'guest',
+      name: isGuest ? 'Guest Athlete' : 'Athlete',
+      age: 0,
       gender: 'male',
-      heightCm: 175.0,
-      weightKg: 72.0,
-      targetWeightKg: 70.0,
+      heightCm: 0.0,
+      weightKg: 0.0,
+      targetWeightKg: null,
       fitnessGoal: 'maintain_weight',
       dietType: 'balanced',
       weeklyWorkoutDays: 4,
       dailyWorkoutMinutes: 45,
-      isCompleted: true,
+      isCompleted: false,
     );
-    _memoryCache = defaultProfile;
+    _memoryCaches[key] = defaultProfile;
     return defaultProfile;
   }
 
   @override
   Future<void> saveProfile(UserProfile profile) async {
-    _memoryCache = profile;
+    final key = _effectiveKey;
+    _memoryCaches[key] = profile;
     try {
-      await _storage.write(key: _profileKey, value: profile.toJsonString());
+      await _storage.write(key: key, value: profile.toJsonString());
     } catch (e) {
-      debugPrint('UserProfileRepository: storage write error (cached in memory): $e');
+      debugPrint(
+        'UserProfileRepository: storage write error (cached in memory): $e',
+      );
     }
   }
 
   @override
   Future<void> resetProfile() async {
-    _memoryCache = null;
+    final key = _effectiveKey;
+    _memoryCaches.remove(key);
     try {
-      await _storage.delete(key: _profileKey);
+      await _storage.delete(key: key);
+      if (key == 'fit_host_user_profile_guest') {
+        await _storage.delete(key: _legacyProfileKey);
+      }
     } catch (e) {
       debugPrint('UserProfileRepository: storage delete error: $e');
     }

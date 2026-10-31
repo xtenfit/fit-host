@@ -1,7 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/models/nutrition_models.dart';
+import '../../domain/services/nutrition_calculation_service.dart';
+import '../../data/repositories/calorie_adjustment_repository.dart';
+import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import 'package:fit_host/core/data/nutrition_repository.dart';
+import 'package:fit_host/core/services/home_widget_service.dart';
+import 'package:fit_host/core/services/analytics_service.dart';
 
 const _uuid = Uuid();
 
@@ -406,36 +411,89 @@ final List<MealItem> defaultPresetMeals = [
 ];
 
 class NutritionNotifier extends Notifier<DailyNutritionState> {
-  @override
-  DailyNutritionState build() {
-    // Warm up from Drift nutrition_logs table
-    Future.microtask(() async {
-      try {
-        final repo = ref.read(nutritionRepositoryProvider);
-        final saved = await repo.getDailyNutrition(DateTime.now());
-        if (saved.loggedMeals.isNotEmpty || saved.waterGlasses > 0 || saved.loggedDrinks.isNotEmpty) {
-          state = state.copyWith(
-            loggedMeals: saved.loggedMeals,
-            waterGlasses: saved.waterGlasses,
-            loggedDrinks: saved.loggedDrinks,
-            targetCalories: saved.targetCalories,
-            targetProtein: saved.targetProtein,
-            targetCarbs: saved.targetCarbs,
-            targetFat: saved.targetFat,
-          );
-        }
-      } catch (_) {}
-    });
+  DateTime _currentDate = DateTime.now();
 
-    return const DailyNutritionState(
-      loggedMeals: [],
-    );
+  DateTime get currentDate => _currentDate;
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  void _persist(DailyNutritionState s) {
+  @override
+  DailyNutritionState build() {
+    _currentDate = DateTime.now();
+    // Warm up from Drift nutrition_logs table and calorie_adjustments table
+    Future.microtask(() async {
+      await loadForDate(_currentDate);
+    });
+
+    return const DailyNutritionState(loggedMeals: []);
+  }
+
+  /// Loads persisted daily nutrition logs and independent calorie adjustments for a specific date.
+  Future<void> loadForDate(DateTime date) async {
+    _currentDate = date;
     try {
-      ref.read(nutritionRepositoryProvider).saveDailyNutrition(DateTime.now(), s).ignore();
+      final repo = ref.read(nutritionRepositoryProvider);
+      final adjRepo = ref.read(calorieAdjustmentRepositoryProvider);
+
+      final saved = await repo.getDailyNutrition(date);
+      final adjustments = await adjRepo.getAdjustmentsForDate(date);
+
+      state = state.copyWith(
+        loggedMeals: saved.loggedMeals,
+        waterGlasses: saved.waterGlasses,
+        loggedDrinks: saved.loggedDrinks,
+        targetCalories: saved.targetCalories > 0
+            ? saved.targetCalories
+            : state.targetCalories,
+        targetProtein: saved.targetProtein > 0
+            ? saved.targetProtein
+            : state.targetProtein,
+        targetCarbs: saved.targetCarbs > 0
+            ? saved.targetCarbs
+            : state.targetCarbs,
+        targetFat: saved.targetFat > 0 ? saved.targetFat : state.targetFat,
+        targetWater: saved.targetWater > 0
+            ? saved.targetWater
+            : state.targetWater,
+        manualAdjustments: adjustments,
+      );
+
+      try {
+        HomeWidgetService.instance
+            .syncData(
+              waterGlasses: state.waterGlasses,
+              targetWater: state.targetWater,
+              calories: state.totalCaloriesGained,
+            )
+            .ignore();
+      } catch (_) {}
     } catch (_) {}
+  }
+
+  void _persist(DailyNutritionState s, {DateTime? targetDate}) {
+    final date = targetDate ?? _currentDate;
+    try {
+      ref
+          .read(nutritionRepositoryProvider)
+          .saveDailyNutrition(date, s)
+          .ignore();
+    } catch (_) {}
+    try {
+      HomeWidgetService.instance
+          .syncData(
+            waterGlasses: s.waterGlasses,
+            targetWater: s.targetWater,
+            calories: s.totalCaloriesGained,
+          )
+          .ignore();
+    } catch (_) {}
+  }
+
+  void setWaterTarget(int target) {
+    state = state.copyWith(targetWater: target.clamp(1, 30));
+    _persist(state);
   }
 
   void syncWithProfile({
@@ -451,81 +509,162 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
       targetCarbs: carbs,
       targetFat: fat,
       targetWater: waterGlasses ?? state.targetWater,
+      isPersonalized: true,
     );
     _persist(state);
   }
 
-  void logMeal(MealItem meal) {
+  void logMeal(MealItem meal, {DateTime? date}) {
+    final logTime = date ?? meal.loggedAt;
     final entry = meal.copyWith(
-      id: _uuid.v4(),
-      loggedAt: DateTime.now(),
+      id: meal.id.isNotEmpty ? meal.id : _uuid.v4(),
+      loggedAt: logTime,
     );
-    state = state.copyWith(
-      loggedMeals: [...state.loggedMeals, entry],
-    );
-    _persist(state);
+
+    if (_isSameDay(logTime, _currentDate)) {
+      state = state.copyWith(loggedMeals: [...state.loggedMeals, entry]);
+      _persist(state, targetDate: logTime);
+    } else {
+      // Save directly to the meal's specific date record in repository
+      ref
+          .read(nutritionRepositoryProvider)
+          .logMeal(entry, date: logTime)
+          .ignore();
+    }
+    AnalyticsService.instance
+        .track(AnalyticsEvents.mealLogged, properties: {'is_custom': false})
+        .ignore();
   }
 
-  void removeLoggedMeal(String mealId) {
+  void removeLoggedMeal(String mealId, {DateTime? date}) {
+    final targetDate = date ?? _currentDate;
     state = state.copyWith(
       loggedMeals: state.loggedMeals.where((m) => m.id != mealId).toList(),
     );
-    _persist(state);
+    _persist(state, targetDate: targetDate);
   }
 
-  void addCustomMeal(MealItem meal) {
+  void addCustomMeal(MealItem meal, {DateTime? date}) {
+    final logTime = date ?? meal.loggedAt;
     final custom = meal.copyWith(
-      id: _uuid.v4(),
+      id: meal.id.isNotEmpty ? meal.id : _uuid.v4(),
       isCustom: true,
-      loggedAt: DateTime.now(),
+      loggedAt: logTime,
     );
-    state = state.copyWith(
-      customMeals: [...state.customMeals, custom],
-      loggedMeals: [...state.loggedMeals, custom],
-    );
-    _persist(state);
+    if (_isSameDay(logTime, _currentDate)) {
+      state = state.copyWith(
+        customMeals: [...state.customMeals, custom],
+        loggedMeals: [...state.loggedMeals, custom],
+      );
+      _persist(state, targetDate: logTime);
+    } else {
+      ref
+          .read(nutritionRepositoryProvider)
+          .logMeal(custom, date: logTime)
+          .ignore();
+    }
+    AnalyticsService.instance
+        .track(AnalyticsEvents.mealLogged, properties: {'is_custom': true})
+        .ignore();
   }
 
   void setDietFilter(String filter) {
     state = state.copyWith(dietFilter: filter);
   }
 
+  /// Calculates personalized targets using canonical NutritionCalculationService.
   void setGoalMode(String mode) {
-    switch (mode) {
-      case 'hypertrophy':
-        state = state.copyWith(
-          goalMode: 'hypertrophy',
-          targetCalories: 2650,
-          targetProtein: 185,
-          targetCarbs: 290,
-          targetFat: 68,
-        );
-        break;
-      case 'cutting':
-        state = state.copyWith(
-          goalMode: 'cutting',
-          targetCalories: 1950,
-          targetProtein: 190,
-          targetCarbs: 165,
-          targetFat: 50,
-        );
-        break;
-      case 'recomp':
-        state = state.copyWith(
-          goalMode: 'recomp',
-          targetCalories: 2300,
-          targetProtein: 165,
-          targetCarbs: 235,
-          targetFat: 60,
-        );
-        break;
+    try {
+      final profile = ref.read(userProfileProvider);
+      final goalName = mode == 'hypertrophy'
+          ? 'build_muscle'
+          : mode == 'cutting'
+          ? 'lose_weight'
+          : 'maintain_weight';
+      final modProfile = profile.copyWith(fitnessGoal: goalName);
+      final targets = NutritionCalculationService.calculateTargetsFromProfile(
+        modProfile,
+      );
+
+      state = state.copyWith(
+        goalMode: mode,
+        targetCalories: targets.dailyCalories,
+        targetProtein: targets.proteinGrams,
+        targetCarbs: targets.carbsGrams,
+        targetFat: targets.fatsGrams,
+        isPersonalized: targets.isPersonalized,
+      );
+      _persist(state);
+    } catch (_) {
+      // Fallback baseline targets if profile read fails
+      state = state.copyWith(
+        goalMode: mode,
+        targetCalories: mode == 'cutting'
+            ? 1950
+            : (mode == 'hypertrophy' ? 2650 : 2250),
+        isPersonalized: false,
+      );
+      _persist(state);
     }
   }
 
-  void addBurnedCalories(int delta) {
+  /// Adds a verified, independent manual calorie-burn adjustment.
+  Future<void> addCalorieAdjustment(CalorieAdjustment adjustment) async {
+    final adjRepo = ref.read(calorieAdjustmentRepositoryProvider);
+    await adjRepo.addAdjustment(adjustment);
+    if (_isSameDay(adjustment.date, _currentDate)) {
+      state = state.copyWith(
+        manualAdjustments: [
+          ...state.manualAdjustments.where((a) => a.id != adjustment.id),
+          adjustment,
+        ],
+      );
+    }
+  }
+
+  /// Updates an existing manual calorie-burn adjustment.
+  Future<void> updateCalorieAdjustment(CalorieAdjustment adjustment) async {
+    final adjRepo = ref.read(calorieAdjustmentRepositoryProvider);
+    await adjRepo.updateAdjustment(adjustment);
+    if (_isSameDay(adjustment.date, _currentDate)) {
+      state = state.copyWith(
+        manualAdjustments: state.manualAdjustments
+            .map((a) => a.id == adjustment.id ? adjustment : a)
+            .toList(),
+      );
+    }
+  }
+
+  /// Soft deletes a manual calorie-burn adjustment.
+  Future<void> deleteCalorieAdjustment(String adjustmentId) async {
+    final adjRepo = ref.read(calorieAdjustmentRepositoryProvider);
+    await adjRepo.deleteAdjustment(adjustmentId);
     state = state.copyWith(
-      manualCaloriesBurned: (state.manualCaloriesBurned + delta).clamp(0, 5000),
+      manualAdjustments: state.manualAdjustments
+          .where((a) => a.id != adjustmentId)
+          .toList(),
     );
+  }
+
+  /// Adds manual burned calories by creating an identifiable CalorieAdjustment record.
+  void addBurnedCalories(
+    int delta, {
+    String title = 'Manual Activity',
+    String? note,
+  }) {
+    if (delta <= 0) return;
+    final now = DateTime.now();
+    final adjustment = CalorieAdjustment(
+      id: _uuid.v4(),
+      date: _currentDate,
+      caloriesBurned: delta.clamp(1, 5000),
+      title: title,
+      note: note,
+      source: 'manual_adjustment',
+      createdAt: now,
+      updatedAt: now,
+    );
+    addCalorieAdjustment(adjustment);
   }
 
   void setWater(int count) {
@@ -540,10 +679,7 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
       for (var i = 0; i < diff && updatedDrinks.isNotEmpty; i++) {
         updatedDrinks.removeAt(0);
       }
-      state = state.copyWith(
-        loggedDrinks: updatedDrinks,
-        waterGlasses: target,
-      );
+      state = state.copyWith(loggedDrinks: updatedDrinks, waterGlasses: target);
     } else {
       final diff = target - state.waterGlasses;
       final now = DateTime.now();
@@ -566,18 +702,17 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
   }
 
   void incrementWater() {
-    logDrink(
-      type: LiquidDrinkType.water,
-      name: 'Water Glass',
-      volumeMl: 250,
-    );
+    logDrink(type: LiquidDrinkType.water, name: 'Water Glass', volumeMl: 250);
   }
 
   void decrementWater() {
     if (state.loggedDrinks.isNotEmpty) {
       final updatedDrinks = state.loggedDrinks.sublist(1);
       final totalMl = updatedDrinks.fold<int>(0, (sum, d) => sum + d.volumeMl);
-      final calculatedGlasses = (totalMl / 250).floor().clamp(0, state.targetWater);
+      final calculatedGlasses = (totalMl / 250).floor().clamp(
+        0,
+        state.targetWater,
+      );
       state = state.copyWith(
         loggedDrinks: updatedDrinks,
         waterGlasses: calculatedGlasses,
@@ -605,12 +740,21 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
     );
     final updatedDrinks = [drink, ...state.loggedDrinks];
     final totalMl = updatedDrinks.fold<int>(0, (sum, d) => sum + d.volumeMl);
-    final calculatedGlasses = (totalMl / 250).floor().clamp(0, state.targetWater);
+    final calculatedGlasses = (totalMl / 250).floor().clamp(
+      0,
+      state.targetWater,
+    );
     state = state.copyWith(
       loggedDrinks: updatedDrinks,
       waterGlasses: calculatedGlasses,
     );
     _persist(state);
+    AnalyticsService.instance
+        .track(
+          AnalyticsEvents.hydrationLogged,
+          properties: {'is_water': type == LiquidDrinkType.water},
+        )
+        .ignore();
   }
 
   void removeDrink(String id) {
@@ -625,9 +769,14 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
       ),
     );
     if (entry.id.isNotEmpty) {
-      final updatedDrinks = state.loggedDrinks.where((d) => d.id != id).toList();
+      final updatedDrinks = state.loggedDrinks
+          .where((d) => d.id != id)
+          .toList();
       final totalMl = updatedDrinks.fold<int>(0, (sum, d) => sum + d.volumeMl);
-      final calculatedGlasses = (totalMl / 250).floor().clamp(0, state.targetWater);
+      final calculatedGlasses = (totalMl / 250).floor().clamp(
+        0,
+        state.targetWater,
+      );
       state = state.copyWith(
         loggedDrinks: updatedDrinks,
         waterGlasses: calculatedGlasses,
@@ -637,16 +786,12 @@ class NutritionNotifier extends Notifier<DailyNutritionState> {
   }
 
   void resetHydration() {
-    state = state.copyWith(
-      waterGlasses: 0,
-      loggedDrinks: [],
-    );
+    state = state.copyWith(waterGlasses: 0, loggedDrinks: []);
     _persist(state);
   }
 }
 
-
 final nutritionProvider =
     NotifierProvider<NutritionNotifier, DailyNutritionState>(
-  NutritionNotifier.new,
-);
+      NutritionNotifier.new,
+    );

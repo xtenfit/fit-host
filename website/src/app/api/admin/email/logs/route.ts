@@ -5,7 +5,7 @@ import { emailStore } from '@/lib/email/store';
 export async function GET(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const { searchParams } = new URL(request.url);

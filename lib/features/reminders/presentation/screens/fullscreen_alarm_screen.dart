@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/services/lock_screen_security_service.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/alarm_sound_service.dart';
+import '../../data/repositories/reminder_repository.dart';
+import '../../domain/models/reminder.dart';
 import '../controllers/reminders_controller.dart';
-import '../../../workouts/presentation/controllers/workout_providers.dart';
-import '../../../workouts/domain/models/workout_models.dart';
 
 class FullscreenAlarmScreen extends ConsumerStatefulWidget {
   final String id;
@@ -44,6 +45,7 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
   @override
   void initState() {
     super.initState();
+    LockScreenSecurityService.instance.enableAlarmLockScreenMode();
     _soundService = ref.read(alarmSoundServiceProvider);
     _pulseController = AnimationController(
       vsync: this,
@@ -60,7 +62,71 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
 
     _startCountdownTimer();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_isTestId(widget.id)) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final masterEnabled =
+              prefs.getBool('notification_master_enabled') ?? true;
+          if (!masterEnabled) {
+            await ref
+                .read(notificationServiceProvider)
+                .cancelNotification(widget.id);
+            if (mounted) {
+              await _safeDismiss();
+            }
+            return;
+          }
+
+          final repo = ref.read(reminderRepositoryProvider);
+          final rem = await repo.getReminder(widget.id);
+          if (rem == null || !rem.isEnabled) {
+            await ref
+                .read(notificationServiceProvider)
+                .cancelNotification(widget.id);
+            if (mounted) {
+              await _safeDismiss();
+            }
+            return;
+          }
+
+          bool categoryAllowed = true;
+          switch (rem.category) {
+            case ReminderCategory.workout:
+              categoryAllowed =
+                  prefs.getBool('notification_workouts_enabled') ?? true;
+              break;
+            case ReminderCategory.meal:
+              categoryAllowed =
+                  prefs.getBool('notification_meals_enabled') ?? true;
+              break;
+            case ReminderCategory.hydration:
+              categoryAllowed =
+                  prefs.getBool('notification_hydration_enabled') ?? true;
+              break;
+            case ReminderCategory.sleep:
+              categoryAllowed =
+                  prefs.getBool('notification_recovery_enabled') ?? true;
+              break;
+            case ReminderCategory.habit:
+            case ReminderCategory.custom:
+              categoryAllowed =
+                  prefs.getBool('notification_habits_enabled') ?? true;
+              break;
+          }
+
+          if (!categoryAllowed) {
+            await ref
+                .read(notificationServiceProvider)
+                .cancelNotification(widget.id);
+            if (mounted) {
+              await _safeDismiss();
+            }
+            return;
+          }
+        } catch (_) {}
+      }
+
       _startAlarmRinging();
     });
   }
@@ -88,9 +154,18 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
     String soundId = 'cyber_chime';
     if (soundSettings != null) {
       final act = widget.channel ?? 'workout';
-      soundId = soundSettings.activitySounds[act] ?? soundSettings.defaultSoundId;
+      soundId =
+          soundSettings.activitySounds[act] ?? soundSettings.defaultSoundId;
     }
     soundService.startContinuousAlarm(soundId: soundId, boostVolume: true);
+  }
+
+  Future<void> _safeDismiss({String? nextRoute}) async {
+    if (!mounted) return;
+    await LockScreenSecurityService.instance.dismissAlarmSafely(
+      context,
+      nextRoute: nextRoute,
+    );
   }
 
   Future<void> _autoSnoozeDueToTimeout() async {
@@ -119,12 +194,15 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
           duration: const Duration(seconds: 3),
         ),
       );
-      Navigator.of(context).maybePop();
+      _safeDismiss();
     }
   }
 
   bool _isTestId(String id) {
-    return id.startsWith('test_') || id == 'alarm_default';
+    final lower = id.toLowerCase();
+    return lower.startsWith('test_') ||
+        lower.contains('test') ||
+        lower == 'alarm_default';
   }
 
   Future<void> _completeAlarmForToday() async {
@@ -132,56 +210,44 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
     final soundService = ref.read(alarmSoundServiceProvider);
     await soundService.stopContinuousAlarm();
 
-    // 1. Log workout in Drift/Supabase if this is a workout reminder
-    final channelLower = widget.channel?.toLowerCase() ?? '';
-    if (channelLower == 'workout' || channelLower == 'workouts' || widget.title.toLowerCase().contains('workout')) {
-      try {
-        final repo = ref.read(workoutRepositoryProvider);
-        final now = DateTime.now();
-        final workoutId = 'workout_alarm_${now.millisecondsSinceEpoch}';
-        final completedWorkout = WorkoutEntity(
-          id: workoutId,
-          title: widget.title.isNotEmpty ? widget.title : 'Completed Workout Session',
-          category: 'Strength',
-          startedAt: now.subtract(const Duration(minutes: 30)),
-          completedAt: now,
-          status: 'completed',
-          durationSeconds: 1800,
-          caloriesBurned: 220,
-          updatedAt: now,
-          exercises: const [],
-        );
-        await repo.saveWorkout(completedWorkout);
-        ref.invalidate(workoutsStreamProvider);
-      } catch (e) {
-        debugPrint('[FullscreenAlarmScreen] Failed to save workout record: $e');
-      }
-    }
-
-    // 2. Mark reminder completed
+    // 1. Mark reminder completed in repository & cancel notification
     if (!_isTestId(widget.id)) {
       try {
-        await ref
-            .read(remindersControllerProvider)
-            .completeReminder(widget.id);
+        await ref.read(remindersControllerProvider).completeReminder(widget.id);
       } catch (_) {}
     }
     await NotificationService.instance.cancelNotification(widget.id);
 
-    // 3. Dismiss alarm overlay and show success snackbar
+    // 2. Determine target workflow route based on reminder channel / title
+    String? nextRoute;
+    final channelLower = widget.channel?.toLowerCase() ?? '';
+    final titleLower = widget.title.toLowerCase();
+    if (channelLower.contains('workout') || titleLower.contains('workout')) {
+      nextRoute = '/workouts';
+    } else if (channelLower.contains('nutrition') ||
+        channelLower.contains('meal') ||
+        titleLower.contains('meal')) {
+      nextRoute = '/nutrition';
+    } else if (channelLower.contains('hydration') ||
+        titleLower.contains('water') ||
+        titleLower.contains('hydration')) {
+      nextRoute = '/hydration';
+    }
+
+    // 3. Dismiss alarm overlay and offer workflow navigation
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Mark completed! Logged to history and next alarm set for tomorrow.'),
+        SnackBar(
+          content: Text(
+            nextRoute != null
+                ? '✓ Reminder acknowledged! Opening ${nextRoute.substring(1)}...'
+                : '✓ Reminder completed! Next occurrence scheduled.',
+          ),
           backgroundColor: AppColors.limeGreen,
-          duration: Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ),
       );
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      } else {
-        context.go('/home');
-      }
+      _safeDismiss(nextRoute: nextRoute);
     }
   }
 
@@ -209,11 +275,7 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
           duration: const Duration(seconds: 3),
         ),
       );
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      } else {
-        context.go('/home');
-      }
+      _safeDismiss();
     }
   }
 
@@ -222,27 +284,19 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
     final soundService = ref.read(alarmSoundServiceProvider);
     await soundService.stopContinuousAlarm();
     await NotificationService.instance.cancelNotification(widget.id);
-    if (mounted) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      } else {
-        context.go('/home');
-      }
-    }
+    _safeDismiss();
   }
 
   void _openTracker(String route) {
     _countdownTimer?.cancel();
     _soundService?.stopContinuousAlarm();
     NotificationService.instance.cancelNotification(widget.id);
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    }
-    context.push(route);
+    _safeDismiss(nextRoute: route);
   }
 
   @override
   void dispose() {
+    LockScreenSecurityService.instance.disableAlarmLockScreenMode();
     _clockTimer.cancel();
     _countdownTimer?.cancel();
     _pulseController.dispose();
@@ -347,310 +401,399 @@ class _FullscreenAlarmScreenState extends ConsumerState<FullscreenAlarmScreen>
             ),
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // --- TOP BAR: Category Badge & 60s Ringing Timer ---
-                  Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Type Badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: cfg.primaryColor.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: cfg.primaryColor.withValues(alpha: 0.4),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(cfg.icon, color: cfg.primaryColor, size: 16),
-                                const SizedBox(width: 8),
-                                Text(
-                                  cfg.label,
-                                  style: TextStyle(
-                                    color: cfg.primaryColor,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 11,
-                                    letterSpacing: 1.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Close / Dismiss Icon
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, color: Colors.white60, size: 24),
-                            onPressed: _dismissOnly,
-                            tooltip: 'Dismiss',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Ringing 60s Countdown Bar
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black45,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: cfg.primaryColor.withValues(alpha: 0.25),
-                          ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 16,
                         ),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            // --- TOP BAR: Category Badge & 60s Ringing Timer ---
+                            Column(
                               children: [
                                 Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Icon(
-                                      Icons.ring_volume_rounded,
-                                      color: cfg.primaryColor,
-                                      size: 15,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      'Ringing for 1 minute',
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                    // Type Badge
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 7,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: cfg.primaryColor.withValues(
+                                              alpha: 0.16,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: cfg.primaryColor
+                                                  .withValues(alpha: 0.4),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                cfg.icon,
+                                                color: cfg.primaryColor,
+                                                size: 16,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Flexible(
+                                                child: Text(
+                                                  cfg.label,
+                                                  style: TextStyle(
+                                                    color: cfg.primaryColor,
+                                                    fontWeight: FontWeight.w900,
+                                                    fontSize: 11,
+                                                    letterSpacing: 1.0,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+
+                                    // Close / Dismiss Icon
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.close_rounded,
+                                        color: Colors.white60,
+                                        size: 24,
+                                      ),
+                                      onPressed: _dismissOnly,
+                                      tooltip: 'Dismiss',
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 12),
+
+                                // Ringing 60s Countdown Bar
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black45,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: cfg.primaryColor.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.ring_volume_rounded,
+                                              color: cfg.primaryColor,
+                                              size: 15,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            const Text(
+                                              'Ringing for 1 minute',
+                                              style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              '• Auto-snooze in ${_secondsRemaining}s',
+                                              style: TextStyle(
+                                                color: cfg.primaryColor,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: progress,
+                                          backgroundColor: Colors.white12,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                cfg.primaryColor,
+                                              ),
+                                          minHeight: 4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'Auto-snooze in ${_secondsRemaining}s',
-                                  style: TextStyle(
-                                    color: cfg.primaryColor,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
+                                  dateStr,
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                backgroundColor: Colors.white12,
-                                valueColor: AlwaysStoppedAnimation<Color>(cfg.primaryColor),
-                                minHeight: 4,
-                              ),
+
+                            // --- CENTER SECTION: Animated Pulsing Radar & Digital Clock ---
+                            Column(
+                              children: [
+                                const SizedBox(height: 12),
+                                AnimatedBuilder(
+                                  animation: _pulseController,
+                                  builder: (context, child) {
+                                    final scale =
+                                        1.0 + (_pulseController.value * 0.12);
+                                    return Transform.scale(
+                                      scale: scale,
+                                      child: Container(
+                                        width: 110,
+                                        height: 110,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: cfg.primaryColor.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          border: Border.all(
+                                            color: cfg.primaryColor.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                            width: 2.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: cfg.primaryColor
+                                                  .withValues(alpha: 0.35),
+                                              blurRadius:
+                                                  36 * _pulseController.value,
+                                              spreadRadius:
+                                                  8 * _pulseController.value,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          cfg.icon,
+                                          size: 52,
+                                          color: cfg.primaryColor,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.baseline,
+                                    textBaseline: TextBaseline.alphabetic,
+                                    children: [
+                                      Text(
+                                        timeStr,
+                                        style: const TextStyle(
+                                          fontSize: 56,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                          letterSpacing: -2,
+                                          height: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        periodStr,
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                          color: cfg.primaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  widget.title,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  widget.body.isNotEmpty
+                                      ? widget.body
+                                      : cfg.subtitle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFFCBD5E1),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            ),
+
+                            // --- BOTTOM ACTIONS: Complete for Today, Snooze, & Tracker Shortcut ---
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 1. Primary Action: Complete for Today
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 54,
+                                  child: ElevatedButton(
+                                    onPressed: _completeAlarmForToday,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: cfg.primaryColor,
+                                      foregroundColor: Colors.black,
+                                      elevation: 8,
+                                      shadowColor: cfg.primaryColor.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 22,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            cfg.completeButtonLabel,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 0.3,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+
+                                // 2. Secondary Action: Snooze with gap time
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: _snoozeAlarm,
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      side: const BorderSide(
+                                        color: Color(0xFF334155),
+                                        width: 1.5,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.snooze_rounded,
+                                          size: 20,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            'Snooze (${widget.snoozeMinutes} Min Gap)',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFFE2E8F0),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // 3. Optional Tracker Shortcut
+                                if (cfg.trackerRoute != null &&
+                                    cfg.trackerButtonLabel != null) ...[
+                                  const SizedBox(height: 8),
+                                  TextButton.icon(
+                                    onPressed: () =>
+                                        _openTracker(cfg.trackerRoute!),
+                                    icon: Icon(
+                                      Icons.open_in_new_rounded,
+                                      size: 16,
+                                      color: cfg.primaryColor,
+                                    ),
+                                    label: Text(
+                                      cfg.trackerButtonLabel!,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: cfg.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 6),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        dateStr,
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-
-                  // --- CENTER SECTION: Animated Pulsing Radar & Digital Clock ---
-                  Column(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          final scale = 1.0 + (_pulseController.value * 0.12);
-                          return Transform.scale(
-                            scale: scale,
-                            child: Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: cfg.primaryColor.withValues(alpha: 0.15),
-                                border: Border.all(
-                                  color: cfg.primaryColor.withValues(alpha: 0.6),
-                                  width: 2.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: cfg.primaryColor.withValues(alpha: 0.35),
-                                    blurRadius: 36 * _pulseController.value,
-                                    spreadRadius: 8 * _pulseController.value,
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                cfg.icon,
-                                size: 56,
-                                color: cfg.primaryColor,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 28),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            timeStr,
-                            style: const TextStyle(
-                              fontSize: 62,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: -2,
-                              height: 1.0,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            periodStr,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: cfg.primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        widget.title,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        widget.body.isNotEmpty ? widget.body : cfg.subtitle,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFFCBD5E1),
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // --- BOTTOM ACTIONS: Complete for Today, Snooze, & Tracker Shortcut ---
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 1. Primary Action: Complete for Today (Stops alarm, advances to tomorrow)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _completeAlarmForToday,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: cfg.primaryColor,
-                            foregroundColor: Colors.black,
-                            elevation: 8,
-                            shadowColor: cfg.primaryColor.withValues(alpha: 0.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.check_circle_rounded, size: 22),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  cfg.completeButtonLabel,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.3,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // 2. Secondary Action: Snooze with gap time
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: OutlinedButton(
-                          onPressed: _snoozeAlarm,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Color(0xFF334155), width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.snooze_rounded, size: 20, color: Color(0xFF94A3B8)),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Snooze (${widget.snoozeMinutes} Min Gap)',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFE2E8F0),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // 3. Optional Tracker Shortcut
-                      if (cfg.trackerRoute != null && cfg.trackerButtonLabel != null) ...[
-                        const SizedBox(height: 8),
-                        TextButton.icon(
-                          onPressed: () => _openTracker(cfg.trackerRoute!),
-                          icon: Icon(Icons.open_in_new_rounded, size: 16, color: cfg.primaryColor),
-                          label: Text(
-                            cfg.trackerButtonLabel!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: cfg.primaryColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                    ],
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ),

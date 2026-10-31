@@ -35,7 +35,8 @@ class RangeAggregationCard extends ConsumerWidget {
           child: Row(
             children: RangeFilter.values.map((filter) {
               final isSelected = rangeState.selectedFilter == filter;
-              final isLocked = isGuest &&
+              final isLocked =
+                  isGuest &&
                   (filter == RangeFilter.month || filter == RangeFilter.custom);
 
               return Expanded(
@@ -114,12 +115,14 @@ class RangeAggregationCard extends ConsumerWidget {
                             filter.label,
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
                               color: isSelected
                                   ? AppColors.electricBlue
                                   : (isDark
-                                      ? AppColors.darkTextSecondary
-                                      : AppColors.lightTextSecondary),
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary),
                             ),
                           ),
                         ],
@@ -237,7 +240,10 @@ class RangeAggregationCard extends ConsumerWidget {
                     const SizedBox(width: 10),
                     TextButton(
                       onPressed: () {
-                        rangeNotifier.selectFilter(RangeFilter.today, isGuest: true);
+                        rangeNotifier.selectFilter(
+                          RangeFilter.today,
+                          isGuest: true,
+                        );
                       },
                       child: const Text('Back to Today'),
                     ),
@@ -304,7 +310,9 @@ class _TotalsPanel extends ConsumerWidget {
         color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
         boxShadow: [
           BoxShadow(
@@ -326,12 +334,17 @@ class _TotalsPanel extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                   letterSpacing: 0.2,
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF9500).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
@@ -405,16 +418,25 @@ class _TotalsPanel extends ConsumerWidget {
                   value: '${aggregation.totalCaloriesIn}',
                   color: const Color(0xFF22C55E),
                 ),
-                Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.3)),
+                Container(
+                  width: 1,
+                  height: 32,
+                  color: Colors.grey.withValues(alpha: 0.3),
+                ),
                 _SubStat(
                   label: 'Burned',
                   value: '${aggregation.totalCaloriesBurned}',
                   color: const Color(0xFFFF5252),
                 ),
-                Container(width: 1, height: 32, color: Colors.grey.withValues(alpha: 0.3)),
+                Container(
+                  width: 1,
+                  height: 32,
+                  color: Colors.grey.withValues(alpha: 0.3),
+                ),
                 _SubStat(
                   label: 'Net',
-                  value: '${aggregation.netCalories > 0 ? '+' : ''}${aggregation.netCalories}',
+                  value:
+                      '${aggregation.netCalories > 0 ? '+' : ''}${aggregation.netCalories}',
                   color: aggregation.netCalories <= 0
                       ? const Color(0xFF10B981)
                       : const Color(0xFFFF9500),
@@ -458,8 +480,10 @@ class _TotalsPanel extends ConsumerWidget {
               Expanded(
                 child: _MacroChip(
                   label: 'Water',
-                  total: '${(aggregation.totalWaterMl / 1000).toStringAsFixed(1)}L',
-                  avg: '${(aggregation.totalWaterMl / (aggregation.dayCount > 0 ? aggregation.dayCount : 1)).round()}ml/d',
+                  total:
+                      '${(aggregation.totalWaterMl / 1000).toStringAsFixed(1)}L',
+                  avg:
+                      '${(aggregation.totalWaterMl / (aggregation.dayCount > 0 ? aggregation.dayCount : 1)).round()}ml/d',
                   color: const Color(0xFF06B6D4),
                 ),
               ),
@@ -480,7 +504,11 @@ class _TotalsPanel extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.bolt_rounded, size: 16, color: AppColors.limeGreen),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      size: 16,
+                      color: AppColors.limeGreen,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Avg Daily Intake: ',
@@ -505,7 +533,11 @@ class _TotalsPanel extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text('• ', style: TextStyle(color: Colors.grey)),
-                        const Icon(Icons.favorite_rounded, size: 14, color: Color(0xFFFF5252)),
+                        const Icon(
+                          Icons.favorite_rounded,
+                          size: 14,
+                          color: Color(0xFFFF5252),
+                        ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
@@ -515,7 +547,9 @@ class _TotalsPanel extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                         ),
@@ -585,7 +619,9 @@ class _MetricTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -671,10 +707,7 @@ class _MacroChip extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             total,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
           ),
           Text(
             avg,

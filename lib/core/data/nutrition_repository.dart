@@ -30,14 +30,17 @@ class LocalNutritionRepository implements NutritionRepository {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-    final row = await (db.select(db.nutritionLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(startOfDay) &
-              t.logDate.isSmallerOrEqualValue(endOfDay))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (db.select(db.nutritionLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.logDate.isBiggerOrEqualValue(startOfDay) &
+                    t.logDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
     if (row == null) {
       return const DailyNutritionState();
@@ -99,45 +102,67 @@ class LocalNutritionRepository implements NutritionRepository {
   }
 
   @override
-  Future<void> saveDailyNutrition(DateTime date, DailyNutritionState state) async {
+  Future<void> saveDailyNutrition(
+    DateTime date,
+    DailyNutritionState state,
+  ) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
     final now = DateTime.now();
 
-    final mealsJson = jsonEncode(state.loggedMeals.map((m) => {
-          'id': m.id,
-          'name': m.name,
-          'meal_type': m.mealType,
-          'diet_type': m.dietType,
-          'calories': m.calories,
-          'protein_grams': m.proteinGrams,
-          'carbs_grams': m.carbsGrams,
-          'fat_grams': m.fatGrams,
-          'portion': m.portion,
-          'logged_at': m.loggedAt.toIso8601String(),
-        }).toList());
+    final mealsJson = jsonEncode(
+      state.loggedMeals
+          .map(
+            (m) => {
+              'id': m.id,
+              'name': m.name,
+              'meal_type': m.mealType,
+              'diet_type': m.dietType,
+              'calories': m.calories,
+              'protein_grams': m.proteinGrams,
+              'carbs_grams': m.carbsGrams,
+              'fat_grams': m.fatGrams,
+              'portion': m.portion,
+              'logged_at': m.loggedAt.toIso8601String(),
+            },
+          )
+          .toList(),
+    );
 
-    final drinksJson = jsonEncode(state.loggedDrinks.map((d) => {
-          'id': d.id,
-          'name': d.name,
-          'type': d.type.name,
-          'volume_ml': d.volumeMl,
-          'logged_at': d.loggedAt.toIso8601String(),
-          'note': d.note,
-        }).toList());
+    final drinksJson = jsonEncode(
+      state.loggedDrinks
+          .map(
+            (d) => {
+              'id': d.id,
+              'name': d.name,
+              'type': d.type.name,
+              'volume_ml': d.volumeMl,
+              'logged_at': d.loggedAt.toIso8601String(),
+              'note': d.note,
+            },
+          )
+          .toList(),
+    );
 
-    final existing = await (db.select(db.nutritionLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(startOfDay) &
-              t.logDate.isSmallerOrEqualValue(endOfDay))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (db.select(db.nutritionLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.logDate.isBiggerOrEqualValue(startOfDay) &
+                    t.logDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
-    final rowId = existing?.id ?? 'nutrition_${userId}_${startOfDay.toIso8601String().substring(0, 10)}';
+    final rowId =
+        existing?.id ??
+        'nutrition_${userId}_${startOfDay.toIso8601String().substring(0, 10)}';
 
-    await db.into(db.nutritionLogs).insertOnConflictUpdate(
+    await db
+        .into(db.nutritionLogs)
+        .insertOnConflictUpdate(
           NutritionLogsCompanion.insert(
             id: rowId,
             userId: drift.Value(userId),
@@ -189,8 +214,10 @@ class LocalNutritionRepository implements NutritionRepository {
     final targetDate = date ?? drink.loggedAt;
     final current = await getDailyNutrition(targetDate);
     final additionalGlasses = (drink.volumeMl / 250).round();
-    final newGlasses =
-        (current.waterGlasses + additionalGlasses).clamp(0, current.targetWater);
+    final newGlasses = (current.waterGlasses + additionalGlasses).clamp(
+      0,
+      current.targetWater,
+    );
     final updated = current.copyWith(
       loggedDrinks: [drink, ...current.loggedDrinks],
       waterGlasses: newGlasses,
@@ -202,21 +229,26 @@ class LocalNutritionRepository implements NutritionRepository {
   Future<void> removeDrink(String drinkId, {DateTime? date}) async {
     final targetDate = date ?? DateTime.now();
     final current = await getDailyNutrition(targetDate);
-    final drink = current.loggedDrinks.firstWhere((d) => d.id == drinkId,
-        orElse: () => LiquidDrinkEntry(
-              id: '',
-              type: LiquidDrinkType.water,
-              name: '',
-              volumeMl: 0,
-              loggedAt: DateTime.now(),
-            ));
+    final drink = current.loggedDrinks.firstWhere(
+      (d) => d.id == drinkId,
+      orElse: () => LiquidDrinkEntry(
+        id: '',
+        type: LiquidDrinkType.water,
+        name: '',
+        volumeMl: 0,
+        loggedAt: DateTime.now(),
+      ),
+    );
     if (drink.id.isNotEmpty) {
       final deductGlasses = (drink.volumeMl / 250).round();
-      final newGlasses = (current.waterGlasses - deductGlasses)
-          .clamp(0, current.targetWater);
+      final newGlasses = (current.waterGlasses - deductGlasses).clamp(
+        0,
+        current.targetWater,
+      );
       final updated = current.copyWith(
-        loggedDrinks:
-            current.loggedDrinks.where((d) => d.id != drinkId).toList(),
+        loggedDrinks: current.loggedDrinks
+            .where((d) => d.id != drinkId)
+            .toList(),
         waterGlasses: newGlasses,
       );
       await saveDailyNutrition(targetDate, updated);
@@ -243,40 +275,53 @@ class CloudNutritionRepository implements NutritionRepository {
         await _fetchRemoteAndSave(date).timeout(const Duration(seconds: 4));
         return await _local.getDailyNutrition(date);
       } catch (e) {
-        debugPrint('[CloudNutritionRepository] Remote fetch notice (using cache): $e');
+        debugPrint(
+          '[CloudNutritionRepository] Remote fetch notice (using cache): $e',
+        );
       }
     }
     return await _local.getDailyNutrition(date);
   }
 
   @override
-  Future<void> saveDailyNutrition(DateTime date, DailyNutritionState state) async {
+  Future<void> saveDailyNutrition(
+    DateTime date,
+    DailyNutritionState state,
+  ) async {
     await _local.saveDailyNutrition(date, state);
 
     if (isValidUuid(userId)) {
       final dateStr =
           "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-      final mealsJson = state.loggedMeals.map((m) => {
-            'id': m.id,
-            'name': m.name,
-            'meal_type': m.mealType,
-            'diet_type': m.dietType,
-            'calories': m.calories,
-            'protein_grams': m.proteinGrams,
-            'carbs_grams': m.carbsGrams,
-            'fat_grams': m.fatGrams,
-            'portion': m.portion,
-            'logged_at': m.loggedAt.toIso8601String(),
-          }).toList();
+      final mealsJson = state.loggedMeals
+          .map(
+            (m) => {
+              'id': m.id,
+              'name': m.name,
+              'meal_type': m.mealType,
+              'diet_type': m.dietType,
+              'calories': m.calories,
+              'protein_grams': m.proteinGrams,
+              'carbs_grams': m.carbsGrams,
+              'fat_grams': m.fatGrams,
+              'portion': m.portion,
+              'logged_at': m.loggedAt.toIso8601String(),
+            },
+          )
+          .toList();
 
-      final drinksJson = state.loggedDrinks.map((d) => {
-            'id': d.id,
-            'name': d.name,
-            'type': d.type.name,
-            'volume_ml': d.volumeMl,
-            'logged_at': d.loggedAt.toIso8601String(),
-            'note': d.note,
-          }).toList();
+      final drinksJson = state.loggedDrinks
+          .map(
+            (d) => {
+              'id': d.id,
+              'name': d.name,
+              'type': d.type.name,
+              'volume_ml': d.volumeMl,
+              'logged_at': d.loggedAt.toIso8601String(),
+              'note': d.note,
+            },
+          )
+          .toList();
 
       // Confirmed user_id sent explicitly by client on every insert (Condition 6)
       final payload = {
@@ -297,16 +342,22 @@ class CloudNutritionRepository implements NutritionRepository {
       bool remoteWriteSucceeded = false;
       if (supabase != null) {
         try {
-          await supabase!.from('nutrition_logs').upsert(payload, onConflict: 'id');
+          await supabase!
+              .from('nutrition_logs')
+              .upsert(payload, onConflict: 'user_id, log_date');
           remoteWriteSucceeded = true;
         } catch (e) {
-          debugPrint('[CloudNutritionRepository] Supabase write failed, queueing: $e');
+          debugPrint(
+            '[CloudNutritionRepository] Supabase write failed, queueing: $e',
+          );
         }
       }
 
       if (!remoteWriteSucceeded) {
         // Queue in sync_queue with valid userId
-        await db.into(db.syncQueue).insertOnConflictUpdate(
+        await db
+            .into(db.syncQueue)
+            .insertOnConflictUpdate(
               SyncQueueCompanion.insert(
                 id: const Uuid().v4(),
                 userId: drift.Value(userId),
@@ -326,7 +377,9 @@ class CloudNutritionRepository implements NutritionRepository {
   @override
   Future<void> logMeal(MealItem meal, {DateTime? date}) async {
     final current = await getDailyNutrition(date ?? meal.loggedAt);
-    final updated = current.copyWith(loggedMeals: [...current.loggedMeals, meal]);
+    final updated = current.copyWith(
+      loggedMeals: [...current.loggedMeals, meal],
+    );
     await saveDailyNutrition(date ?? meal.loggedAt, updated);
   }
 
@@ -353,8 +406,10 @@ class CloudNutritionRepository implements NutritionRepository {
     final targetDate = date ?? drink.loggedAt;
     final current = await getDailyNutrition(targetDate);
     final additionalGlasses = (drink.volumeMl / 250).round();
-    final newGlasses = (current.waterGlasses + additionalGlasses)
-        .clamp(0, current.targetWater);
+    final newGlasses = (current.waterGlasses + additionalGlasses).clamp(
+      0,
+      current.targetWater,
+    );
     final updated = current.copyWith(
       loggedDrinks: [drink, ...current.loggedDrinks],
       waterGlasses: newGlasses,
@@ -366,21 +421,26 @@ class CloudNutritionRepository implements NutritionRepository {
   Future<void> removeDrink(String drinkId, {DateTime? date}) async {
     final targetDate = date ?? DateTime.now();
     final current = await getDailyNutrition(targetDate);
-    final drink = current.loggedDrinks.firstWhere((d) => d.id == drinkId,
-        orElse: () => LiquidDrinkEntry(
-              id: '',
-              type: LiquidDrinkType.water,
-              name: '',
-              volumeMl: 0,
-              loggedAt: DateTime.now(),
-            ));
+    final drink = current.loggedDrinks.firstWhere(
+      (d) => d.id == drinkId,
+      orElse: () => LiquidDrinkEntry(
+        id: '',
+        type: LiquidDrinkType.water,
+        name: '',
+        volumeMl: 0,
+        loggedAt: DateTime.now(),
+      ),
+    );
     if (drink.id.isNotEmpty) {
       final deductGlasses = (drink.volumeMl / 250).round();
-      final newGlasses =
-          (current.waterGlasses - deductGlasses).clamp(0, current.targetWater);
+      final newGlasses = (current.waterGlasses - deductGlasses).clamp(
+        0,
+        current.targetWater,
+      );
       final updated = current.copyWith(
-        loggedDrinks:
-            current.loggedDrinks.where((d) => d.id != drinkId).toList(),
+        loggedDrinks: current.loggedDrinks
+            .where((d) => d.id != drinkId)
+            .toList(),
         waterGlasses: newGlasses,
       );
       await saveDailyNutrition(targetDate, updated);
@@ -411,7 +471,9 @@ class CloudNutritionRepository implements NutritionRepository {
         final loggedDrinks = jsonEncode(row['logged_drinks'] ?? []);
         final updatedAt = DateTime.parse(row['updated_at'] as String);
 
-        await db.into(db.nutritionLogs).insertOnConflictUpdate(
+        await db
+            .into(db.nutritionLogs)
+            .insertOnConflictUpdate(
               NutritionLogsCompanion.insert(
                 id: id,
                 userId: drift.Value(userId),

@@ -153,8 +153,10 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -188,10 +190,15 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: AppColors.error, width: 2),
+                  borderSide: const BorderSide(
+                    color: AppColors.error,
+                    width: 2,
+                  ),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
             ),
 
@@ -211,7 +218,9 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isDeleting ? null : () => Navigator.of(context).pop(false),
+          onPressed: _isDeleting
+              ? null
+              : () => Navigator.of(context).pop(false),
           child: Text(
             'Cancel',
             style: TextStyle(
@@ -226,8 +235,9 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
             foregroundColor: Colors.white,
-            disabledBackgroundColor:
-                isDark ? Colors.white12 : Colors.grey.shade300,
+            disabledBackgroundColor: isDark
+                ? Colors.white12
+                : Colors.grey.shade300,
             disabledForegroundColor: Colors.grey,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

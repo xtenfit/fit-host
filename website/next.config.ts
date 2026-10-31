@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "api.amitrana.tech",
+      },
+      {
+        protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
     ],

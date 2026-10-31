@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/reminder.dart';
 import '../../data/repositories/reminder_repository.dart';
+import 'package:fit_host/core/services/analytics_service.dart';
 
 class RemindersFilterNotifier extends Notifier<ReminderCategory?> {
   @override
@@ -11,8 +12,8 @@ class RemindersFilterNotifier extends Notifier<ReminderCategory?> {
 
 final remindersFilterCategoryProvider =
     NotifierProvider<RemindersFilterNotifier, ReminderCategory?>(
-  RemindersFilterNotifier.new,
-);
+      RemindersFilterNotifier.new,
+    );
 
 final allRemindersProvider = StreamProvider<List<Reminder>>((ref) {
   final repo = ref.watch(reminderRepositoryProvider);
@@ -40,7 +41,10 @@ class RemindersController {
   Future<void> snoozeReminder(String id, int minutes) =>
       _repo.snoozeReminder(id, minutes);
 
-  Future<void> completeReminder(String id) => _repo.completeReminder(id);
+  Future<void> completeReminder(String id) async {
+    await _repo.completeReminder(id);
+    AnalyticsService.instance.track(AnalyticsEvents.reminderCompleted).ignore();
+  }
 
   Future<void> uncompleteReminder(String id) => _repo.uncompleteReminder(id);
 
@@ -49,10 +53,19 @@ class RemindersController {
   Future<void> deleteReminder(String id) => _repo.deleteReminder(id);
 
   Future<void> saveReminder(Reminder reminder) async {
-    if (reminder.id.isEmpty) {
+    final existing = reminder.id.isEmpty
+        ? null
+        : await _repo.getReminder(reminder.id);
+    if (existing == null) {
       await _repo.createReminder(reminder);
+      AnalyticsService.instance
+          .track(
+            AnalyticsEvents.reminderCreated,
+            properties: {'is_enabled': reminder.isEnabled},
+          )
+          .ignore();
     } else {
-      await _repo.createReminder(reminder);
+      await _repo.updateReminder(reminder);
     }
   }
 

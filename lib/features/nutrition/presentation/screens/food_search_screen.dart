@@ -38,7 +38,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
   Future<void> _loadInitialFoods() async {
     setState(() => _isLoading = true);
     try {
-      final recents = await ref.read(foodRepositoryProvider).getRecentFoods(limit: 15);
+      final recents = await ref
+          .read(foodRepositoryProvider)
+          .getRecentFoods(limit: 15);
       if (mounted) {
         setState(() {
           _results = recents;
@@ -69,7 +71,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
       });
 
       try {
-        final matches = await ref.read(foodRepositoryProvider).searchFoods(trimmed);
+        final matches = await ref
+            .read(foodRepositoryProvider)
+            .searchFoods(trimmed);
         if (mounted && _activeQuery == trimmed) {
           setState(() {
             _results = matches;
@@ -94,9 +98,7 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
 
     if (newFood != null && mounted) {
       final logged = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          builder: (_) => QuantityEntryScreen(food: newFood),
-        ),
+        MaterialPageRoute(builder: (_) => QuantityEntryScreen(food: newFood)),
       );
       if (logged == true && mounted) {
         context.pop(true);
@@ -140,18 +142,27 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                         )
                       : null,
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  fillColor: isDark
+                      ? AppColors.darkSurface
+                      : AppColors.lightSurface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -180,12 +191,16 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    _activeQuery.isEmpty ? 'RECENT / POPULAR FOODS' : 'SEARCH RESULTS (${_results.length})',
+                    _activeQuery.isEmpty
+                        ? 'RECENT / POPULAR FOODS'
+                        : 'SEARCH RESULTS (${_results.length})',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
-                      color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                      color: isDark
+                          ? AppColors.darkTextTertiary
+                          : AppColors.lightTextTertiary,
                     ),
                   ),
                   if (_activeQuery.isNotEmpty)
@@ -193,7 +208,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                       'Per 100g',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
                       ),
                     ),
                 ],
@@ -210,19 +227,28 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                           Icon(
                             Icons.search_off_rounded,
                             size: 54,
-                            color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                            color: isDark
+                                ? AppColors.darkTextTertiary
+                                : AppColors.lightTextTertiary,
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _activeQuery.isEmpty ? 'No recent foods yet' : 'No items matching "$_activeQuery"',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                            _activeQuery.isEmpty
+                                ? 'No recent foods yet'
+                                : 'No items matching "$_activeQuery"',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
                             'Try a different keyword or create a custom item.',
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -230,7 +256,10 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.limeGreen,
                               foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
                             ),
                             onPressed: _openCustomFoodSheet,
                             icon: const Icon(Icons.add_rounded),
@@ -258,7 +287,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
           color: isDark ? AppColors.darkSurface : Colors.white,
           border: Border(
             top: BorderSide(
-              color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+              color: isDark
+                  ? AppColors.darkSurfaceBorder
+                  : AppColors.lightSurfaceBorder,
             ),
           ),
         ),
@@ -296,7 +327,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Material(
@@ -343,7 +376,10 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                         food.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Row(
@@ -355,7 +391,9 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                             const Text(' • '),
@@ -391,13 +429,19 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
                       'C: ${food.carbsPer100g.toStringAsFixed(0)}g  F: ${food.fatsPer100g.toStringAsFixed(0)}g',
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -412,6 +456,8 @@ class _FoodSearchScreenState extends ConsumerState<FoodSearchScreen> {
         return '🥗';
       case FoodSource.openfoodfacts:
         return '📦';
+      case FoodSource.usda:
+        return '🏛️';
       case FoodSource.gemini:
         return '📸';
       case FoodSource.user_custom:

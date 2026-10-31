@@ -19,20 +19,75 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   static const List<Map<String, dynamic>> _categories = [
-    {'id': 'all', 'label': 'All Logs', 'icon': Icons.apps_rounded, 'color': AppColors.electricCyan},
-    {'id': 'work', 'label': 'Work & Career', 'icon': Icons.work_rounded, 'color': Colors.blueAccent},
-    {'id': 'professional', 'label': 'Professional', 'icon': Icons.business_center_rounded, 'color': Colors.indigoAccent},
-    {'id': 'fitness', 'label': 'Fitness & Body', 'icon': Icons.fitness_center_rounded, 'color': AppColors.limeGreen},
-    {'id': 'personal', 'label': 'Personal Life', 'icon': Icons.self_improvement_rounded, 'color': AppColors.warmCoral},
-    {'id': 'ideas', 'label': 'Ideas & Insights', 'icon': Icons.lightbulb_rounded, 'color': Color(0xFFF59E0B)},
+    {
+      'id': 'all',
+      'label': 'All Logs',
+      'icon': Icons.apps_rounded,
+      'color': AppColors.electricCyan,
+    },
+    {
+      'id': 'work',
+      'label': 'Work & Career',
+      'icon': Icons.work_rounded,
+      'color': Colors.blueAccent,
+    },
+    {
+      'id': 'professional',
+      'label': 'Professional',
+      'icon': Icons.business_center_rounded,
+      'color': Colors.indigoAccent,
+    },
+    {
+      'id': 'fitness',
+      'label': 'Fitness & Body',
+      'icon': Icons.fitness_center_rounded,
+      'color': AppColors.limeGreen,
+    },
+    {
+      'id': 'personal',
+      'label': 'Personal Life',
+      'icon': Icons.self_improvement_rounded,
+      'color': AppColors.warmCoral,
+    },
+    {
+      'id': 'ideas',
+      'label': 'Ideas & Insights',
+      'icon': Icons.lightbulb_rounded,
+      'color': Color(0xFFF59E0B),
+    },
   ];
 
   static const List<Map<String, dynamic>> _moods = [
-    {'id': 'productive', 'label': 'Productive', 'icon': Icons.trending_up_rounded, 'color': AppColors.limeGreen},
-    {'id': 'focused', 'label': 'Focused', 'icon': Icons.center_focus_strong_rounded, 'color': Colors.blueAccent},
-    {'id': 'energized', 'label': 'Energized', 'icon': Icons.bolt_rounded, 'color': Color(0xFFFFB300)},
-    {'id': 'calm', 'label': 'Calm', 'icon': Icons.spa_rounded, 'color': Colors.teal},
-    {'id': 'tired', 'label': 'Exhausted', 'icon': Icons.battery_alert_rounded, 'color': AppColors.warmCoral},
+    {
+      'id': 'productive',
+      'label': 'Productive',
+      'icon': Icons.trending_up_rounded,
+      'color': AppColors.limeGreen,
+    },
+    {
+      'id': 'focused',
+      'label': 'Focused',
+      'icon': Icons.center_focus_strong_rounded,
+      'color': Colors.blueAccent,
+    },
+    {
+      'id': 'energized',
+      'label': 'Energized',
+      'icon': Icons.bolt_rounded,
+      'color': Color(0xFFFFB300),
+    },
+    {
+      'id': 'calm',
+      'label': 'Calm',
+      'icon': Icons.spa_rounded,
+      'color': Colors.teal,
+    },
+    {
+      'id': 'tired',
+      'label': 'Exhausted',
+      'icon': Icons.battery_alert_rounded,
+      'color': AppColors.warmCoral,
+    },
   ];
 
   @override
@@ -70,7 +125,9 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
     final entriesAsync = ref.watch(diaryEntriesStreamProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Daily Work & Life Diary'),
         leading: IconButton(
@@ -83,76 +140,15 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
         backgroundColor: AppColors.limeGreen,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.edit_note_rounded, size: 22),
-        label: const Text('New Entry', style: TextStyle(fontWeight: FontWeight.w800)),
+        label: const Text(
+          'New Entry',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
           children: [
-            // Header card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: isDark
-                      ? [const Color(0xFF1E172B), const Color(0xFF131722)]
-                      : [const Color(0xFFF7F0FF), Colors.white],
-                ),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: const Color(0xFFA855F7).withValues(alpha: 0.35),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFA855F7).withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.book_rounded, color: Color(0xFFA855F7), size: 22),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Life & Career Reflection',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFA855F7).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'v1.2.2v2',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFA855F7)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Track work breakthroughs, professional duties, workouts, and personal thoughts with text notes and audio voice memos stored locally in your encrypted vault.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      height: 1.45,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Daily To-Do Checklist (Focus & Habits)
             DailyTodoChecklistWidget(
               dateKey: ref.watch(todayDiaryDateKeyProvider),
@@ -162,7 +158,9 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
             // Search Bar
             TextField(
               controller: _searchController,
-              onChanged: (val) => ref.read(diarySearchQueryProvider.notifier).state = val.trim(),
+              onChanged: (val) =>
+                  ref.read(diarySearchQueryProvider.notifier).state = val
+                      .trim(),
               decoration: InputDecoration(
                 hintText: 'Search notes, work logs, mood...',
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
@@ -171,23 +169,31 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                         icon: const Icon(Icons.clear_rounded, size: 18),
                         onPressed: () {
                           _searchController.clear();
-                          ref.read(diarySearchQueryProvider.notifier).state = '';
+                          ref.read(diarySearchQueryProvider.notifier).state =
+                              '';
                         },
                       )
                     : null,
                 filled: true,
                 fillColor: isDark ? AppColors.darkSurface : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
               ),
@@ -205,23 +211,38 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
                       selected: isSelected,
-                      avatar: Icon(cat['icon'], size: 16, color: isSelected ? Colors.black : cColor),
+                      avatar: Icon(
+                        cat['icon'],
+                        size: 16,
+                        color: isSelected ? Colors.black : cColor,
+                      ),
                       label: Text(cat['label']),
                       selectedColor: cColor,
-                      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+                      backgroundColor: isDark
+                          ? AppColors.darkSurface
+                          : Colors.white,
                       labelStyle: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: isSelected
                             ? Colors.black
-                            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                            : (isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary),
                       ),
                       side: BorderSide(
-                        color: isSelected ? cColor : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                        color: isSelected
+                            ? cColor
+                            : (isDark
+                                  ? AppColors.darkSurfaceBorder
+                                  : AppColors.lightSurfaceBorder),
                       ),
                       onSelected: (val) {
                         if (val) {
-                          ref.read(diarySelectedCategoryProvider.notifier).state = cat['id'];
+                          ref
+                                  .read(diarySelectedCategoryProvider.notifier)
+                                  .state =
+                              cat['id'];
                         }
                       },
                     ),
@@ -233,8 +254,14 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
 
             // Entries List
             entriesAsync.when(
-              loading: () => const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())),
-              error: (e, _) => Center(child: Text('Error loading diary entries: $e')),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) =>
+                  Center(child: Text('Error loading diary entries: $e')),
               data: (entries) {
                 if (entries.isEmpty) {
                   return Container(
@@ -244,16 +271,25 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                       color: isDark ? AppColors.darkSurface : Colors.white,
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     child: Column(
                       children: [
-                        const Icon(Icons.note_alt_outlined, size: 48, color: Colors.grey),
+                        const Icon(
+                          Icons.note_alt_outlined,
+                          size: 48,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           'No Diary Entries Yet',
-                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -261,7 +297,9 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                       ],
@@ -272,8 +310,10 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                 return Column(
                   children: entries.map((entry) {
                     final catColor = _getCategoryColor(entry.category);
-                    final dateStr = '${entry.entryDate.year}-${entry.entryDate.month.toString().padLeft(2, '0')}-${entry.entryDate.day.toString().padLeft(2, '0')}';
-                    final timeStr = '${entry.entryDate.hour.toString().padLeft(2, '0')}:${entry.entryDate.minute.toString().padLeft(2, '0')}';
+                    final dateStr =
+                        '${entry.entryDate.year}-${entry.entryDate.month.toString().padLeft(2, '0')}-${entry.entryDate.day.toString().padLeft(2, '0')}';
+                    final timeStr =
+                        '${entry.entryDate.hour.toString().padLeft(2, '0')}:${entry.entryDate.minute.toString().padLeft(2, '0')}';
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 14),
@@ -282,11 +322,15 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                         color: isDark ? AppColors.darkSurface : Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                          color: isDark
+                              ? AppColors.darkSurfaceBorder
+                              : AppColors.lightSurfaceBorder,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.2 : 0.04,
+                            ),
                             blurRadius: 10,
                             offset: const Offset(0, 3),
                           ),
@@ -302,7 +346,10 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: catColor.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
@@ -318,14 +365,22 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey.withValues(alpha: 0.15),
+                                      color: Colors.grey.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       entry.mood,
-                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -336,23 +391,38 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                                     '$dateStr • $timeStr',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.lightTextSecondary,
                                     ),
                                   ),
                                   PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                                    icon: const Icon(
+                                      Icons.more_horiz_rounded,
+                                      size: 20,
+                                    ),
                                     onSelected: (val) {
                                       if (val == 'edit') {
                                         _showAddEditDiarySheet(existing: entry);
                                       } else if (val == 'delete') {
-                                        ref.read(dailyDiaryRepositoryProvider).deleteEntry(entry.id);
+                                        ref
+                                            .read(dailyDiaryRepositoryProvider)
+                                            .deleteEntry(entry.id);
                                       }
                                     },
                                     itemBuilder: (ctx) => [
-                                      const PopupMenuItem(value: 'edit', child: Text('Edit Note')),
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Text('Edit Note'),
+                                      ),
                                       const PopupMenuItem(
                                         value: 'delete',
-                                        child: Text('Delete Note', style: TextStyle(color: Colors.redAccent)),
+                                        child: Text(
+                                          'Delete Note',
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -365,7 +435,10 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                           // Title
                           Text(
                             entry.title,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: 6),
 
@@ -375,16 +448,20 @@ class _DailyDiaryScreenState extends ConsumerState<DailyDiaryScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               height: 1.45,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
 
                           // Voice Memo Player if attached
-                          if (entry.voiceMemoPath != null && entry.voiceMemoPath!.isNotEmpty) ...[
+                          if (entry.voiceMemoPath != null &&
+                              entry.voiceMemoPath!.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             VoiceMemoPlayerWidget(
                               audioPath: entry.voiceMemoPath!,
-                              totalDurationSeconds: entry.voiceMemoDurationSeconds,
+                              totalDurationSeconds:
+                                  entry.voiceMemoDurationSeconds,
                             ),
                           ],
                         ],
@@ -483,7 +560,11 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.existingEntry != null ? '✅ Entry updated!' : '✅ Diary note saved!'),
+          content: Text(
+            widget.existingEntry != null
+                ? '✅ Entry updated!'
+                : '✅ Diary note saved!',
+          ),
           backgroundColor: AppColors.limeGreen,
           behavior: SnackBarBehavior.floating,
         ),
@@ -528,8 +609,13 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.existingEntry != null ? 'Edit Diary Note' : 'New Life & Work Log',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  widget.existingEntry != null
+                      ? 'Edit Diary Note'
+                      : 'New Life & Work Log',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -547,13 +633,18 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
                 hintText: 'e.g. Q4 Strategy Sprint, Leg Day PR, Client Call...',
                 filled: true,
                 fillColor: isDark ? AppColors.darkSurface : Colors.grey[100],
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 14),
 
             // Category Chips
-            const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const Text(
+              'Category',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -570,7 +661,9 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
                       labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87),
+                        color: isSelected
+                            ? Colors.black
+                            : (isDark ? Colors.white70 : Colors.black87),
                       ),
                       onSelected: (val) {
                         if (val) setState(() => _selectedCategory = c['id']);
@@ -583,7 +676,10 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
             const SizedBox(height: 14),
 
             // Mood Chips
-            const Text('Current Mood & State', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            const Text(
+              'Current Mood & State',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -594,13 +690,19 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
                       selected: isSelected,
-                      avatar: Icon(m['icon'], size: 14, color: isSelected ? Colors.black : m['color']),
+                      avatar: Icon(
+                        m['icon'],
+                        size: 14,
+                        color: isSelected ? Colors.black : m['color'],
+                      ),
                       label: Text(m['label']),
                       selectedColor: m['color'],
                       labelStyle: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87),
+                        color: isSelected
+                            ? Colors.black
+                            : (isDark ? Colors.white70 : Colors.black87),
                       ),
                       onSelected: (val) {
                         if (val) setState(() => _selectedMood = m['id']);
@@ -618,10 +720,13 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
               maxLines: 4,
               decoration: InputDecoration(
                 labelText: 'Reflection Notes & Observations',
-                hintText: 'Describe key achievements, work deliverables, mental state, or fitness outcomes...',
+                hintText:
+                    'Describe key achievements, work deliverables, mental state, or fitness outcomes...',
                 filled: true,
                 fillColor: isDark ? AppColors.darkSurface : Colors.grey[100],
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -660,13 +765,20 @@ class _AddEditDiarySheetState extends ConsumerState<_AddEditDiarySheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.limeGreen,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
                 icon: const Icon(Icons.check_rounded, size: 20),
                 label: Text(
-                  widget.existingEntry != null ? 'Update Diary Note' : 'Save Diary Entry',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                  widget.existingEntry != null
+                      ? 'Update Diary Note'
+                      : 'Save Diary Entry',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ),

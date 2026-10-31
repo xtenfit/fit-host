@@ -135,7 +135,9 @@ class _SignOutDialogState extends ConsumerState<SignOutDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isSigningOut ? null : () => Navigator.of(context).pop(false),
+          onPressed: _isSigningOut
+              ? null
+              : () => Navigator.of(context).pop(false),
           child: Text(
             'Cancel',
             style: TextStyle(

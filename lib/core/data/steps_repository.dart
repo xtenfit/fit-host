@@ -40,15 +40,23 @@ class LocalStepsRepository implements StepsRepository {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-    final row = await (db.select(db.stepDailyLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.stepDate.isBiggerOrEqualValue(startOfDay) &
-              t.stepDate.isSmallerOrEqualValue(endOfDay))
-          ..orderBy([(t) => drift.OrderingTerm(expression: t.updatedAt, mode: drift.OrderingMode.desc)])
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (db.select(db.stepDailyLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.stepDate.isBiggerOrEqualValue(startOfDay) &
+                    t.stepDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..orderBy([
+                (t) => drift.OrderingTerm(
+                  expression: t.updatedAt,
+                  mode: drift.OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
 
     if (row == null) return null;
 
@@ -83,17 +91,19 @@ class LocalStepsRepository implements StepsRepository {
       if (rec != null) {
         history.add(rec);
       } else {
-        history.add(DailyStepRecord(
-          id: 'step_empty_${d.year}_${d.month}_${d.day}',
-          userId: userId,
-          date: DateTime(d.year, d.month, d.day),
-          steps: 0,
-          targetSteps: 10000,
-          distanceKm: 0.0,
-          activeCalories: 0,
-          activeMinutes: 0,
-          updatedAt: DateTime.now(),
-        ));
+        history.add(
+          DailyStepRecord(
+            id: 'step_empty_${d.year}_${d.month}_${d.day}',
+            userId: userId,
+            date: DateTime(d.year, d.month, d.day),
+            steps: 0,
+            targetSteps: 10000,
+            distanceKm: 0.0,
+            activeCalories: 0,
+            activeMinutes: 0,
+            updatedAt: DateTime.now(),
+          ),
+        );
       }
     }
 
@@ -114,17 +124,22 @@ class LocalStepsRepository implements StepsRepository {
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
     final now = DateTime.now();
 
-    final existing = await (db.select(db.stepDailyLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.stepDate.isBiggerOrEqualValue(startOfDay) &
-              t.stepDate.isSmallerOrEqualValue(endOfDay))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (db.select(db.stepDailyLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.stepDate.isBiggerOrEqualValue(startOfDay) &
+                    t.stepDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
     if (existing != null) {
-      await (db.update(db.stepDailyLogs)..where((t) => t.id.equals(existing.id))).write(
+      await (db.update(
+        db.stepDailyLogs,
+      )..where((t) => t.id.equals(existing.id))).write(
         StepDailyLogsCompanion(
           steps: drift.Value(steps),
           targetSteps: drift.Value(target),
@@ -134,7 +149,9 @@ class LocalStepsRepository implements StepsRepository {
         ),
       );
     } else {
-      await db.into(db.stepDailyLogs).insert(
+      await db
+          .into(db.stepDailyLogs)
+          .insert(
             StepDailyLogsCompanion.insert(
               id: const Uuid().v4(),
               userId: drift.Value(userId),
@@ -221,7 +238,9 @@ class CloudStepsRepository implements StepsRepository {
 
     if (supabase != null) {
       try {
-        await supabase!.from('step_daily_logs').upsert(payload, onConflict: 'user_id, step_date');
+        await supabase!
+            .from('step_daily_logs')
+            .upsert(payload, onConflict: 'user_id, step_date');
         return;
       } catch (e) {
         debugPrint('[CloudStepsRepository] Cloud steps write failed: $e');
@@ -252,12 +271,15 @@ class CloudStepsRepository implements StepsRepository {
         final id = r['id'] as String;
         final steps = r['steps'] as int? ?? 0;
         final targetSteps = r['target_steps'] as int? ?? 10000;
-        final distanceMeters = (r['distance_meters'] as num?)?.toDouble() ?? 0.0;
+        final distanceMeters =
+            (r['distance_meters'] as num?)?.toDouble() ?? 0.0;
         final activeCalories = r['active_calories'] as int? ?? 0;
         final createdAt = DateTime.parse(r['created_at'] as String);
         final updatedAt = DateTime.parse(r['updated_at'] as String);
 
-        await db.into(db.stepDailyLogs).insertOnConflictUpdate(
+        await db
+            .into(db.stepDailyLogs)
+            .insertOnConflictUpdate(
               StepDailyLogsCompanion.insert(
                 id: id,
                 userId: drift.Value(userId),

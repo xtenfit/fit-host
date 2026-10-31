@@ -22,14 +22,13 @@ void main() {
 
   Widget createWidget({WidgetRef? ref}) {
     return ProviderScope(
-      child: MaterialApp(
-        home: QuantityEntryScreen(food: testFood),
-      ),
+      child: MaterialApp(home: QuantityEntryScreen(food: testFood)),
     );
   }
 
-  testWidgets('QuantityEntryScreen renders initial food data and live macros',
-      (WidgetTester tester) async {
+  testWidgets('QuantityEntryScreen renders initial food data and live macros', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -49,31 +48,34 @@ void main() {
     expect(find.text('3.0'), findsOneWidget); // 3.0g fats
   });
 
-  testWidgets('Tapping preset chip updates quantity and recalculates macros live',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 1400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'Tapping preset chip updates quantity and recalculates macros live',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(createWidget());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(createWidget());
+      await tester.pumpAndSettle();
 
-    // Tap preset '1 glass (200g)'
-    final glassPresetFinder = find.text('1 glass (200g)');
-    expect(glassPresetFinder, findsOneWidget);
-    await tester.tap(glassPresetFinder);
-    await tester.pumpAndSettle();
+      // Tap preset '1 glass (200g)'
+      final glassPresetFinder = find.text('1 glass (200g)');
+      expect(glassPresetFinder, findsOneWidget);
+      await tester.tap(glassPresetFinder);
+      await tester.pumpAndSettle();
 
-    // 200g -> 116 kcal, 6.4g protein, 9.6g carbs, 6.0g fats
-    expect(find.text('116'), findsOneWidget); // 116 kcal
-    expect(find.text('6.4'), findsOneWidget); // 6.4g protein
-    expect(find.text('9.6'), findsOneWidget); // 9.6g carbs
-    expect(find.text('6.0'), findsOneWidget); // 6.0g fats
-  });
+      // 200g -> 116 kcal, 6.4g protein, 9.6g carbs, 6.0g fats
+      expect(find.text('116'), findsOneWidget); // 116 kcal
+      expect(find.text('6.4'), findsOneWidget); // 6.4g protein
+      expect(find.text('9.6'), findsOneWidget); // 9.6g carbs
+      expect(find.text('6.0'), findsOneWidget); // 6.0g fats
+    },
+  );
 
-  testWidgets('Changing meal type changes selected choice chip state',
-      (WidgetTester tester) async {
+  testWidgets('Changing meal type changes selected choice chip state', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -94,8 +96,9 @@ void main() {
     expect(choiceChipWidget.selected, isTrue);
   });
 
-  testWidgets('Saving meal logs entry into nutritionProvider state',
-      (WidgetTester tester) async {
+  testWidgets('Saving meal logs entry into nutritionProvider state', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -107,9 +110,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(
-          home: QuantityEntryScreen(food: testFood),
-        ),
+        child: MaterialApp(home: QuantityEntryScreen(food: testFood)),
       ),
     );
     await tester.pumpAndSettle();

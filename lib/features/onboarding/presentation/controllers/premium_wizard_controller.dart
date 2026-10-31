@@ -56,12 +56,14 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       currentStep: n.clamp(1, 17),
       isGenderBranch: false,
     );
-    state = AsyncData(cur.copyWith(
-      currentStep: n.clamp(1, 17),
-      draft: updatedDraft,
-      isSaving: false,
-      lastStepSaved: true,
-    ));
+    state = AsyncData(
+      cur.copyWith(
+        currentStep: n.clamp(1, 17),
+        draft: updatedDraft,
+        isSaving: false,
+        lastStepSaved: true,
+      ),
+    );
     await _repository.saveDraft(updatedDraft);
   }
 
@@ -75,7 +77,8 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
 
     // Step 6 (Main Goal) -> if Maintain, skip step 7 (timeline)
     if (step == 6) {
-      if (draft.goals.contains('maintain') || draft.goals.contains('maintain_weight')) {
+      if (draft.goals.contains('maintain') ||
+          draft.goals.contains('maintain_weight')) {
         next = 8;
       }
     } else if (step == 8 && !draft.isGenderBranch) {
@@ -98,11 +101,13 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       isGenderBranch: isBranch,
     );
 
-    state = AsyncData(cur.copyWith(
-      currentStep: next.clamp(1, 17),
-      draft: updatedDraft,
-      lastStepSaved: true,
-    ));
+    state = AsyncData(
+      cur.copyWith(
+        currentStep: next.clamp(1, 17),
+        draft: updatedDraft,
+        lastStepSaved: true,
+      ),
+    );
 
     await _repository.saveDraft(updatedDraft);
   }
@@ -128,7 +133,8 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
         prev = 8;
       }
     } else if (step == 8) {
-      if (draft.goals.contains('maintain') || draft.goals.contains('maintain_weight')) {
+      if (draft.goals.contains('maintain') ||
+          draft.goals.contains('maintain_weight')) {
         prev = 6;
       } else {
         prev = 7;
@@ -140,23 +146,29 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       isGenderBranch: isBranch,
     );
 
-    state = AsyncData(cur.copyWith(
-      currentStep: prev.clamp(1, 17),
-      draft: updatedDraft,
-      lastStepSaved: true,
-    ));
+    state = AsyncData(
+      cur.copyWith(
+        currentStep: prev.clamp(1, 17),
+        draft: updatedDraft,
+        lastStepSaved: true,
+      ),
+    );
 
     await _repository.saveDraft(updatedDraft);
   }
 
-  Future<void> updateDraft(OnboardingState Function(OnboardingState) mutate) async {
+  Future<void> updateDraft(
+    OnboardingState Function(OnboardingState) mutate,
+  ) async {
     final cur = state.value ?? const PremiumWizardState();
     final updated = mutate(cur.draft);
-    state = AsyncData(cur.copyWith(
-      draft: updated,
-      currentStep: updated.currentStep,
-      isSaving: false,
-    ));
+    state = AsyncData(
+      cur.copyWith(
+        draft: updated,
+        currentStep: updated.currentStep,
+        isSaving: false,
+      ),
+    );
     await _repository.saveDraft(updated);
   }
 
@@ -176,10 +188,7 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       currentStep: 17,
     );
 
-    state = AsyncData(cur.copyWith(
-      draft: finalDraft,
-      isSaving: true,
-    ));
+    state = AsyncData(cur.copyWith(draft: finalDraft, isSaving: true));
 
     await _repository.completeOnboarding(finalDraft);
 
@@ -203,7 +212,9 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
     }
 
     try {
-      await ref.read(userProfileProvider.notifier).saveSuggestedPlan(
+      await ref
+          .read(userProfileProvider.notifier)
+          .saveSuggestedPlan(
             name: isGuest ? 'Guest Athlete' : 'Athlete',
             age: finalDraft.age,
             gender: finalDraft.gender ?? 'male',
@@ -225,15 +236,13 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       }
     } catch (_) {}
 
-    state = AsyncData(cur.copyWith(
-      draft: finalDraft,
-      isSaving: false,
-      lastStepSaved: true,
-    ));
+    state = AsyncData(
+      cur.copyWith(draft: finalDraft, isSaving: false, lastStepSaved: true),
+    );
   }
 }
 
 final premiumWizardControllerProvider =
     AsyncNotifierProvider<PremiumWizardController, PremiumWizardState>(
-  PremiumWizardController.new,
-);
+      PremiumWizardController.new,
+    );

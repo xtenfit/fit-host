@@ -6,8 +6,10 @@ import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/features/workouts/domain/models/workout_models.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 
-final workoutDetailProvider =
-    FutureProvider.family<WorkoutEntity?, String>((ref, id) async {
+final workoutDetailProvider = FutureProvider.family<WorkoutEntity?, String>((
+  ref,
+  id,
+) async {
   final repo = ref.watch(workoutRepositoryProvider);
   return await repo.getWorkoutById(id);
 });
@@ -40,7 +42,10 @@ class WorkoutDetailScreen extends ConsumerWidget {
         title: const Text('Workout Summary'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AppColors.error,
+            ),
             tooltip: 'Delete Workout',
             onPressed: () async {
               final confirmed = await showDialog<bool>(
@@ -56,7 +61,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
                       child: const Text('Cancel'),
                     ),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: const Text('Delete'),
                     ),
@@ -66,7 +73,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
 
               if (confirmed == true) {
                 try {
-                  await ref.read(workoutRepositoryProvider).deleteWorkout(workoutId);
+                  await ref
+                      .read(workoutRepositoryProvider)
+                      .deleteWorkout(workoutId);
                   ref.invalidate(workoutsStreamProvider);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -93,11 +102,45 @@ class WorkoutDetailScreen extends ConsumerWidget {
       body: workoutAsync.when(
         data: (workout) {
           if (workout == null) {
-            return const Center(child: Text('Workout not found.'));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.search_off_rounded,
+                      size: 48,
+                      color: AppColors.lightTextSecondary,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'This workout is no longer available.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'It may have been deleted, or it may belong to another account.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: () => context.go('/workouts'),
+                      child: const Text('Back to Workouts'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
-          final dateStr =
-              DateFormat('EEEE, MMMM d, y • h:mm a').format(workout.startedAt);
+          final dateStr = DateFormat(
+            'EEEE, MMMM d, y • h:mm a',
+          ).format(workout.startedAt);
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
@@ -112,7 +155,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.40 : 0.12),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.40 : 0.12,
+                        ),
                         blurRadius: 18,
                         offset: const Offset(0, 6),
                       ),
@@ -156,7 +201,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF00E676),
                                   borderRadius: BorderRadius.circular(6),
@@ -234,8 +281,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
                             style: TextStyle(
                               color: workout.status == 'completed'
                                   ? (isDark
-                                      ? AppColors.limeGreen
-                                      : AppColors.limeGreenLight)
+                                        ? AppColors.limeGreen
+                                        : AppColors.limeGreenLight)
                                   : AppColors.warning,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -305,7 +352,9 @@ class WorkoutDetailScreen extends ConsumerWidget {
                 ...workout.exercises.map((e) {
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -384,8 +433,8 @@ class WorkoutDetailScreen extends ConsumerWidget {
                                     color: s.isCompleted
                                         ? AppColors.limeGreen
                                         : (isDark
-                                            ? AppColors.darkTextTertiary
-                                            : AppColors.lightTextTertiary),
+                                              ? AppColors.darkTextTertiary
+                                              : AppColors.lightTextTertiary),
                                   ),
                                 ],
                               ),
@@ -436,7 +485,9 @@ class _StatItem extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
         ),
       ],

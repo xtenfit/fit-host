@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../steps/presentation/controllers/step_controller.dart';
+import '../controllers/home_dashboard_controller.dart';
 
 class HomeStepCard extends ConsumerWidget {
   final bool isDark;
@@ -12,8 +12,29 @@ class HomeStepCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stepState = ref.watch(stepControllerProvider);
-    final pct = (stepState.progressPercentage * 100).toInt();
+    final selectedDate = ref.watch(homeDashboardProvider).selectedDate;
+    final summaryAsync = ref.watch(homeDashboardSummaryProvider(selectedDate));
+
+    return summaryAsync.when(
+      loading: () => const SizedBox(
+        height: 150,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Text('Unable to load steps: $error'),
+      data: (summary) => _buildCard(context, summary),
+    );
+  }
+
+  Widget _buildCard(BuildContext context, HomeDashboardSummary summary) {
+    final steps = summary.steps;
+    final stepCount = steps?.steps ?? 0;
+    final target = steps?.targetSteps ?? 10000;
+    final pct = target <= 0
+        ? 0
+        : ((stepCount / target) * 100).round().clamp(0, 100);
+    final distance = steps?.distanceKm ?? 0;
+    final activeMinutes = steps?.activeMinutes ?? 0;
+    final calories = steps?.activeCalories ?? 0;
 
     return InkWell(
       onTap: () => context.push('/steps'),
@@ -35,7 +56,9 @@ class HomeStepCard extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.limeGreen.withValues(alpha: isDark ? 0.08 : 0.04),
+              color: AppColors.limeGreen.withValues(
+                alpha: isDark ? 0.08 : 0.04,
+              ),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -90,7 +113,7 @@ class HomeStepCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${NumberFormat('#,###').format(stepState.todaySteps)} of ${NumberFormat('#,###').format(stepState.targetSteps)} steps',
+                        '${NumberFormat('#,###').format(stepCount)} of ${NumberFormat('#,###').format(target)} steps',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark
@@ -114,10 +137,12 @@ class HomeStepCard extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
-                value: stepState.progressPercentage,
+                value: target <= 0 ? 0 : (stepCount / target).clamp(0.0, 1.0),
                 minHeight: 7,
                 backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.limeGreen),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.limeGreen,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -127,19 +152,19 @@ class HomeStepCard extends ConsumerWidget {
               children: [
                 _SubBadge(
                   icon: Icons.straighten_rounded,
-                  label: stepState.formattedDistance,
+                  label: '${distance.toStringAsFixed(1)} km',
                   color: AppColors.electricCyan,
                   isDark: isDark,
                 ),
                 _SubBadge(
                   icon: Icons.timer_outlined,
-                  label: '${stepState.activeMinutes} min active',
+                  label: '$activeMinutes min active',
                   color: const Color(0xFFFFB703),
                   isDark: isDark,
                 ),
                 _SubBadge(
                   icon: Icons.local_fire_department_rounded,
-                  label: '${stepState.calories} kcal',
+                  label: '$calories kcal',
                   color: const Color(0xFFFF5252),
                   isDark: isDark,
                 ),

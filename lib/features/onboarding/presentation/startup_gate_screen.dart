@@ -10,9 +10,7 @@ class StartupGateScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AsyncValue<String>>(startupGateProvider, (prev, next) {
-      if (next.hasValue &&
-          next.value != '/startup-gate' &&
-          context.mounted) {
+      if (next.hasValue && next.value != '/startup-gate' && context.mounted) {
         context.go(next.value!);
       }
     });

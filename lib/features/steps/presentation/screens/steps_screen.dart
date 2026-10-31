@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import '../../../auth/presentation/dialogs/feature_upsell_sheet.dart';
 import '../../data/step_permission_service.dart';
+import '../../data/health_platform_service.dart';
 import '../../domain/daily_step_record.dart';
 import '../../domain/step_calculator.dart';
 import '../controllers/step_controller.dart';
@@ -23,7 +24,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
     super.initState();
     // Deliverable A: Request permission on first entry to Steps screen (NOT at app launch)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(stepControllerProvider.notifier).requestPermissionsOnScreenEntry();
+      ref
+          .read(stepControllerProvider.notifier)
+          .requestPermissionsOnScreenEntry();
     });
   }
 
@@ -45,7 +48,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF161F1A) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
               border: Border.all(
                 color: isDark
                     ? AppColors.limeGreen.withValues(alpha: 0.2)
@@ -93,7 +98,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       selected: isSel,
                       selectedColor: AppColors.limeGreen,
                       labelStyle: TextStyle(
-                        color: isSel ? Colors.black : (isDark ? Colors.white : Colors.black87),
+                        color: isSel
+                            ? Colors.black
+                            : (isDark ? Colors.white : Colors.black87),
                         fontWeight: FontWeight.w700,
                       ),
                       onSelected: (selected) {
@@ -137,15 +144,21 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       ),
                     ),
                     onPressed: () {
-                      final parsed = int.tryParse(controller.text) ?? selectedGoal;
+                      final parsed =
+                          int.tryParse(controller.text) ?? selectedGoal;
                       if (parsed > 0) {
-                        ref.read(stepControllerProvider.notifier).updateGoal(parsed);
+                        ref
+                            .read(stepControllerProvider.notifier)
+                            .updateGoal(parsed);
                       }
                       Navigator.pop(ctx);
                     },
                     child: const Text(
                       'Save Goal',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -168,18 +181,27 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final parsed = int.tryParse(controller.text.trim()) ?? 0;
-            final dist = StepCalculator.distanceKm(steps: parsed, strideCm: 72.6);
+            final dist = StepCalculator.distanceKm(
+              steps: parsed,
+              strideCm: 72.6,
+            );
             final cal = StepCalculator.estimateCalories(parsed);
 
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF161F1A) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                   border: Border.all(
-                    color: isDark ? AppColors.limeGreen.withValues(alpha: 0.2) : Colors.black12,
+                    color: isDark
+                        ? AppColors.limeGreen.withValues(alpha: 0.2)
+                        : Colors.black12,
                   ),
                 ),
                 child: Column(
@@ -197,11 +219,20 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text('Log Treadmill / Walk Steps', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    const Text(
+                      'Log Treadmill / Walk Steps',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Record real steps from an indoor walking pad, treadmill, or outdoor workout session.',
-                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     TextField(
@@ -211,8 +242,13 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       decoration: InputDecoration(
                         labelText: 'Actual Step Count',
                         hintText: 'e.g. 3200',
-                        prefixIcon: const Icon(Icons.directions_walk_rounded, color: AppColors.limeGreen),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                        prefixIcon: const Icon(
+                          Icons.directions_walk_rounded,
+                          color: AppColors.limeGreen,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onChanged: (_) => setSheetState(() {}),
                     ),
@@ -227,8 +263,21 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Estimated Distance: ${dist.toStringAsFixed(2)} km', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            Text('Burn: $cal kcal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.limeGreen)),
+                            Text(
+                              'Estimated Distance: ${dist.toStringAsFixed(2)} km',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Burn: $cal kcal',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.limeGreen,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -241,15 +290,25 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                           backgroundColor: AppColors.limeGreen,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         onPressed: parsed <= 0
                             ? null
                             : () {
-                                ref.read(stepControllerProvider.notifier).addSimulatedSteps(parsed);
+                                ref
+                                    .read(stepControllerProvider.notifier)
+                                    .addSimulatedSteps(parsed);
                                 Navigator.pop(ctx);
                               },
-                        child: const Text('Save Walk Session', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        child: const Text(
+                          'Save Walk Session',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -272,7 +331,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
     final todayFormatted = DateFormat('EEEE, MMM d').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -282,9 +343,31 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.sync_rounded),
+            tooltip: 'Sync Health Data',
+            onPressed: () async {
+              final ok = await ref
+                  .read(stepControllerProvider.notifier)
+                  .refreshFromHealthPlatform();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? 'Health data synchronized successfully!'
+                          : 'Using device pedometer sensor as primary source.',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.tune_rounded),
             tooltip: 'Edit Step Goal',
-            onPressed: () => _showGoalEditorDialog(context, stepState.targetSteps),
+            onPressed: () =>
+                _showGoalEditorDialog(context, stepState.targetSteps),
           ),
         ],
       ),
@@ -292,20 +375,68 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 140),
           children: [
-            // Date subtitle
-            Text(
-              todayFormatted,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              ),
+            // Date subtitle & Data Source Badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    todayFormatted,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.limeGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.limeGreen.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        stepState.dataSource == StepDataSource.hardwareSensor
+                            ? Icons.directions_walk_rounded
+                            : Icons.favorite_rounded,
+                        size: 13,
+                        color: AppColors.limeGreen,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        stepState.dataSource.displayName,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.limeGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
             // Deliverable A: Inline Permission Card if permission is denied
             if (stepState.permissionState == StepPermissionState.denied ||
-                stepState.permissionState == StepPermissionState.permanentlyDenied) ...[
+                stepState.permissionState ==
+                    StepPermissionState.permanentlyDenied) ...[
               _PermissionWarningCard(isDark: isDark),
               const SizedBox(height: 16),
             ],
@@ -316,7 +447,8 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
               goal: stepState.targetSteps,
               progress: stepState.progressPercentage,
               isDark: isDark,
-              onTapGoal: () => _showGoalEditorDialog(context, stepState.targetSteps),
+              onTapGoal: () =>
+                  _showGoalEditorDialog(context, stepState.targetSteps),
             ),
             const SizedBox(height: 20),
 
@@ -366,7 +498,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
               isRunning: stepState.isRunningStride,
               isDark: isDark,
               onToggleMode: (isRunning) {
-                ref.read(stepControllerProvider.notifier).setStrideMode(
+                ref
+                    .read(stepControllerProvider.notifier)
+                    .setStrideMode(
                       isRunning: isRunning,
                       heightCm: profile.heightCm,
                     );
@@ -391,7 +525,9 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Row(
@@ -402,7 +538,11 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       color: AppColors.limeGreen.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.fitness_center_rounded, color: AppColors.limeGreen, size: 20),
+                    child: const Icon(
+                      Icons.fitness_center_rounded,
+                      color: AppColors.limeGreen,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -411,7 +551,10 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                       children: [
                         Text(
                           'Manual Treadmill / Walk Log',
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
                         ),
                         Text(
                           'Record indoor walking sessions and treadmill workouts',
@@ -424,14 +567,23 @@ class _StepsScreenState extends ConsumerState<StepsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.limeGreen,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     onPressed: () => _showManualStepEntryDialog(context),
-                    child: const Text('Log Walk', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                    child: const Text(
+                      'Log Walk',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -461,7 +613,11 @@ class _PermissionWarningCard extends ConsumerWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Color(0xFFFFB703), size: 22),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFFFB703),
+                size: 22,
+              ),
               SizedBox(width: 8),
               Text(
                 'Activity Sensor Access Needed',
@@ -488,11 +644,17 @@ class _PermissionWarningCard extends ConsumerWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 minimumSize: Size.zero,
               ),
               icon: const Icon(Icons.settings_rounded, size: 16),
-              label: const Text('Open Settings', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+              label: const Text(
+                'Open Settings',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+              ),
               onPressed: () {
                 ref.read(stepPermissionProvider.notifier).openAppSettingsMenu();
               },
@@ -534,9 +696,7 @@ class _BigStepRingCard extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: AppColors.limeGreen.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.limeGreen.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -578,7 +738,10 @@ class _BigStepRingCard extends StatelessWidget {
                     onTap: onTapGoal,
                     borderRadius: BorderRadius.circular(12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -587,18 +750,27 @@ class _BigStepRingCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.edit_rounded, size: 12, color: AppColors.limeGreen),
+                          const Icon(
+                            Icons.edit_rounded,
+                            size: 12,
+                            color: AppColors.limeGreen,
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.limeGreen.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -731,7 +903,9 @@ class _MetricCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
         ],
@@ -772,19 +946,37 @@ class _StrideConfigTile extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.settings_accessibility_rounded, color: AppColors.limeGreen, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Stride Length & Pace',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.settings_accessibility_rounded,
+                      color: AppColors.limeGreen,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Stride Length & Pace',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '${strideCm.toStringAsFixed(1)} cm / step',
-                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.limeGreen, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.limeGreen,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -793,7 +985,9 @@ class _StrideConfigTile extends StatelessWidget {
             'Estimated based on ${heightCm.toInt()} cm height (${isRunning ? 'running 0.45×' : 'walking 0.415×'}).',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 14),
@@ -805,7 +999,9 @@ class _StrideConfigTile extends StatelessWidget {
                   selected: !isRunning,
                   selectedColor: AppColors.limeGreen,
                   labelStyle: TextStyle(
-                    color: !isRunning ? Colors.black : (isDark ? Colors.white : Colors.black87),
+                    color: !isRunning
+                        ? Colors.black
+                        : (isDark ? Colors.white : Colors.black87),
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -821,7 +1017,9 @@ class _StrideConfigTile extends StatelessWidget {
                   selected: isRunning,
                   selectedColor: AppColors.electricCyan,
                   labelStyle: TextStyle(
-                    color: isRunning ? Colors.black : (isDark ? Colors.white : Colors.black87),
+                    color: isRunning
+                        ? Colors.black
+                        : (isDark ? Colors.white : Colors.black87),
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -880,28 +1078,39 @@ class _SevenDayStepsChartCard extends StatelessWidget {
             color: isDark ? const Color(0xFF161F1A) : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+              color: isDark
+                  ? Colors.white10
+                  : Colors.black.withValues(alpha: 0.05),
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.bar_chart_rounded, color: AppColors.limeGreen, size: 22),
-                      SizedBox(width: 8),
-                      Text(
-                        '7-Day Movement Trend',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                      ),
-                    ],
+                  const Icon(
+                    Icons.bar_chart_rounded,
+                    color: AppColors.limeGreen,
+                    size: 22,
                   ),
-                  if (isGuest)
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '7-Day Movement Trend',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isGuest) ...[
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
@@ -909,7 +1118,11 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.lock_rounded, size: 12, color: Colors.amber),
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 12,
+                            color: Colors.amber,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Today Only',
@@ -922,6 +1135,7 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ],
                 ],
               ),
               const SizedBox(height: 16),
@@ -941,25 +1155,35 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                         if (isToday) {
                           stepsVal = todaySteps;
                         } else if (!isGuest) {
-                          final match = history.where((r) =>
-                            r.date.year == dayDate.year &&
-                            r.date.month == dayDate.month &&
-                            r.date.day == dayDate.day,
-                          ).firstOrNull;
+                          final match = history
+                              .where(
+                                (r) =>
+                                    r.date.year == dayDate.year &&
+                                    r.date.month == dayDate.month &&
+                                    r.date.day == dayDate.day,
+                              )
+                              .firstOrNull;
                           stepsVal = match?.steps ?? 0;
                         }
 
-                        final heightRatio = (stepsVal / targetSteps).clamp(0.08, 1.0);
+                        final heightRatio = (stepsVal / targetSteps).clamp(
+                          0.08,
+                          1.0,
+                        );
 
                         return Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              stepsVal > 0 ? '${(stepsVal / 1000).toStringAsFixed(1)}k' : '-',
+                              stepsVal > 0
+                                  ? '${(stepsVal / 1000).toStringAsFixed(1)}k'
+                                  : '-',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: isToday ? AppColors.limeGreen : Colors.grey,
+                                color: isToday
+                                    ? AppColors.limeGreen
+                                    : Colors.grey,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -970,8 +1194,12 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                                 color: isToday
                                     ? AppColors.limeGreen
                                     : (isGuest
-                                        ? (isDark ? Colors.white10 : Colors.black12)
-                                        : AppColors.electricCyan.withValues(alpha: 0.6)),
+                                          ? (isDark
+                                                ? Colors.white10
+                                                : Colors.black12)
+                                          : AppColors.electricCyan.withValues(
+                                              alpha: 0.6,
+                                            )),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
@@ -980,7 +1208,9 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                               DateFormat('E').format(dayDate),
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+                                fontWeight: isToday
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
                                 color: isToday
                                     ? (isDark ? Colors.white : Colors.black)
                                     : Colors.grey,
@@ -1001,9 +1231,15 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                           ),
                           alignment: Alignment.center,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E2822) : Colors.white,
+                              color: isDark
+                                  ? const Color(0xFF1E2822)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -1015,11 +1251,22 @@ class _SevenDayStepsChartCard extends StatelessWidget {
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.lock_outline_rounded, size: 16, color: Colors.amber),
+                                Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 16,
+                                  color: Colors.amber,
+                                ),
                                 SizedBox(width: 6),
-                                Text(
-                                  'Sign in for 7-day trends & records',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                Flexible(
+                                  child: Text(
+                                    'Sign in for 7-day trends & records',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),

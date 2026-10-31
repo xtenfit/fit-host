@@ -1,86 +1,190 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fit_host/core/services/startup_gate_service.dart';
+import 'package:fit_host/core/services/notification_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('StartupGateService 4-way routing tests', () {
-    test('Case 1: routes to /setup-wizard when first_launch_completed is false/unset',
-        () async {
-      FlutterSecureStorage.setMockInitialValues({});
-      final service = StartupGateService();
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
+  });
 
-      expect(await service.isFirstLaunchCompleted(), isFalse);
-      expect(await service.isAuthDecisionMade(), isFalse);
+  group('Startup Gate & Setup Wizard Routing Lifecycle', () {
+    test(
+      '1st screen flow: fresh unauthenticated user is always routed to /auth-decision',
+      () async {
+        final service = StartupGateService();
 
-      final route = await service.determineInitialRoute();
-      expect(route, equals('/setup-wizard'));
-    });
+        expect(await service.isFirstLaunchCompleted(), isFalse);
+        expect(await service.isAuthDecisionMade(), isFalse);
+        expect(await service.isGuestOnboardingCompleted(), isFalse);
+
+        final route = await service.determineInitialRoute(
+          isAuthenticated: false,
+          isProfileSetupCompleted: false,
+        );
+        expect(route, equals('/auth-decision'));
+      },
+    );
 
     test(
-        'Case 2: routes to /auth-decision when first_launch_completed is true but auth_decision_made is false',
-        () async {
-      FlutterSecureStorage.setMockInitialValues({
-        StartupGateService.keyFirstLaunch: 'true',
-      });
-      final service = StartupGateService();
+      'Condition 1: new guest user who taps "Continue as Guest" always launches /setup-wizard',
+      () async {
+        final service = StartupGateService();
 
-      expect(await service.isFirstLaunchCompleted(), isTrue);
-      expect(await service.isAuthDecisionMade(), isFalse);
+        // Guest tapped "Continue as Guest"
+        await service.setAuthDecisionMade(true);
 
-      final route = await service.determineInitialRoute();
-      expect(route, equals('/auth-decision'));
-    });
+        expect(await service.isAuthDecisionMade(), isTrue);
+        expect(await service.isGuestOnboardingCompleted(), isFalse);
 
-    test(
-        'Case 3: routes to /setup-wizard when auth == authenticated && profile.isProfileSetupCompleted == false',
-        () async {
-      FlutterSecureStorage.setMockInitialValues({
-        StartupGateService.keyFirstLaunch: 'true',
-        StartupGateService.keyAuthDecision: 'true',
-      });
-      final service = StartupGateService();
-
-      final route = await service.determineInitialRoute(
-        isAuthenticated: true,
-        isProfileSetupCompleted: false,
-      );
-      expect(route, equals('/setup-wizard'));
-    });
+        final route = await service.determineInitialRoute(
+          isAuthenticated: false,
+          isProfileSetupCompleted: false,
+        );
+        expect(route, equals('/setup-wizard'));
+      },
+    );
 
     test(
-        'Case 4: routes to /home when both flags true and profile setup completed',
-        () async {
-      FlutterSecureStorage.setMockInitialValues({
-        StartupGateService.keyFirstLaunch: 'true',
-        StartupGateService.keyAuthDecision: 'true',
-      });
-      final service = StartupGateService();
+      'Returning guest user who already completed wizard is routed to /home',
+      () async {
+        final service = StartupGateService();
 
-      expect(await service.isFirstLaunchCompleted(), isTrue);
-      expect(await service.isAuthDecisionMade(), isTrue);
+        await service.setAuthDecisionMade(true);
+        await service.setGuestOnboardingCompleted(true);
 
-      final route = await service.determineInitialRoute(
-        isAuthenticated: true,
-        isProfileSetupCompleted: true,
-      );
-      expect(route, equals('/home'));
-    });
+        final route = await service.determineInitialRoute(
+          isAuthenticated: false,
+          isProfileSetupCompleted: true,
+        );
+        expect(route, equals('/home'));
+      },
+    );
 
-    test('resetOnboarding clears both flags and routes back to /setup-wizard',
-        () async {
-      FlutterSecureStorage.setMockInitialValues({
-        StartupGateService.keyFirstLaunch: 'true',
-        StartupGateService.keyAuthDecision: 'true',
-      });
-      final service = StartupGateService();
+    test(
+      'Condition 2 (Existing Account User): DB profile setup completed -> routes directly to /home (no wizard)',
+      () async {
+        final service = StartupGateService();
+        const userId = 'existing-user-999';
 
-      await service.resetOnboarding();
+        // Authenticated with isProfileSetupCompleted == true in DB
+        final route = await service.determineInitialRoute(
+          isAuthenticated: true,
+          isProfileSetupCompleted: true,
+          userId: userId,
+        );
 
-      expect(await service.isFirstLaunchCompleted(), isFalse);
-      expect(await service.isAuthDecisionMade(), isFalse);
-      expect(await service.determineInitialRoute(), equals('/setup-wizard'));
-    });
+        expect(route, equals('/home'));
+        expect(await service.isAccountOnboardingCompleted(userId), isTrue);
+      },
+    );
+
+    test(
+      'Condition 2 (New Account User): DB profile setup not completed -> routes to /setup-wizard',
+      () async {
+        final service = StartupGateService();
+        const userId = 'brand-new-user-111';
+
+        // Authenticated with isProfileSetupCompleted == false in DB
+        final route = await service.determineInitialRoute(
+          isAuthenticated: true,
+          isProfileSetupCompleted: false,
+          userId: userId,
+        );
+
+        expect(route, equals('/setup-wizard'));
+      },
+    );
+
+    test(
+      'Condition 3: Wizard skip persists skip flag and allows guest to enter /home',
+      () async {
+        final service = StartupGateService();
+
+        expect(await service.hasSkippedWizard(), isFalse);
+        await service.setWizardSkipped(true);
+        await service.setGuestOnboardingCompleted(true);
+
+        expect(await service.hasSkippedWizard(), isTrue);
+        expect(await service.isGuestOnboardingCompleted(), isTrue);
+
+        final route = await service.determineInitialRoute(
+          isAuthenticated: false,
+          isProfileSetupCompleted: false,
+        );
+        expect(route, equals('/home'));
+      },
+    );
+
+    test(
+      'Condition 3: NotificationService dispatches immediate and scheduled wizard reminder',
+      () async {
+        final notifService = NotificationService.instance;
+        await notifService.cancelAllNotifications();
+
+        await notifService.showImmediateNotification(
+          id: 'setup_wizard_skip_reminder',
+          title: 'Complete Your Fitness Setup 🎯',
+          body:
+              'Finish setting up your personalized goals and workout schedule.',
+          channel: NotificationChannelType.habits,
+          payload: '/setup-wizard',
+        );
+
+        await notifService.scheduleNotification(
+          id: 'setup_wizard_reminder_followup',
+          title: 'Your Fitness Plan Is Waiting ⚡',
+          body: 'Take 2 minutes to complete your setup wizard.',
+          scheduledTime: DateTime.now().add(const Duration(hours: 2)),
+          channel: NotificationChannelType.habits,
+          payload: '/setup-wizard',
+        );
+
+        final items = notifService.scheduledNotifications;
+        expect(
+          items.any((item) => item.id == 'setup_wizard_skip_reminder'),
+          isTrue,
+        );
+        expect(
+          items.any((item) => item.id == 'setup_wizard_reminder_followup'),
+          isTrue,
+        );
+        final item = items.firstWhere(
+          (i) => i.id == 'setup_wizard_skip_reminder',
+        );
+        expect(item.payload, equals('/setup-wizard'));
+      },
+    );
+
+    test(
+      'resetOnboarding resets all flags and routes fresh state back to /auth-decision',
+      () async {
+        final service = StartupGateService();
+
+        await service.setFirstLaunchCompleted(true);
+        await service.setAuthDecisionMade(true);
+        await service.setGuestOnboardingCompleted(true);
+        await service.setWizardSkipped(true);
+        await service.saveWizardDraftStep(5);
+
+        await service.resetOnboarding();
+
+        expect(await service.isFirstLaunchCompleted(), isFalse);
+        expect(await service.isAuthDecisionMade(), isFalse);
+        expect(await service.isGuestOnboardingCompleted(), isFalse);
+        expect(await service.hasSkippedWizard(), isFalse);
+        expect(await service.getWizardDraftStep(), isNull);
+
+        final route = await service.determineInitialRoute(
+          isAuthenticated: false,
+          isProfileSetupCompleted: false,
+        );
+        expect(route, equals('/auth-decision'));
+      },
+    );
   });
 }

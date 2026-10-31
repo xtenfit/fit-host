@@ -8,28 +8,26 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
 });
 
 class UserProfileNotifier extends Notifier<UserProfile> {
-  UserProfileRepository? _repository;
-
-  void _ensureRepository() {
-    _repository ??= ref.read(userProfileRepositoryProvider);
-  }
+  UserProfileRepository get _repo => ref.read(userProfileRepositoryProvider);
 
   @override
   UserProfile build() {
+    // Re-run build whenever repository provider switches (e.g. between guest and authenticated)
+    ref.watch(userProfileRepositoryProvider);
 
     // Initial default profile
     final initial = UserProfile.calculateSuggestedTargets(
       name: 'Guest Athlete',
-      age: 26,
+      age: 0,
       gender: 'male',
-      heightCm: 175.0,
-      weightKg: 72.0,
-      targetWeightKg: 70.0,
+      heightCm: 0.0,
+      weightKg: 0.0,
+      targetWeightKg: null,
       fitnessGoal: 'maintain_weight',
       dietType: 'balanced',
       weeklyWorkoutDays: 4,
       dailyWorkoutMinutes: 45,
-      isCompleted: true,
+      isCompleted: false,
     );
 
     // Load saved profile asynchronously from local SQLite / SecureStorage
@@ -38,10 +36,13 @@ class UserProfileNotifier extends Notifier<UserProfile> {
     return initial;
   }
 
+  Future<void> reloadProfile() async {
+    await _loadFromStorage();
+  }
+
   Future<void> _loadFromStorage() async {
     try {
-      _ensureRepository();
-      final saved = await _repository!.loadProfile();
+      final saved = await _repo.loadProfile();
       state = saved;
       _propagateToServices(saved);
     } catch (_) {}
@@ -50,7 +51,9 @@ class UserProfileNotifier extends Notifier<UserProfile> {
   void _propagateToServices(UserProfile profile) {
     try {
       // Sync targets with Nutrition provider
-      ref.read(nutritionProvider.notifier).syncWithProfile(
+      ref
+          .read(nutritionProvider.notifier)
+          .syncWithProfile(
             calories: profile.dailyCaloriesTarget,
             protein: profile.targetProteinGrams,
             carbs: profile.targetCarbsGrams,
@@ -67,8 +70,7 @@ class UserProfileNotifier extends Notifier<UserProfile> {
 
   Future<void> updateProfile(UserProfile newProfile) async {
     state = newProfile;
-    _ensureRepository();
-    await _repository!.saveProfile(newProfile);
+    await _repo.saveProfile(newProfile);
     _propagateToServices(newProfile);
   }
 
@@ -181,7 +183,8 @@ class UserProfileNotifier extends Notifier<UserProfile> {
       targetFatsGrams: fats ?? state.targetFatsGrams,
       weeklyWorkoutDays: weeklyDays ?? state.weeklyWorkoutDays,
       dailyWorkoutMinutes: workoutMinutes ?? state.dailyWorkoutMinutes,
-      dailyCaloriesBurnTarget: ((workoutMinutes ?? state.dailyWorkoutMinutes) * 7.5).round(),
+      dailyCaloriesBurnTarget:
+          ((workoutMinutes ?? state.dailyWorkoutMinutes) * 7.5).round(),
       customTargetNote: customNote ?? state.customTargetNote,
       updatedAt: DateTime.now(),
     );
@@ -237,5 +240,6 @@ class UserProfileNotifier extends Notifier<UserProfile> {
   }
 }
 
-final userProfileProvider =
-    NotifierProvider<UserProfileNotifier, UserProfile>(UserProfileNotifier.new);
+final userProfileProvider = NotifierProvider<UserProfileNotifier, UserProfile>(
+  UserProfileNotifier.new,
+);

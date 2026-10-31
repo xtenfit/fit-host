@@ -13,7 +13,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
   bool _memoryCompleted = false;
 
   OnboardingRepositoryImpl({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   @override
   Future<void> saveDraft(OnboardingState state) async {
@@ -21,7 +21,9 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     try {
       await _storage.write(key: _draftKey, value: state.toJsonString());
     } catch (e) {
-      debugPrint('OnboardingRepository: SecureStorage write error (using memory cache): $e');
+      debugPrint(
+        'OnboardingRepository: SecureStorage write error (using memory cache): $e',
+      );
     }
   }
 

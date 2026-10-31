@@ -43,26 +43,43 @@ class HomeDietDiaryCard extends ConsumerWidget {
     final burnedKcal = workoutBurned + nutrition.manualCaloriesBurned;
 
     final eatenKcal = nutrition.totalCaloriesGained;
-    final targetKcal = profile.dailyCaloriesTarget > 0 ? profile.dailyCaloriesTarget : 2250;
+    final targetKcal = profile.dailyCaloriesTarget > 0
+        ? profile.dailyCaloriesTarget
+        : 2250;
     final leftKcal = (targetKcal - eatenKcal + burnedKcal).clamp(0, 9999);
 
     // Real macro remaining amounts based on User Profile Targets
-    final targetCarbs = profile.targetCarbsGrams > 0 ? profile.targetCarbsGrams : 250;
-    final targetProtein = profile.targetProteinGrams > 0 ? profile.targetProteinGrams : 145;
-    final targetFats = profile.targetFatsGrams > 0 ? profile.targetFatsGrams : 60;
+    final targetCarbs = profile.targetCarbsGrams > 0
+        ? profile.targetCarbsGrams
+        : 250;
+    final targetProtein = profile.targetProteinGrams > 0
+        ? profile.targetProteinGrams
+        : 145;
+    final targetFats = profile.targetFatsGrams > 0
+        ? profile.targetFatsGrams
+        : 60;
 
-    final carbsLeft = (targetCarbs - nutrition.totalCarbs).clamp(0, 999).toInt();
-    final proteinLeft = (targetProtein - nutrition.totalProtein).clamp(0, 999).toInt();
+    final carbsLeft = (targetCarbs - nutrition.totalCarbs)
+        .clamp(0, 999)
+        .toInt();
+    final proteinLeft = (targetProtein - nutrition.totalProtein)
+        .clamp(0, 999)
+        .toInt();
     final fatsLeft = (targetFats - nutrition.totalFats).clamp(0, 999).toInt();
 
     // Macro progress ratios
     final carbsProgress = (nutrition.totalCarbs / targetCarbs).clamp(0.0, 1.0);
-    final proteinProgress = (nutrition.totalProtein / targetProtein).clamp(0.0, 1.0);
+    final proteinProgress = (nutrition.totalProtein / targetProtein).clamp(
+      0.0,
+      1.0,
+    );
     final fatsProgress = (nutrition.totalFats / targetFats).clamp(0.0, 1.0);
 
     // Task 12: Quick-Add Shortcuts (logged 3+ times in last 14 days)
     final fourteenDaysAgo = DateTime.now().subtract(const Duration(days: 14));
-    final recentLogged = nutrition.loggedMeals.where((m) => m.loggedAt.isAfter(fourteenDaysAgo)).toList();
+    final recentLogged = nutrition.loggedMeals
+        .where((m) => m.loggedAt.isAfter(fourteenDaysAgo))
+        .toList();
     final itemOccurrences = <String, List<MealItem>>{};
     for (final item in recentLogged) {
       itemOccurrences.putIfAbsent(item.name, () => []).add(item);
@@ -80,7 +97,11 @@ class HomeDietDiaryCard extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(
               children: [
-                const Icon(Icons.bolt_rounded, size: 16, color: AppColors.limeGreen),
+                const Icon(
+                  Icons.bolt_rounded,
+                  size: 16,
+                  color: AppColors.limeGreen,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'QUICK ADD',
@@ -88,7 +109,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.8,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -102,16 +125,29 @@ class HomeDietDiaryCard extends ConsumerWidget {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-                    side: BorderSide(color: AppColors.limeGreen.withValues(alpha: 0.4)),
-                    avatar: const Icon(Icons.flash_on_rounded, size: 14, color: AppColors.limeGreen),
+                    backgroundColor: isDark
+                        ? AppColors.darkSurface
+                        : Colors.white,
+                    side: BorderSide(
+                      color: AppColors.limeGreen.withValues(alpha: 0.4),
+                    ),
+                    avatar: const Icon(
+                      Icons.flash_on_rounded,
+                      size: 14,
+                      color: AppColors.limeGreen,
+                    ),
                     label: Text(
                       '${quickMeal.name} (${quickMeal.portion})',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     onPressed: () {
                       double grams = 100.0;
-                      final match = RegExp(r'(\d+(\.\d+)?)g').firstMatch(quickMeal.portion);
+                      final match = RegExp(
+                        r'(\d+(\.\d+)?)g',
+                      ).firstMatch(quickMeal.portion);
                       if (match != null) {
                         grams = double.tryParse(match.group(1)!) ?? 100.0;
                       }
@@ -121,14 +157,23 @@ class HomeDietDiaryCard extends ConsumerWidget {
                         quantityGrams: grams,
                         mealType: MealType.fromString(quickMeal.mealType),
                         consumedAt: DateTime.now(),
-                        proteinPer100g: grams > 0 ? (quickMeal.proteinGrams * 100) / grams : quickMeal.proteinGrams,
-                        carbsPer100g: grams > 0 ? (quickMeal.carbsGrams * 100) / grams : quickMeal.carbsGrams,
-                        fatsPer100g: grams > 0 ? (quickMeal.fatGrams * 100) / grams : quickMeal.fatGrams,
-                        caloriesPer100g: grams > 0 ? (quickMeal.calories * 100) / grams : quickMeal.calories.toDouble(),
+                        proteinPer100g: grams > 0
+                            ? (quickMeal.proteinGrams * 100) / grams
+                            : quickMeal.proteinGrams,
+                        carbsPer100g: grams > 0
+                            ? (quickMeal.carbsGrams * 100) / grams
+                            : quickMeal.carbsGrams,
+                        fatsPer100g: grams > 0
+                            ? (quickMeal.fatGrams * 100) / grams
+                            : quickMeal.fatGrams,
+                        caloriesPer100g: grams > 0
+                            ? (quickMeal.calories * 100) / grams
+                            : quickMeal.calories.toDouble(),
                       );
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => QuantityEntryScreen(existingEntry: entry),
+                          builder: (_) =>
+                              QuantityEntryScreen(existingEntry: entry),
                         ),
                       );
                     },
@@ -145,7 +190,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
             color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+              color: isDark
+                  ? AppColors.darkSurfaceBorder
+                  : AppColors.lightSurfaceBorder,
             ),
             boxShadow: [
               BoxShadow(
@@ -171,7 +218,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
-                        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                        color: isDark
+                            ? Colors.white
+                            : AppColors.lightTextPrimary,
                       ),
                     ),
                   ),
@@ -180,13 +229,18 @@ class HomeDietDiaryCard extends ConsumerWidget {
                     onTap: () => CustomMealRoutineSheet.show(context),
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
                       child: Text(
                         'Details',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.limeGreen : AppColors.limeGreenDark,
+                          color: isDark
+                              ? AppColors.limeGreen
+                              : AppColors.limeGreenDark,
                         ),
                       ),
                     ),
@@ -210,7 +264,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                             fontFamily: 'Arial',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -228,7 +284,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                                 fontFamily: 'Arial',
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.lightTextPrimary,
                               ),
                             ),
                           ],
@@ -240,7 +298,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                             fontFamily: 'Arial',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -279,7 +339,10 @@ class HomeDietDiaryCard extends ConsumerWidget {
                           CustomPaint(
                             size: const Size(100, 100),
                             painter: _CalorieRadialGaugePainter(
-                              progress: (leftKcal / (targetKcal > 0 ? targetKcal : 2250)).clamp(0.0, 1.0),
+                              progress:
+                                  (leftKcal /
+                                          (targetKcal > 0 ? targetKcal : 2250))
+                                      .clamp(0.0, 1.0),
                               isDark: isDark,
                             ),
                           ),
@@ -304,7 +367,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   height: 1.1,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],
@@ -371,11 +436,15 @@ class HomeDietDiaryCard extends ConsumerWidget {
                   color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.15 : 0.04,
+                      ),
                       blurRadius: 12,
                       offset: const Offset(0, 3),
                     ),
@@ -407,7 +476,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.lightTextPrimary,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -416,7 +487,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -429,7 +502,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.limeGreen : AppColors.limeGreenDark,
+                              color: isDark
+                                  ? AppColors.limeGreen
+                                  : AppColors.limeGreenDark,
                             ),
                           ),
                         ),
@@ -444,7 +519,11 @@ class HomeDietDiaryCard extends ConsumerWidget {
                             width: 60,
                             height: 60,
                             color: AppColors.limeGreen.withValues(alpha: 0.15),
-                            child: const Icon(Icons.restaurant_rounded, color: AppColors.limeGreen, size: 28),
+                            child: const Icon(
+                              Icons.restaurant_rounded,
+                              color: AppColors.limeGreen,
+                              size: 28,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -457,7 +536,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.lightTextPrimary,
                                 ),
                               ),
                               const SizedBox(height: 3),
@@ -466,7 +547,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -474,9 +557,20 @@ class HomeDietDiaryCard extends ConsumerWidget {
                                 spacing: 6,
                                 runSpacing: 4,
                                 children: [
-                                  _MacroPillTag(label: 'P ${latestMeal.proteinGrams.toInt()}g', isDark: isDark),
-                                  _MacroPillTag(label: 'C ${latestMeal.carbsGrams.toInt()}g', isDark: isDark),
-                                  _MacroPillTag(label: 'F ${latestMeal.fatGrams.toInt()}g', isDark: isDark),
+                                  _MacroPillTag(
+                                    label:
+                                        'P ${latestMeal.proteinGrams.toInt()}g',
+                                    isDark: isDark,
+                                  ),
+                                  _MacroPillTag(
+                                    label:
+                                        'C ${latestMeal.carbsGrams.toInt()}g',
+                                    isDark: isDark,
+                                  ),
+                                  _MacroPillTag(
+                                    label: 'F ${latestMeal.fatGrams.toInt()}g',
+                                    isDark: isDark,
+                                  ),
                                 ],
                               ),
                             ],
@@ -496,7 +590,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
               color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
               boxShadow: [
                 BoxShadow(
@@ -514,7 +610,11 @@ class HomeDietDiaryCard extends ConsumerWidget {
                     color: AppColors.limeGreen.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.restaurant_menu_rounded, color: AppColors.limeGreen, size: 24),
+                  child: const Icon(
+                    Icons.restaurant_menu_rounded,
+                    color: AppColors.limeGreen,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -526,7 +626,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.lightTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -534,7 +636,9 @@ class HomeDietDiaryCard extends ConsumerWidget {
                         'Tap to log breakfast, lunch or snacks',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
@@ -545,10 +649,18 @@ class HomeDietDiaryCard extends ConsumerWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.limeGreen,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Log Meal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Log Meal',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -593,7 +705,9 @@ class _MacroProgressItem extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 5,
-            backgroundColor: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+            backgroundColor: (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.08,
+            ),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
@@ -603,7 +717,9 @@ class _MacroProgressItem extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+            color: isDark
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
         ),
       ],
@@ -633,7 +749,9 @@ class _MacroPillTag extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w700,
-          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+          color: isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.lightTextSecondary,
         ),
       ),
     );
@@ -668,11 +786,7 @@ class _CalorieRadialGaugePainter extends CustomPainter {
     final gradient = SweepGradient(
       startAngle: -math.pi / 2,
       endAngle: 3 * math.pi / 2,
-      colors: const [
-        Color(0xFFFF6B4A),
-        Color(0xFFFF5252),
-        AppColors.limeGreen,
-      ],
+      colors: const [Color(0xFFFF6B4A), Color(0xFFFF5252), AppColors.limeGreen],
       stops: const [0.0, 0.6, 1.0],
       transform: const GradientRotation(-math.pi / 2),
     );

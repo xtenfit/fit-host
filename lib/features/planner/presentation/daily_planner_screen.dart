@@ -21,12 +21,15 @@ class DailyPlannerScreen extends ConsumerWidget {
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final isToday = calendarState.selectedDate.year == today.year &&
+    final isToday =
+        calendarState.selectedDate.year == today.year &&
         calendarState.selectedDate.month == today.month &&
         calendarState.selectedDate.day == today.day;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -54,7 +57,11 @@ class DailyPlannerScreen extends ConsumerWidget {
                 color: AppColors.electricBlue,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
+              child: const Icon(
+                Icons.add_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -71,14 +78,18 @@ class DailyPlannerScreen extends ConsumerWidget {
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () {
-                      final prev = calendarState.selectedDate.subtract(const Duration(days: 1));
+                      final prev = calendarState.selectedDate.subtract(
+                        const Duration(days: 1),
+                      );
                       calendarNotifier.selectDate(prev);
                     },
                     icon: const Icon(Icons.chevron_left_rounded),
@@ -87,15 +98,25 @@ class DailyPlannerScreen extends ConsumerWidget {
                     child: Column(
                       children: [
                         Text(
-                          isToday ? 'Today' : DateFormat('EEEE').format(calendarState.selectedDate),
+                          isToday
+                              ? 'Today'
+                              : DateFormat(
+                                  'EEEE',
+                                ).format(calendarState.selectedDate),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isToday ? AppColors.electricBlue : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                            color: isToday
+                                ? AppColors.electricBlue
+                                : (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary),
                           ),
                         ),
                         Text(
-                          DateFormat('MMMM d, yyyy').format(calendarState.selectedDate),
+                          DateFormat(
+                            'MMMM d, yyyy',
+                          ).format(calendarState.selectedDate),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w900,
@@ -106,7 +127,9 @@ class DailyPlannerScreen extends ConsumerWidget {
                   ),
                   IconButton(
                     onPressed: () {
-                      final next = calendarState.selectedDate.add(const Duration(days: 1));
+                      final next = calendarState.selectedDate.add(
+                        const Duration(days: 1),
+                      );
                       calendarNotifier.selectDate(next);
                     },
                     icon: const Icon(Icons.chevron_right_rounded),
@@ -148,13 +171,20 @@ class DailyPlannerScreen extends ConsumerWidget {
                             child: CircularProgressIndicator(
                               value: pct,
                               strokeWidth: 6,
-                              backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
-                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.limeGreen),
+                              backgroundColor: isDark
+                                  ? Colors.white12
+                                  : Colors.grey[200],
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.limeGreen,
+                              ),
                             ),
                           ),
                           Text(
                             '${(pct * 100).toInt()}%',
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
                           ),
                         ],
                       ),
@@ -165,7 +195,10 @@ class DailyPlannerScreen extends ConsumerWidget {
                           children: [
                             Text(
                               '$completed of $total Activities Done',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -174,7 +207,9 @@ class DailyPlannerScreen extends ConsumerWidget {
                                   : 'Follow your plan to keep your streak and fitness goals on track.',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -196,10 +231,14 @@ class DailyPlannerScreen extends ConsumerWidget {
                   return Container(
                     padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                      color: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     child: Column(
@@ -212,7 +251,10 @@ class DailyPlannerScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         const Text(
                           'No Tasks Planned For Today',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -220,7 +262,9 @@ class DailyPlannerScreen extends ConsumerWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -229,7 +273,8 @@ class DailyPlannerScreen extends ConsumerWidget {
                             AddEditEventDialog.show(
                               context,
                               selectedDate: calendarState.selectedDate,
-                              onSave: (event) => calendarNotifier.addEvent(event),
+                              onSave: (event) =>
+                                  calendarNotifier.addEvent(event),
                             );
                           },
                           icon: const Icon(Icons.add_rounded, size: 18),
@@ -251,15 +296,18 @@ class DailyPlannerScreen extends ConsumerWidget {
                   children: events.map((event) {
                     return CalendarEventCard(
                       event: event,
-                      onToggleComplete: () =>
-                          calendarNotifier.toggleCompletion(event.id, !event.isCompleted),
-                      onReschedule: (newDate, newTime) =>
-                          calendarNotifier.rescheduleEvent(event.id, newDate, newTime),
+                      onToggleComplete: () => calendarNotifier.toggleCompletion(
+                        event.id,
+                        !event.isCompleted,
+                      ),
+                      onReschedule: (newDate, newTime) => calendarNotifier
+                          .rescheduleEvent(event.id, newDate, newTime),
                       onEdit: () => AddEditEventDialog.show(
                         context,
                         initialEvent: event,
                         selectedDate: calendarState.selectedDate,
-                        onSave: (updated) => calendarNotifier.updateEvent(updated),
+                        onSave: (updated) =>
+                            calendarNotifier.updateEvent(updated),
                       ),
                       onDelete: () => calendarNotifier.deleteEvent(event.id),
                     );

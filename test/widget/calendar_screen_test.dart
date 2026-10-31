@@ -6,8 +6,9 @@ import 'package:fit_host/core/database/database.dart';
 import 'package:fit_host/features/calendar/presentation/screens/calendar_screen.dart';
 
 void main() {
-  testWidgets('CalendarScreen renders header, view modes, and event agenda',
-      (WidgetTester tester) async {
+  testWidgets('CalendarScreen renders header, view modes, and event agenda', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -17,12 +18,8 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-        ],
-        child: const MaterialApp(
-          home: CalendarScreen(),
-        ),
+        overrides: [databaseProvider.overrideWithValue(db)],
+        child: const MaterialApp(home: CalendarScreen()),
       ),
     );
 
@@ -35,7 +32,7 @@ void main() {
     // Verify Range bar & View Mode options
     expect(find.text('Custom'), findsOneWidget);
     expect(find.text('Month'), findsNWidgets(2)); // Range control + View mode
-    expect(find.text('Week'), findsNWidgets(2));  // Range control + View mode
+    expect(find.text('Week'), findsNWidgets(2)); // Range control + View mode
     expect(find.text('Day'), findsOneWidget);
 
     // Verify Range Summary Card

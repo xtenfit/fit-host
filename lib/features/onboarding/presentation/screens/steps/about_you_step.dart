@@ -101,8 +101,14 @@ class AboutYouStep extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('13 yrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 12)),
-              Text('100 yrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 12)),
+              Text(
+                '13 yrs',
+                style: TextStyle(color: Color(0xFF8FA396), fontSize: 12),
+              ),
+              Text(
+                '100 yrs',
+                style: TextStyle(color: Color(0xFF8FA396), fontSize: 12),
+              ),
             ],
           ),
         ),

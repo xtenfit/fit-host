@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:drift/drift.dart' show OrderingTerm;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/database/database.dart';
@@ -11,6 +11,7 @@ import '../../../../core/sync/sync_coordinator.dart';
 
 class SyncStatusState {
   final String label;
+  final String compactLabel;
   final IconData icon;
   final Color color;
   final bool isSyncing;
@@ -19,12 +20,13 @@ class SyncStatusState {
 
   const SyncStatusState({
     required this.label,
+    String? compactLabel,
     required this.icon,
     required this.color,
     this.isSyncing = false,
     this.isOffline = false,
     this.lastSyncTime,
-  });
+  }) : compactLabel = compactLabel ?? label;
 }
 
 class SyncStatusNotifier extends Notifier<SyncStatusState> {
@@ -43,6 +45,8 @@ class SyncStatusNotifier extends Notifier<SyncStatusState> {
 
     ref.listen(connectivityProvider, (prev, next) => _update());
     ref.listen(authProvider, (prev, next) => _update());
+    ref.listen(pendingSyncCountProvider, (prev, next) => _update());
+    ref.listen(failedSyncCountProvider, (prev, next) => _update());
 
     return _computeState();
   }
@@ -61,21 +65,27 @@ class SyncStatusNotifier extends Notifier<SyncStatusState> {
 
   SyncStatusState _computeState() {
     final auth = ref.read(authProvider);
-    final connectivity = ref.read(connectivityProvider).value ??
-        ref.read(connectivityStateMachineProvider).currentStatus;
+    final connectivity =
+        ref.read(connectivityProvider).value ?? ConnectivityStatus.online;
+    final pendingCount = ref.read(pendingSyncCountProvider).value ?? 0;
+    final failedCount = ref.read(failedSyncCountProvider).value ?? 0;
 
     if (auth.isGuest) {
       return const SyncStatusState(
-        label: 'Offline — changes saved locally',
-        icon: Icons.cloud_off_rounded,
-        color: Colors.grey,
-        isOffline: true,
+        label: 'Guest Mode (Stored on Device)',
+        compactLabel: 'Guest Mode',
+        icon: Icons.phone_android_rounded,
+        color: AppColors.limeGreen,
+        isOffline: false,
       );
     }
 
     if (connectivity == ConnectivityStatus.offline) {
-      return const SyncStatusState(
-        label: 'Offline — changes saved locally',
+      return SyncStatusState(
+        label: pendingCount > 0
+            ? 'Working Offline ($pendingCount saved locally)'
+            : 'Working Offline (Changes saved locally)',
+        compactLabel: pendingCount > 0 ? 'Offline ($pendingCount)' : 'Offline',
         icon: Icons.cloud_off_rounded,
         color: AppColors.warmCoral,
         isOffline: true,
@@ -85,23 +95,47 @@ class SyncStatusNotifier extends Notifier<SyncStatusState> {
     if (_isDraining) {
       return const SyncStatusState(
         label: 'Syncing…',
+        compactLabel: 'Syncing…',
         icon: Icons.sync_rounded,
         color: AppColors.electricCyan,
         isSyncing: true,
       );
     }
 
+    if (failedCount > 0) {
+      return SyncStatusState(
+        label: 'Sync Error ($failedCount item${failedCount > 1 ? 's' : ''})',
+        compactLabel: 'Sync Error ($failedCount)',
+        icon: Icons.error_outline_rounded,
+        color: AppColors.error,
+      );
+    }
+
+    if (pendingCount > 0) {
+      return SyncStatusState(
+        label:
+            'Pending Sync ($pendingCount change${pendingCount > 1 ? 's' : ''})',
+        compactLabel: 'Pending ($pendingCount)',
+        icon: Icons.cloud_upload_outlined,
+        color: AppColors.warmCoral,
+      );
+    }
+
     if (_lastSyncTime == null) {
       return const SyncStatusState(
-        label: 'Ready to sync',
-        icon: Icons.cloud_queue_rounded,
-        color: AppColors.electricCyan,
+        label: 'Cloud Synced',
+        compactLabel: 'Synced',
+        icon: Icons.cloud_done_rounded,
+        color: AppColors.limeGreen,
       );
     }
 
     final relative = _formatRelativeTime(_lastSyncTime);
     return SyncStatusState(
-      label: 'Synced $relative',
+      label: 'Cloud Synced ($relative)',
+      compactLabel: relative == 'just now'
+          ? 'Synced just now'
+          : 'Synced • $relative',
       icon: Icons.cloud_done_rounded,
       color: AppColors.limeGreen,
       lastSyncTime: _lastSyncTime,
@@ -120,16 +154,17 @@ class SyncStatusNotifier extends Notifier<SyncStatusState> {
 
 final syncStatusStateProvider =
     NotifierProvider<SyncStatusNotifier, SyncStatusState>(
-        SyncStatusNotifier.new);
+      SyncStatusNotifier.new,
+    );
 
 final recentSyncOperationsProvider =
     StreamProvider.autoDispose<List<SyncQueueData>>((ref) {
-  final db = ref.watch(databaseProvider);
-  return (db.select(db.syncQueue)
-        ..orderBy([(t) => OrderingTerm.desc(t.id)])
-        ..limit(20))
-      .watch();
-});
+      final db = ref.watch(databaseProvider);
+      return (db.select(db.syncQueue)
+            ..orderBy([(t) => OrderingTerm.desc(t.id)])
+            ..limit(20))
+          .watch();
+    });
 
 final pendingSyncCountProvider = StreamProvider.autoDispose<int>((ref) {
   final db = ref.watch(databaseProvider);
@@ -139,17 +174,26 @@ final pendingSyncCountProvider = StreamProvider.autoDispose<int>((ref) {
       .map((list) => list.length);
 });
 
+final failedSyncCountProvider = StreamProvider.autoDispose<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.syncQueue)
+        ..where((t) => t.status.isIn(['failed', 'dead_letter'])))
+      .watch()
+      .map((list) => list.length);
+});
+
 class OfflineSyncBanner extends ConsumerWidget {
   const OfflineSyncBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final connectivity = ref.watch(connectivityProvider).value ??
+    final connectivity =
+        ref.watch(connectivityProvider).value ??
         ref.watch(connectivityStateMachineProvider).currentStatus;
     final isOffline = connectivity == ConnectivityStatus.offline;
     final auth = ref.watch(authProvider);
 
-    if (!isOffline && !auth.isOfflineGrace) {
+    if (auth.isGuest || (!isOffline && !auth.isOfflineGrace)) {
       return const SizedBox.shrink();
     }
 
@@ -206,7 +250,11 @@ class OfflineSyncBanner extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    Icon(Icons.refresh_rounded, size: 14, color: AppColors.warmCoral),
+                    Icon(
+                      Icons.refresh_rounded,
+                      size: 14,
+                      color: AppColors.warmCoral,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Retry',
@@ -230,10 +278,7 @@ class OfflineSyncBanner extends ConsumerWidget {
 class SyncStatusIndicator extends ConsumerWidget {
   final bool compact;
 
-  const SyncStatusIndicator({
-    super.key,
-    this.compact = false,
-  });
+  const SyncStatusIndicator({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -248,43 +293,45 @@ class SyncStatusIndicator extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 10 : 12,
-            vertical: compact ? 5 : 7,
+            horizontal: compact ? 8 : 12,
+            vertical: compact ? 4 : 7,
           ),
           decoration: BoxDecoration(
             color: status.color.withValues(alpha: isDark ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: status.color.withValues(alpha: 0.3),
-            ),
+            border: Border.all(color: status.color.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (status.isSyncing)
                 SizedBox(
-                  width: 14,
-                  height: 14,
+                  width: compact ? 12 : 14,
+                  height: compact ? 12 : 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(status.color),
                   ),
                 )
               else
-                Icon(status.icon, size: 14, color: status.color),
-              const SizedBox(width: 6),
-              Text(
-                status.label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: status.color,
+                Icon(status.icon, size: compact ? 12 : 14, color: status.color),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  compact ? status.compactLabel : status.label,
+                  style: TextStyle(
+                    fontSize: compact ? 10.5 : 11,
+                    fontWeight: FontWeight.w700,
+                    color: status.color,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 3),
               Icon(
                 Icons.chevron_right_rounded,
-                size: 14,
+                size: compact ? 12 : 14,
                 color: status.color.withValues(alpha: 0.6),
               ),
             ],
@@ -321,7 +368,7 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
 
     try {
       final coordinator = ref.read(syncCoordinatorProvider);
-      final count = await coordinator.drain();
+      final count = await coordinator.drain(forceRetry: true);
       if (mounted) {
         setState(() => _isRetrying = false);
         ref.read(syncStatusStateProvider.notifier).setDraining(false);
@@ -348,6 +395,145 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
         );
       }
     }
+  }
+
+  Future<void> _retrySingleItem(SyncQueueData item) async {
+    final db = ref.read(databaseProvider);
+    await (db.update(db.syncQueue)..where((t) => t.id.equals(item.id))).write(
+      SyncQueueCompanion(
+        status: const Value('queued'),
+        attempts: const Value(0),
+        attemptCount: const Value(0),
+      ),
+    );
+    await _handleRetry();
+  }
+
+  void _showItemDetails(BuildContext context, SyncQueueData item) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        title: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: AppColors.electricCyan,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${item.entityType.toUpperCase()} Diagnostics',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow('Operation', item.operation),
+              _buildDetailRow('Status', item.status.toUpperCase()),
+              _buildDetailRow('Attempts', '${item.attempts} of 8'),
+              _buildDetailRow(
+                'Created',
+                DateFormat(
+                  'yyyy-MM-dd HH:mm:ss',
+                ).format(item.clientTimestamp.toLocal()),
+              ),
+              if (item.lastAttemptAt != null)
+                _buildDetailRow(
+                  'Last Attempt',
+                  DateFormat(
+                    'yyyy-MM-dd HH:mm:ss',
+                  ).format(item.lastAttemptAt!.toLocal()),
+                ),
+              if (item.errorLog != null && item.errorLog!.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  'Diagnostic Error:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    item.errorLog!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          if (item.status == 'failed' || item.status == 'dead_letter')
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _retrySingleItem(item);
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Retry Now'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.limeGreen,
+                foregroundColor: Colors.black,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -401,8 +587,11 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
                         color: syncStatus.color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(syncStatus.icon,
-                          color: syncStatus.color, size: 20),
+                      child: Icon(
+                        syncStatus.icon,
+                        color: syncStatus.color,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Column(
@@ -447,8 +636,10 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.limeGreen,
                     foregroundColor: Colors.black,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -511,12 +702,15 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
                       final statusColor = isDead
                           ? AppColors.error
                           : (isFailed
-                              ? AppColors.warmCoral
-                              : AppColors.electricCyan);
+                                ? AppColors.warmCoral
+                                : AppColors.electricCyan);
 
                       return ListTile(
+                        onTap: () => _showItemDetails(context, item),
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 4),
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -543,7 +737,9 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: statusColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
@@ -587,12 +783,26 @@ class _SyncLogBottomSheetState extends ConsumerState<_SyncLogBottomSheet> {
                             ],
                           ],
                         ),
+                        trailing: (isFailed || isDead)
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.refresh_rounded,
+                                  size: 18,
+                                  color: AppColors.warmCoral,
+                                ),
+                                tooltip: 'Retry Item',
+                                onPressed: () => _retrySingleItem(item),
+                              )
+                            : const Icon(
+                                Icons.chevron_right_rounded,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                       );
                     },
                   );
                 },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error loading log: $e')),
               ),
             ),

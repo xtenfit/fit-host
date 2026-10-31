@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,11 +21,14 @@ class QuantityEntryScreen extends ConsumerStatefulWidget {
     this.food,
     this.photoDraft,
     this.existingEntry,
-  }) : assert(food != null || photoDraft != null || existingEntry != null,
-            'Must provide food, photoDraft, or existingEntry');
+  }) : assert(
+         food != null || photoDraft != null || existingEntry != null,
+         'Must provide food, photoDraft, or existingEntry',
+       );
 
   @override
-  ConsumerState<QuantityEntryScreen> createState() => _QuantityEntryScreenState();
+  ConsumerState<QuantityEntryScreen> createState() =>
+      _QuantityEntryScreenState();
 }
 
 class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
@@ -51,8 +55,11 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
       _quantityGrams = 100.0;
     }
 
-    _quantityController = TextEditingController(text: '${_quantityGrams.toInt()}');
-    _selectedMealType = widget.existingEntry?.mealType ?? MealType.fromCurrentHour();
+    _quantityController = TextEditingController(
+      text: '${_quantityGrams.toInt()}',
+    );
+    _selectedMealType =
+        widget.existingEntry?.mealType ?? MealType.fromCurrentHour();
     _customMealLabelController = TextEditingController(
       text: widget.existingEntry?.customMealLabel ?? '',
     );
@@ -76,7 +83,10 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
   // Live macro calculation
   double get _proteinPer100g {
     if (widget.photoDraft != null && _ingredients.isNotEmpty) {
-      final totalGrams = _ingredients.fold(0.0, (sum, i) => sum + i.estimatedGrams);
+      final totalGrams = _ingredients.fold(
+        0.0,
+        (sum, i) => sum + i.estimatedGrams,
+      );
       if (totalGrams <= 0) return 0.0;
       final totalP = _ingredients.fold(0.0, (sum, i) => sum + i.protein);
       return (totalP / totalGrams) * 100;
@@ -88,7 +98,10 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
 
   double get _carbsPer100g {
     if (widget.photoDraft != null && _ingredients.isNotEmpty) {
-      final totalGrams = _ingredients.fold(0.0, (sum, i) => sum + i.estimatedGrams);
+      final totalGrams = _ingredients.fold(
+        0.0,
+        (sum, i) => sum + i.estimatedGrams,
+      );
       if (totalGrams <= 0) return 0.0;
       final totalC = _ingredients.fold(0.0, (sum, i) => sum + i.carbs);
       return (totalC / totalGrams) * 100;
@@ -100,19 +113,23 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
 
   double get _fatsPer100g {
     if (widget.photoDraft != null && _ingredients.isNotEmpty) {
-      final totalGrams = _ingredients.fold(0.0, (sum, i) => sum + i.estimatedGrams);
+      final totalGrams = _ingredients.fold(
+        0.0,
+        (sum, i) => sum + i.estimatedGrams,
+      );
       if (totalGrams <= 0) return 0.0;
       final totalF = _ingredients.fold(0.0, (sum, i) => sum + i.fats);
       return (totalF / totalGrams) * 100;
     }
-    return widget.food?.fatsPer100g ??
-        widget.existingEntry?.fatsPer100g ??
-        0.0;
+    return widget.food?.fatsPer100g ?? widget.existingEntry?.fatsPer100g ?? 0.0;
   }
 
   double get _caloriesPer100g {
     if (widget.photoDraft != null && _ingredients.isNotEmpty) {
-      final totalGrams = _ingredients.fold(0.0, (sum, i) => sum + i.estimatedGrams);
+      final totalGrams = _ingredients.fold(
+        0.0,
+        (sum, i) => sum + i.estimatedGrams,
+      );
       if (totalGrams <= 0) return 0.0;
       final totalCal = _ingredients.fold(0.0, (sum, i) => sum + i.calories);
       return (totalCal / totalGrams) * 100;
@@ -163,26 +180,60 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name (e.g. Olive Oil)')),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Name (e.g. Olive Oil)',
+                ),
+              ),
               const SizedBox(height: 8),
-              TextField(controller: gramsCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Grams')),
+              TextField(
+                controller: gramsCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Grams'),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: pCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'P / 100g'))),
+                  Expanded(
+                    child: TextField(
+                      controller: pCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'P / 100g'),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: cCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'C / 100g'))),
+                  Expanded(
+                    child: TextField(
+                      controller: cCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'C / 100g'),
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: fCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'F / 100g'))),
+                  Expanded(
+                    child: TextField(
+                      controller: fCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'F / 100g'),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
-              TextField(controller: calCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Calories / 100g')),
+              TextField(
+                controller: calCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Calories / 100g'),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (nameCtrl.text.trim().isNotEmpty) {
@@ -190,7 +241,9 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                 final p = double.tryParse(pCtrl.text) ?? 0.0;
                 final c = double.tryParse(cCtrl.text) ?? 0.0;
                 final f = double.tryParse(fCtrl.text) ?? 0.0;
-                final cal = double.tryParse(calCtrl.text) ?? ((p * 4) + (c * 4) + (f * 9));
+                final cal =
+                    double.tryParse(calCtrl.text) ??
+                    ((p * 4) + (c * 4) + (f * 9));
                 setState(() {
                   _ingredients.add(
                     IngredientEstimate(
@@ -202,7 +255,10 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                       caloriesPer100g: cal,
                     ),
                   );
-                  _quantityGrams = _ingredients.fold(0.0, (s, i) => s + i.estimatedGrams);
+                  _quantityGrams = _ingredients.fold(
+                    0.0,
+                    (s, i) => s + i.estimatedGrams,
+                  );
                   _quantityController.text = '${_quantityGrams.toInt()}';
                 });
               }
@@ -248,7 +304,8 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
     Navigator.of(context).pop(true);
 
     // Show SnackBar with Undo
-    final mealTypeLabel = entry.mealType == MealType.custom &&
+    final mealTypeLabel =
+        entry.mealType == MealType.custom &&
             entry.customMealLabel != null &&
             entry.customMealLabel!.isNotEmpty
         ? entry.customMealLabel!
@@ -280,12 +337,26 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
         : (widget.food?.name ?? widget.existingEntry?.foodName ?? 'Meal');
 
     final brand = widget.food?.brand ?? widget.existingEntry?.brand;
-    final presets = widget.food?.servingPresets ??
-        const [
-          ServingPreset(label: '100g', grams: 100),
-          ServingPreset(label: '1 serving (50g)', grams: 50),
-          ServingPreset(label: '1 cup (200g)', grams: 200),
-        ];
+    final List<ServingPreset> presets;
+    if (widget.food?.servingPresets != null &&
+        widget.food!.servingPresets.isNotEmpty) {
+      presets = widget.food!.servingPresets;
+    } else if (widget.photoDraft != null && widget.photoDraft!.totalGrams > 0) {
+      final draftG = widget.photoDraft!.totalGrams;
+      presets = [
+        ServingPreset(label: '${draftG.toInt()}g (detected)', grams: draftG),
+        const ServingPreset(label: '100g', grams: 100),
+        const ServingPreset(label: '1 cup (240g)', grams: 240),
+        if (draftG >= 500)
+          const ServingPreset(label: '1 litre (1000g)', grams: 1000),
+      ];
+    } else {
+      presets = const [
+        ServingPreset(label: '100g', grams: 100),
+        ServingPreset(label: '1 serving (50g)', grams: 50),
+        ServingPreset(label: '1 cup (200g)', grams: 200),
+      ];
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -304,7 +375,9 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
                 side: BorderSide(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Padding(
@@ -370,8 +443,11 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.auto_awesome_rounded,
-                                    size: 14, color: AppColors.electricCyan),
+                                const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 14,
+                                  color: AppColors.electricCyan,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Gemini AI Estimate (${(widget.photoDraft!.confidence * 100).toInt()}% conf)',
@@ -410,8 +486,15 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                   ),
                   TextButton.icon(
                     onPressed: _addCustomIngredientDialog,
-                    icon: const Icon(Icons.add_rounded, size: 16, color: AppColors.limeGreen),
-                    label: const Text('Add Ingredient', style: TextStyle(color: AppColors.limeGreen)),
+                    icon: const Icon(
+                      Icons.add_rounded,
+                      size: 16,
+                      color: AppColors.limeGreen,
+                    ),
+                    label: const Text(
+                      'Add Ingredient',
+                      style: TextStyle(color: AppColors.limeGreen),
+                    ),
                   ),
                 ],
               ),
@@ -429,16 +512,26 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                       '${ing.estimatedGrams.toInt()}g · ${ing.calories.toInt()} kcal (P:${ing.protein.toStringAsFixed(1)}g C:${ing.carbs.toStringAsFixed(1)}g F:${ing.fats.toStringAsFixed(1)}g)',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.error),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: AppColors.error,
+                      ),
                       onPressed: () {
                         setState(() {
                           _ingredients.remove(ing);
-                          _quantityGrams = _ingredients.fold(0.0, (s, i) => s + i.estimatedGrams);
-                          _quantityController.text = '${_quantityGrams.toInt()}';
+                          _quantityGrams = _ingredients.fold(
+                            0.0,
+                            (s, i) => s + i.estimatedGrams,
+                          );
+                          _quantityController.text =
+                              '${_quantityGrams.toInt()}';
                         });
                       },
                     ),
@@ -464,16 +557,25 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
             Row(
               children: [
                 Expanded(
-                  child: Slider(
-                    value: _quantityGrams.clamp(5.0, 1000.0),
-                    min: 5.0,
-                    max: 1000.0,
-                    divisions: 199,
-                    activeColor: AppColors.limeGreen,
-                    inactiveColor: isDark
-                        ? AppColors.darkSurfaceBorder
-                        : AppColors.lightSurfaceBorder,
-                    onChanged: (val) => _updateQuantity(val),
+                  child: Builder(
+                    builder: (context) {
+                      final maxSlider = math.max(
+                        1000.0,
+                        ((_quantityGrams * 1.5) / 100).ceil() * 100.0,
+                      );
+                      final divisions = math.max(20, (maxSlider - 5.0) ~/ 5);
+                      return Slider(
+                        value: _quantityGrams.clamp(5.0, maxSlider),
+                        min: 5.0,
+                        max: maxSlider,
+                        divisions: divisions,
+                        activeColor: AppColors.limeGreen,
+                        inactiveColor: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
+                        onChanged: (val) => _updateQuantity(val),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -481,12 +583,19 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                   width: 90,
                   child: TextField(
                     controller: _quantityController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       suffixText: 'g',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onSubmitted: (val) {
                       final parsed = double.tryParse(val) ?? _quantityGrams;
@@ -509,7 +618,9 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                   selected: isSelected,
                   selectedColor: AppColors.limeGreen.withValues(alpha: 0.2),
                   side: BorderSide(
-                    color: isSelected ? AppColors.limeGreen : Colors.transparent,
+                    color: isSelected
+                        ? AppColors.limeGreen
+                        : Colors.transparent,
                   ),
                   onSelected: (selected) {
                     if (selected) {
@@ -525,10 +636,14 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceElevated,
+                color: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : AppColors.lightSurfaceElevated,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Row(
@@ -610,7 +725,9 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                   labelText: 'Custom Meal Name',
                   hintText: 'e.g. Post-Workout Shake, Midnight Snack',
                   prefixIcon: const Icon(Icons.label_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ],
@@ -624,24 +741,39 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
                     onTap: _pickDate,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+                        color: isDark
+                            ? AppColors.darkSurface
+                            : AppColors.lightSurface,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                          color: isDark
+                              ? AppColors.darkSurfaceBorder
+                              : AppColors.lightSurfaceBorder,
                         ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today_rounded, size: 18, color: AppColors.limeGreen),
+                          const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 18,
+                            color: AppColors.limeGreen,
+                          ),
                           const SizedBox(width: 10),
                           Text(
-                            DateFormat('EEE, MMM d, yyyy').format(_selectedDate),
+                            DateFormat(
+                              'EEE, MMM d, yyyy',
+                            ).format(_selectedDate),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                              color: isDark
+                                  ? AppColors.darkTextPrimary
+                                  : AppColors.lightTextPrimary,
                             ),
                           ),
                         ],
@@ -660,7 +792,9 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
           color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
           border: Border(
             top: BorderSide(
-              color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+              color: isDark
+                  ? AppColors.darkSurfaceBorder
+                  : AppColors.lightSurfaceBorder,
             ),
           ),
         ),
@@ -671,11 +805,18 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.limeGreen,
               foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
             ),
             onPressed: _saveMeal,
-            child: Text(widget.existingEntry != null ? 'Update Meal' : 'Log to Diary'),
+            child: Text(
+              widget.existingEntry != null ? 'Update Meal' : 'Log to Diary',
+            ),
           ),
         ),
       ),
@@ -718,13 +859,7 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
           ],
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }

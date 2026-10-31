@@ -63,3 +63,6 @@ bug- screenshot/
 /android/build/
 .next/
 **/.next/
+supabase/.temp/
+reference/
+.posthog/

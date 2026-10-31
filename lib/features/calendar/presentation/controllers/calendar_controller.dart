@@ -76,7 +76,11 @@ class CalendarNotifier extends Notifier<CalendarState> {
   void previousPeriod() {
     switch (state.viewMode) {
       case CalendarViewMode.month:
-        final prevMonth = DateTime(state.focusedMonth.year, state.focusedMonth.month - 1, 1);
+        final prevMonth = DateTime(
+          state.focusedMonth.year,
+          state.focusedMonth.month - 1,
+          1,
+        );
         state = state.copyWith(
           focusedMonth: prevMonth,
           selectedDate: DateTime(prevMonth.year, prevMonth.month, 1),
@@ -102,7 +106,11 @@ class CalendarNotifier extends Notifier<CalendarState> {
   void nextPeriod() {
     switch (state.viewMode) {
       case CalendarViewMode.month:
-        final nextMonth = DateTime(state.focusedMonth.year, state.focusedMonth.month + 1, 1);
+        final nextMonth = DateTime(
+          state.focusedMonth.year,
+          state.focusedMonth.month + 1,
+          1,
+        );
         state = state.copyWith(
           focusedMonth: nextMonth,
           selectedDate: DateTime(nextMonth.year, nextMonth.month, 1),
@@ -149,7 +157,11 @@ class CalendarNotifier extends Notifier<CalendarState> {
     await _repository.toggleCompletion(id, isCompleted);
   }
 
-  Future<void> rescheduleEvent(String id, DateTime newDate, DateTime? newTime) async {
+  Future<void> rescheduleEvent(
+    String id,
+    DateTime newDate,
+    DateTime? newTime,
+  ) async {
     await _repository.rescheduleEvent(id, newDate, newTime);
   }
 
@@ -166,29 +178,32 @@ extension on CalendarState {
   DateTime addOneDay(DateTime dt) => dt.add(const Duration(days: 1));
 }
 
-final calendarStateProvider =
-    NotifierProvider<CalendarNotifier, CalendarState>(CalendarNotifier.new);
+final calendarStateProvider = NotifierProvider<CalendarNotifier, CalendarState>(
+  CalendarNotifier.new,
+);
 
 final calendarEventsForSelectedDateProvider =
     StreamProvider<List<CalendarEvent>>((ref) {
-  final state = ref.watch(calendarStateProvider);
-  final repo = ref.watch(calendarRepositoryProvider);
+      final state = ref.watch(calendarStateProvider);
+      final repo = ref.watch(calendarRepositoryProvider);
 
-  return repo.watchEventsForDate(state.selectedDate).map((events) {
-    if (state.selectedCategoryFilter == null) return events;
-    return events.where((e) => e.eventType == state.selectedCategoryFilter).toList();
-  });
-});
+      return repo.watchEventsForDate(state.selectedDate).map((events) {
+        if (state.selectedCategoryFilter == null) return events;
+        return events
+            .where((e) => e.eventType == state.selectedCategoryFilter)
+            .toList();
+      });
+    });
 
-final calendarEventsForMonthProvider =
-    StreamProvider<List<CalendarEvent>>((ref) {
+final calendarEventsForMonthProvider = StreamProvider<List<CalendarEvent>>((
+  ref,
+) {
   final state = ref.watch(calendarStateProvider);
   final repo = ref.watch(calendarRepositoryProvider);
   return repo.watchEventsForMonth(state.focusedMonth);
 });
 
-final allCalendarEventsProvider =
-    StreamProvider<List<CalendarEvent>>((ref) {
+final allCalendarEventsProvider = StreamProvider<List<CalendarEvent>>((ref) {
   final repo = ref.watch(calendarRepositoryProvider);
   return repo.watchAllEvents();
 });

@@ -62,8 +62,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         : (profile.weightKg * 2.20462).toStringAsFixed(1);
     final displayTargetWeight = profile.targetWeightKg != null
         ? (_useMetricUnits
-            ? profile.targetWeightKg!.toInt().toString()
-            : (profile.targetWeightKg! * 2.20462).toStringAsFixed(1))
+              ? profile.targetWeightKg!.toInt().toString()
+              : (profile.targetWeightKg! * 2.20462).toStringAsFixed(1))
         : '';
 
     _heightController = TextEditingController(text: displayHeight);
@@ -75,8 +75,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _selectedDiet = profile.dietType;
     _avatarId = profile.avatarId;
     _selectedFocusAreas = Set<String>.from(profile.focusAreas);
-    if (_selectedFocusAreas.isEmpty) {
-      _selectedFocusAreas.add('Full Body');
+    final hasFullBody =
+        _selectedFocusAreas.isEmpty ||
+        _selectedFocusAreas.any(
+          (a) => a.toLowerCase().replaceAll('_', ' ') == 'full body',
+        );
+    if (hasFullBody) {
+      _selectedFocusAreas.addAll(_focusAreaOptions);
     }
   }
 
@@ -93,8 +98,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _onUnitsToggled(bool metric) {
     if (_useMetricUnits == metric) return;
 
-    final hVal = double.tryParse(_heightController.text) ?? 175.0;
-    final wVal = double.tryParse(_weightController.text) ?? 70.0;
+    final hVal = double.tryParse(_heightController.text) ?? 0.0;
+    final wVal = double.tryParse(_weightController.text) ?? 0.0;
     final twVal = double.tryParse(_targetWeightController.text);
 
     setState(() {
@@ -143,9 +148,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       double weightKg;
       double? targetWeightKg;
 
-      final parsedHeight = double.tryParse(_heightController.text.trim()) ?? 175.0;
-      final parsedWeight = double.tryParse(_weightController.text.trim()) ?? 70.0;
-      final parsedTargetWeight = double.tryParse(_targetWeightController.text.trim());
+      final parsedHeight =
+          double.tryParse(_heightController.text.trim()) ?? 0.0;
+      final parsedWeight =
+          double.tryParse(_weightController.text.trim()) ?? 0.0;
+      final parsedTargetWeight = double.tryParse(
+        _targetWeightController.text.trim(),
+      );
 
       if (_useMetricUnits) {
         heightCm = parsedHeight;
@@ -154,11 +163,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       } else {
         heightCm = parsedHeight * 30.48;
         weightKg = parsedWeight / 2.20462;
-        targetWeightKg = parsedTargetWeight != null ? (parsedTargetWeight / 2.20462) : null;
+        targetWeightKg = parsedTargetWeight != null
+            ? (parsedTargetWeight / 2.20462)
+            : null;
       }
 
       final updated = current.copyWith(
-        name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : 'Athlete',
+        name: _nameController.text.trim().isNotEmpty
+            ? _nameController.text.trim()
+            : 'Athlete',
         gender: _selectedGender,
         age: age,
         heightCm: heightCm,
@@ -207,7 +220,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text('Edit Profile'),
         actions: [
@@ -217,7 +232,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.limeGreen),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.limeGreen,
+                    ),
                   )
                 : const Text(
                     'Save',
@@ -290,31 +308,42 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               // Storage Mode Indicator
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkSurface : Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      authState.isAuthenticated ? Icons.cloud_done_rounded : Icons.phone_android_rounded,
+                      authState.isAuthenticated
+                          ? Icons.cloud_done_rounded
+                          : Icons.phone_android_rounded,
                       size: 20,
-                      color: authState.isAuthenticated ? AppColors.electricCyan : AppColors.limeGreen,
+                      color: authState.isAuthenticated
+                          ? AppColors.electricCyan
+                          : AppColors.limeGreen,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         authState.isAuthenticated
-                            ? 'Cloud Sync Mode (Synced to Supabase Profile)'
-                            : 'Guest Local Mode (Stored Securely on Device)',
+                            ? 'Account synced with Fit Host Cloud'
+                            : 'Guest Mode • Stored safely on this device',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ),
@@ -330,7 +359,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 controller: _nameController,
                 label: 'Athlete Name',
                 icon: Icons.person_outline_rounded,
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a name' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Please enter a name'
+                    : null,
               ),
               const SizedBox(height: 14),
 
@@ -338,7 +369,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Gender', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  const Text(
+                    'Gender',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -352,7 +386,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         });
                       }),
                       const SizedBox(width: 10),
-                      _buildRadioChip('Female', 'female', _selectedGender, (val) {
+                      _buildRadioChip('Female', 'female', _selectedGender, (
+                        val,
+                      ) {
                         setState(() {
                           _selectedGender = val;
                           if (_avatarId.contains('male')) {
@@ -377,7 +413,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   final n = int.tryParse(v ?? '');
-                  if (n == null || n < 12 || n > 110) return 'Enter a valid age (12-110)';
+                  if (n == null || n < 12 || n > 110) {
+                    return 'Enter a valid age (12-110)';
+                  }
                   return null;
                 },
               ),
@@ -391,7 +429,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Row(
                     children: [
                       ChoiceChip(
-                        label: const Text('Metric', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                        label: Text(
+                          'Metric',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: _useMetricUnits
+                                ? Colors.black
+                                : (isDark ? Colors.white70 : Colors.black87),
+                          ),
+                        ),
                         selected: _useMetricUnits,
                         onSelected: (s) {
                           if (s) _onUnitsToggled(true);
@@ -400,7 +447,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       const SizedBox(width: 6),
                       ChoiceChip(
-                        label: const Text('Imperial', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                        label: Text(
+                          'Imperial',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: !_useMetricUnits
+                                ? Colors.black
+                                : (isDark ? Colors.white70 : Colors.black87),
+                          ),
+                        ),
                         selected: !_useMetricUnits,
                         onSelected: (s) {
                           if (s) _onUnitsToggled(false);
@@ -420,8 +476,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       controller: _heightController,
                       label: _useMetricUnits ? 'Height (cm)' : 'Height (ft)',
                       icon: Icons.height_rounded,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -430,8 +489,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       controller: _weightController,
                       label: _useMetricUnits ? 'Weight (kg)' : 'Weight (lbs)',
                       icon: Icons.monitor_weight_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Required' : null,
                     ),
                   ),
                 ],
@@ -440,9 +502,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               _buildTextField(
                 controller: _targetWeightController,
-                label: _useMetricUnits ? 'Target Weight (kg, optional)' : 'Target Weight (lbs, optional)',
+                label: _useMetricUnits
+                    ? 'Target Weight (kg, optional)'
+                    : 'Target Weight (lbs, optional)',
                 icon: Icons.flag_outlined,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -453,7 +519,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _goalOptions.map((goal) {
-                  final isSelected = _selectedGoal.toLowerCase().replaceAll('_', ' ') ==
+                  final isSelected =
+                      _selectedGoal.toLowerCase().replaceAll('_', ' ') ==
                           goal.toLowerCase().replaceAll('_', ' ') ||
                       _selectedGoal == goal;
                   return ChoiceChip(
@@ -462,9 +529,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onSelected: (sel) {
                       if (sel) setState(() => _selectedGoal = goal);
                     },
-                    selectedColor: AppColors.electricBlue,
+                    selectedColor: AppColors.limeGreen,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      color: isSelected
+                          ? Colors.black
+                          : (isDark ? Colors.white70 : Colors.black87),
                       fontWeight: FontWeight.w700,
                     ),
                   );
@@ -479,7 +548,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 'Select the muscle groups you want emphasized in recommendations.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -487,31 +558,40 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: _focusAreaOptions.map((area) {
-                  final isSelected = _selectedFocusAreas.any((a) =>
-                      a.toLowerCase().replaceAll('_', ' ') ==
-                          area.toLowerCase().replaceAll('_', ' ') ||
-                      a == area);
+                  final isSelected = _selectedFocusAreas.any(
+                    (a) =>
+                        a.toLowerCase().replaceAll('_', ' ') ==
+                            area.toLowerCase().replaceAll('_', ' ') ||
+                        a == area,
+                  );
                   return FilterChip(
                     label: Text(area),
                     selected: isSelected,
                     onSelected: (sel) {
                       setState(() {
+                        final individualAreas = _focusAreaOptions
+                            .where((a) => a != 'Full Body')
+                            .toList();
                         if (area == 'Full Body') {
-                          _selectedFocusAreas.clear();
-                          _selectedFocusAreas.add('Full Body');
+                          if (sel) {
+                            _selectedFocusAreas.addAll(_focusAreaOptions);
+                          } else {
+                            _selectedFocusAreas.clear();
+                          }
                         } else {
-                          _selectedFocusAreas.removeWhere((a) =>
-                              a.toLowerCase().replaceAll('_', ' ') == 'full body');
                           if (sel) {
                             _selectedFocusAreas.add(area);
+                            if (individualAreas.every(
+                              (a) => _selectedFocusAreas.contains(a),
+                            )) {
+                              _selectedFocusAreas.add('Full Body');
+                            }
                           } else {
-                            _selectedFocusAreas.removeWhere((a) =>
-                                a.toLowerCase().replaceAll('_', ' ') ==
-                                    area.toLowerCase().replaceAll('_', ' ') ||
-                                a == area);
+                            _selectedFocusAreas.remove(area);
+                            _selectedFocusAreas.remove('Full Body');
                           }
                           if (_selectedFocusAreas.isEmpty) {
-                            _selectedFocusAreas.add('Full Body');
+                            _selectedFocusAreas.addAll(_focusAreaOptions);
                           }
                         }
                       });
@@ -519,8 +599,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     selectedColor: AppColors.limeGreen.withValues(alpha: 0.2),
                     checkmarkColor: AppColors.limeGreen,
                     labelStyle: TextStyle(
-                      color: isSelected ? AppColors.limeGreen : (isDark ? Colors.white70 : Colors.black87),
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? AppColors.limeGreen
+                          : (isDark ? Colors.white70 : Colors.black87),
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                     ),
                   );
                 }).toList(),
@@ -541,9 +625,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onSelected: (sel) {
                       if (sel) setState(() => _selectedDiet = diet['value']!);
                     },
-                    selectedColor: AppColors.electricCyan.withValues(alpha: 0.25),
+                    selectedColor: AppColors.electricCyan.withValues(
+                      alpha: 0.25,
+                    ),
                     labelStyle: TextStyle(
-                      color: isSelected ? AppColors.electricCyan : (isDark ? Colors.white70 : Colors.black87),
+                      color: isSelected
+                          ? AppColors.electricCyan
+                          : (isDark ? Colors.white70 : Colors.black87),
                       fontWeight: FontWeight.w700,
                     ),
                   );
@@ -560,17 +648,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     backgroundColor: AppColors.limeGreen,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: _isSaving
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.black,
+                          ),
                         )
                       : const Text(
                           'Save Profile Changes',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                 ),
               ),
@@ -585,10 +681,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w800,
-      ),
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
     );
   }
 
@@ -646,13 +739,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
         ),
         focusedBorder: OutlineInputBorder(

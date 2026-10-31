@@ -67,37 +67,43 @@ void main() {
       expect(profile.name, isNotEmpty);
     });
 
-    test('Multiple sequential updates do not trigger LateInitializationError or crashes', () async {
-      final notifier = container.read(userProfileProvider.notifier);
-      // Wait for async load to finish
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+    test(
+      'Multiple sequential updates do not trigger LateInitializationError or crashes',
+      () async {
+        final notifier = container.read(userProfileProvider.notifier);
+        // Wait for async load to finish
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      await expectLater(
-        notifier.saveSuggestedPlan(
-          name: 'Power Athlete',
-          age: 28,
-          gender: 'male',
-          heightCm: 180,
-          weightKg: 80,
-          fitnessGoal: 'gain_weight',
-          dietType: 'high_protein',
-          weeklyWorkoutDays: 5,
-          dailyWorkoutMinutes: 60,
-        ),
-        completes,
-      );
+        await expectLater(
+          notifier.saveSuggestedPlan(
+            name: 'Power Athlete',
+            age: 28,
+            gender: 'male',
+            heightCm: 180,
+            weightKg: 80,
+            fitnessGoal: 'gain_weight',
+            dietType: 'high_protein',
+            weeklyWorkoutDays: 5,
+            dailyWorkoutMinutes: 60,
+          ),
+          completes,
+        );
 
-      final updated = container.read(userProfileProvider);
-      expect(updated.name, equals('Power Athlete'));
-      expect(updated.weeklyWorkoutDays, equals(5));
+        final updated = container.read(userProfileProvider);
+        expect(updated.name, equals('Power Athlete'));
+        expect(updated.weeklyWorkoutDays, equals(5));
 
-      // Second immediate save
-      await expectLater(
-        notifier.updateProfile(updated.copyWith(name: 'Updated Athlete')),
-        completes,
-      );
+        // Second immediate save
+        await expectLater(
+          notifier.updateProfile(updated.copyWith(name: 'Updated Athlete')),
+          completes,
+        );
 
-      expect(container.read(userProfileProvider).name, equals('Updated Athlete'));
-    });
+        expect(
+          container.read(userProfileProvider).name,
+          equals('Updated Athlete'),
+        );
+      },
+    );
   });
 }

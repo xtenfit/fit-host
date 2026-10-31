@@ -9,7 +9,8 @@ class HydrationDetailScreen extends ConsumerStatefulWidget {
   const HydrationDetailScreen({super.key});
 
   @override
-  ConsumerState<HydrationDetailScreen> createState() => _HydrationDetailScreenState();
+  ConsumerState<HydrationDetailScreen> createState() =>
+      _HydrationDetailScreenState();
 }
 
 class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
@@ -34,9 +35,13 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               border: Border.all(
-                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
             ),
             child: SafeArea(
@@ -49,7 +54,10 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                     children: [
                       const Text(
                         'Log Custom Drink',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded),
@@ -64,8 +72,12 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       labelText: 'Drink Name (e.g. BCAA, Coconut Water, Tea)',
                       prefixIcon: const Icon(Icons.local_drink_rounded),
                       filled: true,
-                      fillColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      fillColor: isDark
+                          ? AppColors.darkBackground
+                          : AppColors.lightBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -76,8 +88,12 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       labelText: 'Volume (ml)',
                       prefixIcon: const Icon(Icons.speed_rounded),
                       filled: true,
-                      fillColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      fillColor: isDark
+                          ? AppColors.darkBackground
+                          : AppColors.lightBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       suffixText: 'ml',
                     ),
                   ),
@@ -88,8 +104,12 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       labelText: 'Optional Note (e.g. 5g powder, ice chilled)',
                       prefixIcon: const Icon(Icons.notes_rounded),
                       filled: true,
-                      fillColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      fillColor: isDark
+                          ? AppColors.darkBackground
+                          : AppColors.lightBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -100,13 +120,18 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.electricCyan,
                         foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: () {
                         final name = nameController.text.trim();
-                        final vol = int.tryParse(volumeController.text.trim()) ?? 250;
+                        final vol =
+                            int.tryParse(volumeController.text.trim()) ?? 250;
                         if (name.isNotEmpty) {
-                          ref.read(nutritionProvider.notifier).logDrink(
+                          ref
+                              .read(nutritionProvider.notifier)
+                              .logDrink(
                                 type: LiquidDrinkType.custom,
                                 name: name,
                                 volumeMl: vol,
@@ -126,7 +151,10 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       },
                       child: const Text(
                         'Add to Hydration Log',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -146,12 +174,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
     required int volumeMl,
     String? note,
   }) {
-    ref.read(nutritionProvider.notifier).logDrink(
-          type: type,
-          name: name,
-          volumeMl: volumeMl,
-          note: note,
-        );
+    ref
+        .read(nutritionProvider.notifier)
+        .logDrink(type: type, name: name, volumeMl: volumeMl, note: note);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Logged $name (+$volumeMl ml)'),
@@ -173,7 +198,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
     final percent = targetMl > 0 ? (totalMl / targetMl).clamp(0.0, 1.5) : 0.0;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      backgroundColor: isDark
+          ? AppColors.darkBackground
+          : AppColors.lightBackground,
       appBar: AppBar(
         title: const Text(
           'Hydration & Fluids Tracker',
@@ -220,12 +247,16 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                   end: Alignment.bottomRight,
                 ),
                 border: Border.all(
-                  color: AppColors.electricCyan.withValues(alpha: isDark ? 0.35 : 0.5),
+                  color: AppColors.electricCyan.withValues(
+                    alpha: isDark ? 0.35 : 0.5,
+                  ),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.electricCyan.withValues(alpha: isDark ? 0.15 : 0.1),
+                    color: AppColors.electricCyan.withValues(
+                      alpha: isDark ? 0.15 : 0.1,
+                    ),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -244,21 +275,31 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.electricCyan.withValues(alpha: isDark ? 0.2 : 0.15),
+                          color: AppColors.electricCyan.withValues(
+                            alpha: isDark ? 0.2 : 0.15,
+                          ),
                         ),
                       ),
                     ),
                     // Transparent Athlete & Water Splash Full View
                     Positioned.fill(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         child: Image.asset(
                           'assets/images/nutrition/hydration.png',
                           fit: BoxFit.contain,
                           alignment: Alignment.center,
-                          errorBuilder: (context, error, stackTrace) => const Center(
-                            child: Icon(Icons.water_drop_rounded, size: 64, color: AppColors.electricCyan),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(
+                                child: Icon(
+                                  Icons.water_drop_rounded,
+                                  size: 64,
+                                  color: AppColors.electricCyan,
+                                ),
+                              ),
                         ),
                       ),
                     ),
@@ -282,7 +323,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
               'Tap to instantly log fluids and track hydration saturation',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
             const SizedBox(height: 14),
@@ -362,9 +405,13 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       side: BorderSide(
-                        color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                        color: isDark
+                            ? AppColors.darkSurfaceBorder
+                            : AppColors.lightSurfaceBorder,
                       ),
                     ),
                     icon: const Icon(Icons.wine_bar_rounded, size: 18),
@@ -381,17 +428,25 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                      backgroundColor: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : Colors.white,
                       foregroundColor: AppColors.electricCyan,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(color: AppColors.electricCyan, width: 1.2),
+                        side: const BorderSide(
+                          color: AppColors.electricCyan,
+                          width: 1.2,
+                        ),
                       ),
                     ),
                     icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Custom Liquid', style: TextStyle(fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'Custom Liquid',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     onPressed: () => _showCustomDrinkDialog(context),
                   ),
                 ),
@@ -406,7 +461,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Column(
@@ -421,7 +478,10 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                           children: [
                             const Text(
                               'Daily Fluid Volume',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -437,7 +497,10 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.electricCyan.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
@@ -461,28 +524,45 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                     child: LinearProgressIndicator(
                       value: percent.clamp(0.0, 1.0),
                       minHeight: 12,
-                      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFE2E8F0),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.electricCyan),
+                      backgroundColor: isDark
+                          ? AppColors.darkBackground
+                          : const Color(0xFFE2E8F0),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.electricCyan,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Glass Icons Row (Interactive)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(nutrition.targetWater, (index) {
-                      final isFilled = index < nutrition.waterGlasses;
-                      return GestureDetector(
-                        onTap: () => notifier.setWater(index + 1),
-                        child: Icon(
-                          isFilled ? Icons.local_drink_rounded : Icons.local_drink_outlined,
-                          color: isFilled
-                              ? AppColors.electricCyan
-                              : (isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary),
-                          size: 26,
-                        ),
-                      );
-                    }),
+                  // Glass Icons Grid / Wrap (Interactive & Overflow-Proof)
+                  Center(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: List.generate(nutrition.targetWater, (index) {
+                        final isFilled = index < nutrition.waterGlasses;
+                        return GestureDetector(
+                          onTap: () => notifier.setWater(index + 1),
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Icon(
+                              isFilled
+                                  ? Icons.local_drink_rounded
+                                  : Icons.local_drink_outlined,
+                              color: isFilled
+                                  ? AppColors.electricCyan
+                                  : (isDark
+                                        ? AppColors.darkTextTertiary
+                                        : AppColors.lightTextTertiary),
+                              size: 26,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
                   ),
                   const SizedBox(height: 12),
 
@@ -495,12 +575,15 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       TextButton.icon(
                         icon: const Icon(Icons.remove_rounded, size: 16),
                         label: const Text('Minus Glass'),
-                        onPressed: nutrition.waterGlasses > 0 ? () => notifier.decrementWater() : null,
+                        onPressed: nutrition.waterGlasses > 0
+                            ? () => notifier.decrementWater()
+                            : null,
                       ),
                       TextButton.icon(
                         icon: const Icon(Icons.add_rounded, size: 16),
                         label: const Text('Add Glass'),
-                        onPressed: nutrition.waterGlasses < nutrition.targetWater
+                        onPressed:
+                            nutrition.waterGlasses < nutrition.targetWater
                             ? () => notifier.incrementWater()
                             : null,
                       ),
@@ -523,7 +606,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                   '${nutrition.loggedDrinks.length} entries',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -537,7 +622,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                   color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                 ),
                 child: Center(
@@ -546,7 +633,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       Icon(
                         Icons.water_drop_outlined,
                         size: 40,
-                        color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -559,7 +648,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
@@ -574,12 +665,19 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   child: Row(
@@ -587,7 +685,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: drinkColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                          color: drinkColor.withValues(
+                            alpha: isDark ? 0.2 : 0.12,
+                          ),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(drinkIcon, color: drinkColor, size: 20),
@@ -599,21 +699,30 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                           children: [
                             Text(
                               entry.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               '${entry.volumeMl} ml • $timeStr${entry.note != null ? ' • ${entry.note}' : ''}',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, size: 20, color: AppColors.error),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 20,
+                          color: AppColors.error,
+                        ),
                         onPressed: () {
                           notifier.removeDrink(entry.id);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -654,7 +763,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
           boxShadow: [
             BoxShadow(
@@ -697,7 +808,9 @@ class _HydrationDetailScreenState extends ConsumerState<HydrationDetailScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       height: 1.2,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

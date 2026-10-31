@@ -1,7 +1,9 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fit_host/core/connectivity/connectivity_state_machine.dart';
 import 'package:fit_host/core/database/database.dart';
 import 'package:fit_host/core/services/supabase_service.dart';
 import 'package:fit_host/features/calendar/presentation/screens/calendar_screen.dart';
@@ -9,10 +11,21 @@ import 'package:fit_host/features/calendar/presentation/widgets/range_aggregatio
 import 'package:fit_host/features/profile/presentation/widgets/sync_status_indicator.dart';
 import 'package:fit_host/features/steps/presentation/screens/steps_screen.dart';
 
+class _TestAuthNotifier extends AuthService {
+  final AuthStatus _status;
+  _TestAuthNotifier([this._status = AuthStatus.authenticated]);
+
+  @override
+  AuthState build() => AuthState(status: _status);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  testWidgets('QA Visual Evidence: Dump Steps Screen widget tree', (tester) async {
+  testWidgets('QA Visual Evidence: Dump Steps Screen widget tree', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
@@ -25,9 +38,7 @@ void main() {
           databaseProvider.overrideWithValue(db),
           authStatusProvider.overrideWithValue(AuthStatus.guest),
         ],
-        child: const MaterialApp(
-          home: Scaffold(body: StepsScreen()),
-        ),
+        child: const MaterialApp(home: Scaffold(body: StepsScreen())),
       ),
     );
 
@@ -41,33 +52,34 @@ void main() {
     expect(find.text('Today Only'), findsOneWidget);
 
     debugPrint('=== STEPS SCREEN WIDGET TREE VERIFIED ===');
-    await db.close();
+    db.close().ignore();
   });
 
-  testWidgets('QA Visual Evidence: Dump Calendar Month View & Range Aggregation Panel', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
+  testWidgets(
+    'QA Visual Evidence: Dump Calendar Month View & Range Aggregation Panel',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          authStatusProvider.overrideWithValue(AuthStatus.guest),
-        ],
-        child: const MaterialApp(
-          home: CalendarScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            authStatusProvider.overrideWithValue(AuthStatus.guest),
+          ],
+          child: const MaterialApp(home: CalendarScreen()),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Fitness Calendar'), findsOneWidget);
-    expect(find.byType(RangeAggregationCard), findsOneWidget);
-    expect(find.textContaining('Range Summary'), findsOneWidget);
+      expect(find.text('Fitness Calendar'), findsOneWidget);
+      expect(find.byType(RangeAggregationCard), findsOneWidget);
+      expect(find.textContaining('Range Summary'), findsOneWidget);
 
-    debugPrint('=== CALENDAR & RANGE AGGREGATION WIDGET TREE VERIFIED ===');
-    await db.close();
-  });
+      debugPrint('=== CALENDAR & RANGE AGGREGATION WIDGET TREE VERIFIED ===');
+      db.close().ignore();
+    },
+  );
 
   testWidgets('QA Visual Evidence: Dump Sync Status Indicator', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
@@ -76,14 +88,15 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          authStatusProvider.overrideWithValue(AuthStatus.guest),
+          authProvider.overrideWith(
+            () => _TestAuthNotifier(AuthStatus.authenticated),
+          ),
+          connectivityProvider.overrideWith(
+            (ref) => Stream.value(ConnectivityStatus.offline),
+          ),
         ],
         child: const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: SyncStatusIndicator(),
-            ),
-          ),
+          home: Scaffold(body: Center(child: SyncStatusIndicator())),
         ),
       ),
     );
@@ -92,9 +105,12 @@ void main() {
 
     expect(find.byType(SyncStatusIndicator), findsOneWidget);
     expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
-    expect(find.text('Offline — changes saved locally'), findsOneWidget);
+    expect(
+      find.text('Working Offline (Changes saved locally)'),
+      findsOneWidget,
+    );
 
     debugPrint('=== SYNC STATUS INDICATOR WIDGET TREE VERIFIED ===');
-    await db.close();
+    db.close().ignore();
   });
 }

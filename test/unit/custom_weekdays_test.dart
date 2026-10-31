@@ -37,9 +37,7 @@ void main() {
     setUp(() {
       fakeRepo = _FakeOnboardingRepo();
       container = ProviderContainer(
-        overrides: [
-          onboardingRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [onboardingRepositoryProvider.overrideWithValue(fakeRepo)],
       );
     });
 
@@ -47,38 +45,60 @@ void main() {
       container.dispose();
     });
 
-    test('Selecting Every Day chooses all 7 weekdays and sets workoutDaysPerWeek to 7', () {
-      final notifier = container.read(onboardingProvider.notifier);
+    test(
+      'Selecting Every Day chooses all 7 weekdays and sets workoutDaysPerWeek to 7',
+      () {
+        final notifier = container.read(onboardingProvider.notifier);
 
-      notifier.setWeeklySchedule(days: 7, weekdays: [0, 1, 2, 3, 4, 5, 6], usesEveryDay: true);
+        notifier.setWeeklySchedule(
+          days: 7,
+          weekdays: [0, 1, 2, 3, 4, 5, 6],
+          usesEveryDay: true,
+        );
 
-      final state = container.read(onboardingProvider);
-      expect(state.usesEveryDay, isTrue);
-      expect(state.workoutDaysPerWeek, equals(7));
-      expect(state.selectedWeekdays.length, equals(7));
-      expect(state.selectedWeekdays, containsAll([0, 1, 2, 3, 4, 5, 6]));
-    });
+        final state = container.read(onboardingProvider);
+        expect(state.usesEveryDay, isTrue);
+        expect(state.workoutDaysPerWeek, equals(7));
+        expect(state.selectedWeekdays.length, equals(7));
+        expect(state.selectedWeekdays, containsAll([0, 1, 2, 3, 4, 5, 6]));
+      },
+    );
 
-    test('Custom days selection correctly syncs count and selected day indexes', () {
-      final notifier = container.read(onboardingProvider.notifier);
+    test(
+      'Custom days selection correctly syncs count and selected day indexes',
+      () {
+        final notifier = container.read(onboardingProvider.notifier);
 
-      // Mon (0), Wed (2), Fri (4)
-      notifier.setWeeklySchedule(days: 3, weekdays: [0, 2, 4], usesEveryDay: false);
+        // Mon (0), Wed (2), Fri (4)
+        notifier.setWeeklySchedule(
+          days: 3,
+          weekdays: [0, 2, 4],
+          usesEveryDay: false,
+        );
 
-      final state = container.read(onboardingProvider);
-      expect(state.usesEveryDay, isFalse);
-      expect(state.workoutDaysPerWeek, equals(3));
-      expect(state.selectedWeekdays, equals([0, 2, 4]));
-    });
+        final state = container.read(onboardingProvider);
+        expect(state.usesEveryDay, isFalse);
+        expect(state.workoutDaysPerWeek, equals(3));
+        expect(state.selectedWeekdays, equals([0, 2, 4]));
+      },
+    );
 
     test('Toggling a day off decreases workoutDaysPerWeek', () {
       final notifier = container.read(onboardingProvider.notifier);
 
-      notifier.setWeeklySchedule(days: 4, weekdays: [0, 1, 2, 3], usesEveryDay: false);
+      notifier.setWeeklySchedule(
+        days: 4,
+        weekdays: [0, 1, 2, 3],
+        usesEveryDay: false,
+      );
       expect(container.read(onboardingProvider).workoutDaysPerWeek, equals(4));
 
       // Remove Tuesday (1)
-      notifier.setWeeklySchedule(days: 3, weekdays: [0, 2, 3], usesEveryDay: false);
+      notifier.setWeeklySchedule(
+        days: 3,
+        weekdays: [0, 2, 3],
+        usesEveryDay: false,
+      );
       final updated = container.read(onboardingProvider);
       expect(updated.workoutDaysPerWeek, equals(3));
       expect(updated.selectedWeekdays, equals([0, 2, 3]));

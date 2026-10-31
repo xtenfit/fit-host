@@ -36,46 +36,48 @@ class PrimaryButton extends StatelessWidget {
         height: height,
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: brandGreen,
-          foregroundColor: const Color(0xFF0A0F0D),
-          disabledBackgroundColor: brandGreen.withValues(alpha: 0.35),
-          disabledForegroundColor: Colors.black38,
-          elevation: 4,
-          shadowColor: brandGreen.withValues(alpha: 0.45),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: brandGreen,
+            foregroundColor: const Color(0xFF0A0F0D),
+            disabledBackgroundColor: brandGreen.withValues(alpha: 0.35),
+            disabledForegroundColor: Colors.black38,
+            elevation: 4,
+            shadowColor: brandGreen.withValues(alpha: 0.45),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0A0F0D)),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20, color: const Color(0xFF0A0F0D)),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                      color: Color(0xFF0A0F0D),
+          child: isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF0A0F0D),
                     ),
                   ),
-                ],
-              ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, size: 20, color: const Color(0xFF0A0F0D)),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      text,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                        color: Color(0xFF0A0F0D),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

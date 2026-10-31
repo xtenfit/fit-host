@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
-import 'package:fit_host/features/workouts/domain/models/workout_models.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
+import '../widgets/exercise_picker_sheet.dart';
+import '../widgets/exercise_media_visual.dart';
 
 class ActiveWorkoutScreen extends ConsumerWidget {
   const ActiveWorkoutScreen({super.key});
@@ -17,6 +18,79 @@ class ActiveWorkoutScreen extends ConsumerWidget {
 
     final workout = activeState.workout;
     if (workout == null) {
+      if (activeState.recoveredWorkout != null) {
+        final rec = activeState.recoveredWorkout!;
+        return Scaffold(
+          appBar: AppBar(title: const Text('Active Workout')),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.limeGreen.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.restore_rounded,
+                      color: AppColors.limeGreen,
+                      size: 48,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Recovered Session Found',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You have an in-progress workout "${rec.title}" with ${rec.completedSets} completed sets from a previous session.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.limeGreen,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text(
+                        'Resume Recovered Workout',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () => notifier.resumeRecoveredWorkout(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                    ),
+                    onPressed: () => notifier.discardRecoveredWorkout(),
+                    child: const Text('Discard Unsaved Session'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
       return Scaffold(
         appBar: AppBar(title: const Text('Active Workout')),
         body: Center(
@@ -53,21 +127,24 @@ class ActiveWorkoutScreen extends ConsumerWidget {
             Row(
               children: [
                 Text(
-                  _formatTimer(workout.durationSeconds),
+                  _formatTimer(activeState.elapsedSeconds),
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: activeState.isTimerRunning
-                        ? (isDark ? AppColors.limeGreen : AppColors.limeGreenLight)
-                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 InkWell(
                   onTap: () => notifier.toggleTimer(),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -84,13 +161,17 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                         Text(
                           activeState.isTimerRunning
                               ? 'Active'
-                              : (workout.exercises.isEmpty ? 'Ready' : 'Paused'),
+                              : (workout.exercises.isEmpty
+                                    ? 'Ready'
+                                    : 'Paused'),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                             color: activeState.isTimerRunning
                                 ? AppColors.limeGreen
-                                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                : (isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary),
                           ),
                         ),
                       ],
@@ -117,7 +198,9 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                       child: const Text('Keep Training'),
                     ),
                     TextButton(
-                      style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                      ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: const Text('Discard'),
                     ),
@@ -139,7 +222,15 @@ class ActiveWorkoutScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 8.0),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                backgroundColor: AppColors.limeGreen,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: () async {
                 if (workout.exercises.isEmpty) {
@@ -163,46 +254,137 @@ class ActiveWorkoutScreen extends ConsumerWidget {
 
                 final completedWorkout = await notifier.finishWorkout();
                 if (context.mounted && completedWorkout != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle_rounded, color: AppColors.limeGreen),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Workout saved and synced! (${completedWorkout.completedSets} sets completed)',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
+                  try {
+                    context.pushReplacement(
+                      '/workout-summary',
+                      extra: completedWorkout,
+                    );
+                  } catch (_) {
+                    Navigator.of(context).maybePop();
                   }
                 }
               },
-              child: const Text('Finish', style: TextStyle(color: Colors.black)),
+              child: const Text(
+                'Finish',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
       ),
       body: Column(
         children: [
+          // Crash Recovery Banner if an in-progress session exists
+          if (activeState.recoveredWorkout != null)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF2E1A1A)
+                    : const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.history_rounded,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Unsaved session found: "${activeState.recoveredWorkout!.title}"',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => notifier.resumeRecoveredWorkout(),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Resume',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => notifier.discardRecoveredWorkout(),
+                  ),
+                ],
+              ),
+            ),
+
+          // PR Celebration Banner
+          if (activeState.lastCompletedSetPRs.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF2E240D)
+                    : const Color(0xFFFEF9C3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.military_tech_rounded,
+                    color: Color(0xFFFFD700),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'New PR! ${activeState.lastCompletedSetPRs.map((p) => '${p.recordType.toUpperCase().replaceAll('_', ' ')}: ${p.formattedRecord}').join(', ')}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Rest Timer Banner if resting
           if (activeState.isResting)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF142B1F) : const Color(0xFFDCFCE7),
+                color: isDark
+                    ? const Color(0xFF142B1F)
+                    : const Color(0xFFDCFCE7),
                 border: Border(
                   bottom: BorderSide(
                     color: AppColors.limeGreen.withValues(alpha: 0.4),
@@ -211,24 +393,68 @@ class ActiveWorkoutScreen extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.timer_outlined, color: AppColors.limeGreen, size: 20),
+                  const Icon(
+                    Icons.timer_outlined,
+                    color: AppColors.limeGreen,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Rest Timer: ${_formatTimer(activeState.restTimeRemaining)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
+                      fontSize: 13,
+                      color: isDark
+                          ? AppColors.limeGreen
+                          : AppColors.limeGreenLight,
                     ),
                   ),
                   const Spacer(),
-                  TextButton(
-                    onPressed: () => notifier.adjustRestTimer(30),
-                    child: const Text('+30s'),
+                  IconButton(
+                    icon: const Icon(Icons.replay_rounded, size: 16),
+                    tooltip: '-15s',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => notifier.adjustRestTimer(-15),
                   ),
+                  const SizedBox(width: 6),
                   TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => notifier.adjustRestTimer(15),
+                    child: const Text('+15s', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => notifier.adjustRestTimer(30),
+                    child: const Text('+30s', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     onPressed: () => notifier.skipRestTimer(),
-                    child: const Text('Skip'),
+                    child: const Text('Skip', style: TextStyle(fontSize: 12)),
                   ),
                 ],
               ),
@@ -246,22 +472,31 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                              color: isDark
+                                  ? AppColors.darkSurfaceElevated
+                                  : Colors.white,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                                color: isDark
+                                    ? AppColors.darkSurfaceBorder
+                                    : AppColors.lightSurfaceBorder,
                               ),
                             ),
                             child: Icon(
                               Icons.fitness_center_rounded,
                               size: 44,
-                              color: isDark ? AppColors.limeGreen : AppColors.limeGreenLight,
+                              color: isDark
+                                  ? AppColors.limeGreen
+                                  : AppColors.limeGreenLight,
                             ),
                           ),
                           const SizedBox(height: 18),
                           const Text(
                             'Session Ready To Begin',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -271,7 +506,9 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -282,23 +519,42 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.limeGreen,
                                   foregroundColor: Colors.black,
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
-                                onPressed: () => _showAddExerciseModal(context, ref),
-                                icon: const Icon(Icons.add_rounded, color: Colors.black),
+                                onPressed: () =>
+                                    _showAddExerciseModal(context, ref),
+                                icon: const Icon(
+                                  Icons.add_rounded,
+                                  color: Colors.black,
+                                ),
                                 label: const Text(
                                   'Add Exercise',
-                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                   side: BorderSide(
-                                    color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                    color: activeState.isTimerRunning
+                                        ? AppColors.warning
+                                        : AppColors.limeGreen,
                                   ),
                                 ),
                                 onPressed: () => notifier.toggleTimer(),
@@ -307,12 +563,18 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                       ? Icons.pause_rounded
                                       : Icons.play_arrow_rounded,
                                   size: 20,
-                                  color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                  color: activeState.isTimerRunning
+                                      ? AppColors.warning
+                                      : AppColors.limeGreen,
                                 ),
                                 label: Text(
-                                  activeState.isTimerRunning ? 'Pause' : 'Start Timer',
+                                  activeState.isTimerRunning
+                                      ? 'Pause'
+                                      : 'Start Timer',
                                   style: TextStyle(
-                                    color: activeState.isTimerRunning ? AppColors.warning : AppColors.limeGreen,
+                                    color: activeState.isTimerRunning
+                                        ? AppColors.warning
+                                        : AppColors.limeGreen,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -324,25 +586,50 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                     itemCount: workout.exercises.length + 1,
-                    itemBuilder: (context, exIndex) {
-                      if (exIndex == workout.exercises.length) {
+                    itemBuilder: (context, idx) {
+                      if (idx == workout.exercises.length) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: OutlinedButton.icon(
-                            onPressed: () => _showAddExerciseModal(context, ref),
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Add Another Exercise'),
+                          child: Center(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: const BorderSide(
+                                  color: AppColors.limeGreen,
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _showAddExerciseModal(context, ref),
+                              icon: const Icon(
+                                Icons.add,
+                                color: AppColors.limeGreen,
+                              ),
+                              label: const Text(
+                                'Add Exercise',
+                                style: TextStyle(color: AppColors.limeGreen),
+                              ),
+                            ),
                           ),
                         );
                       }
 
+                      final exIndex = idx;
                       final exercise = workout.exercises[exIndex];
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkSurface : Colors.white,
+                          color: isDark
+                              ? AppColors.darkSurfaceElevated
+                              : AppColors.lightSurfaceElevated,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isDark
@@ -355,12 +642,53 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                           children: [
                             // Exercise Header
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                              padding: const EdgeInsets.all(16.0),
                               child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Consumer(
+                                    builder: (context, ref, _) {
+                                      final exAsync = ref.watch(
+                                        exerciseByIdProvider(
+                                          exercise.exerciseId,
+                                        ),
+                                      );
+                                      return exAsync.when(
+                                        data: (ex) {
+                                          if (ex == null) {
+                                            return const SizedBox.shrink();
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                              right: 12.0,
+                                            ),
+                                            child: ExerciseMediaVisual(
+                                              mediaThumbnailUrl:
+                                                  ex.mediaThumbnailUrl,
+                                              mediaAnimationUrl:
+                                                  ex.mediaAnimationUrl,
+                                              imageAsset: ex.imageAsset,
+                                              anatomyAsset: ex.anatomyAsset,
+                                              category: ex.category,
+                                              exerciseName: ex.name,
+                                              mode: ExerciseMediaVisualMode
+                                                  .thumbnail,
+                                              width: 44,
+                                              height: 44,
+                                              isDark: isDark,
+                                            ),
+                                          );
+                                        },
+                                        loading: () => const SizedBox.shrink(),
+                                        error: (_, _) =>
+                                            const SizedBox.shrink(),
+                                      );
+                                    },
+                                  ),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           exercise.exerciseName,
@@ -369,6 +697,7 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
+                                        const SizedBox(height: 2),
                                         Text(
                                           exercise.category,
                                           style: TextStyle(
@@ -377,6 +706,101 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                                 ? AppColors.darkTextSecondary
                                                 : AppColors.lightTextSecondary,
                                           ),
+                                        ),
+                                        // Previous Performance Indicator Pill
+                                        Consumer(
+                                          builder: (context, ref, _) {
+                                            final prevExAsync = ref.watch(
+                                              previousExercisePerformanceProvider(
+                                                exercise.exerciseId,
+                                              ),
+                                            );
+                                            return prevExAsync.when(
+                                              data: (prevEx) {
+                                                if (prevEx == null ||
+                                                    prevEx.sets.isEmpty) {
+                                                  return const SizedBox.shrink();
+                                                }
+                                                final completedPrevSets = prevEx
+                                                    .sets
+                                                    .where((s) => s.isCompleted)
+                                                    .toList();
+                                                if (completedPrevSets.isEmpty) {
+                                                  return const SizedBox.shrink();
+                                                }
+                                                final bestSet =
+                                                    completedPrevSets.reduce(
+                                                      (curr, next) =>
+                                                          (curr.weightKg *
+                                                                  curr.reps) >
+                                                              (next.weightKg *
+                                                                  next.reps)
+                                                          ? curr
+                                                          : next,
+                                                    );
+
+                                                return Container(
+                                                  margin: const EdgeInsets.only(
+                                                    top: 6,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 3,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: isDark
+                                                        ? AppColors
+                                                              .darkBackground
+                                                        : const Color(
+                                                            0xFFF1F5F9,
+                                                          ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          6,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: isDark
+                                                          ? AppColors
+                                                                .darkSurfaceBorder
+                                                          : AppColors
+                                                                .lightSurfaceBorder,
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.history_rounded,
+                                                        size: 12,
+                                                        color:
+                                                            AppColors.limeGreen,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        'Last: ${completedPrevSets.length} sets • Best: ${bestSet.weightKg.toStringAsFixed(bestSet.weightKg % 1 == 0 ? 0 : 1)}kg × ${bestSet.reps}',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: isDark
+                                                              ? AppColors
+                                                                    .darkTextSecondary
+                                                              : AppColors
+                                                                    .lightTextSecondary,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                              loading: () =>
+                                                  const SizedBox.shrink(),
+                                              error: (err, stack) =>
+                                                  const SizedBox.shrink(),
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
@@ -392,8 +816,11 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                         value: 'delete',
                                         child: Row(
                                           children: [
-                                            Icon(Icons.delete_outline_rounded,
-                                                color: AppColors.error, size: 18),
+                                            Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: AppColors.error,
+                                              size: 18,
+                                            ),
                                             SizedBox(width: 8),
                                             Text('Remove Exercise'),
                                           ],
@@ -407,14 +834,14 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                             const Divider(height: 1),
 
                             // Sets Header Row
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
+                            const Padding(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
                               ),
                               child: Row(
                                 children: [
-                                  const SizedBox(
+                                  SizedBox(
                                     width: 32,
                                     child: Text(
                                       'SET',
@@ -424,7 +851,7 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  const Expanded(
+                                  Expanded(
                                     flex: 3,
                                     child: Text(
                                       'KG',
@@ -435,8 +862,8 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const Expanded(
+                                  SizedBox(width: 8),
+                                  Expanded(
                                     flex: 3,
                                     child: Text(
                                       'REPS',
@@ -447,8 +874,8 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  const SizedBox(
+                                  SizedBox(width: 8),
+                                  SizedBox(
                                     width: 44,
                                     child: Center(
                                       child: Icon(
@@ -474,13 +901,24 @@ class ActiveWorkoutScreen extends ConsumerWidget {
                                 isCompleted: set.isCompleted,
                                 isDark: isDark,
                                 onWeightChanged: (val) {
-                                  notifier.updateSet(exIndex, setIndex, weightKg: val);
+                                  notifier.updateSet(
+                                    exIndex,
+                                    setIndex,
+                                    weightKg: val,
+                                  );
                                 },
                                 onRepsChanged: (val) {
-                                  notifier.updateSet(exIndex, setIndex, reps: val);
+                                  notifier.updateSet(
+                                    exIndex,
+                                    setIndex,
+                                    reps: val,
+                                  );
                                 },
                                 onToggleCompleted: () {
-                                  notifier.toggleSetCompleted(exIndex, setIndex);
+                                  notifier.toggleSetCompleted(
+                                    exIndex,
+                                    setIndex,
+                                  );
                                 },
                                 onDeleteSet: () {
                                   notifier.removeSet(exIndex, setIndex);
@@ -515,7 +953,14 @@ class ActiveWorkoutScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (ctx) => _ExercisePickerSheet(
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => ExercisePickerSheet(
+        onExercisesSelected: (exercises) {
+          for (final exercise in exercises) {
+            ref.read(activeWorkoutProvider.notifier).addExercise(exercise);
+          }
+          Navigator.pop(ctx);
+        },
         onExerciseSelected: (exercise) {
           ref.read(activeWorkoutProvider.notifier).addExercise(exercise);
           Navigator.pop(ctx);
@@ -603,8 +1048,8 @@ class _SetRowState extends State<_SetRow> {
   Widget build(BuildContext context) {
     final bgColor = widget.isCompleted
         ? (widget.isDark
-            ? AppColors.limeGreen.withValues(alpha: 0.12)
-            : AppColors.limeGreen.withValues(alpha: 0.08))
+              ? AppColors.limeGreen.withValues(alpha: 0.12)
+              : AppColors.limeGreen.withValues(alpha: 0.08))
         : Colors.transparent;
 
     return Dismissible(
@@ -635,9 +1080,14 @@ class _SetRowState extends State<_SetRow> {
                 height: 38,
                 child: TextField(
                   controller: _weightController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
                     filled: true,
@@ -661,7 +1111,10 @@ class _SetRowState extends State<_SetRow> {
                   controller: _repsController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.zero,
                     filled: true,
@@ -687,140 +1140,14 @@ class _SetRowState extends State<_SetRow> {
                   color: widget.isCompleted
                       ? AppColors.limeGreen
                       : (widget.isDark
-                          ? AppColors.darkTextTertiary
-                          : AppColors.lightTextTertiary),
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary),
                 ),
                 onPressed: widget.onToggleCompleted,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ExercisePickerSheet extends ConsumerStatefulWidget {
-  final ValueChanged<ExerciseEntity> onExerciseSelected;
-
-  const _ExercisePickerSheet({required this.onExerciseSelected});
-
-  @override
-  ConsumerState<_ExercisePickerSheet> createState() => _ExercisePickerSheetState();
-}
-
-class _ExercisePickerSheetState extends ConsumerState<_ExercisePickerSheet> {
-  String _query = '';
-  String _selectedCategory = 'All';
-
-  final _categories = ['All', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'];
-
-  @override
-  Widget build(BuildContext context) {
-    final exercisesAsync = ref.watch(exercisesListProvider);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      padding: const EdgeInsets.only(top: 16),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Select Exercise',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search exercise name or muscle...',
-                prefixIcon: Icon(Icons.search_rounded),
-              ),
-              onChanged: (val) {
-                setState(() => _query = val);
-                ref
-                    .read(exercisesFilterProvider.notifier)
-                    .updateFilter(query: _query, category: _selectedCategory);
-              },
-            ),
-          ),
-          // Categories horizontal scroll
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, idx) {
-                final cat = _categories[idx];
-                final isSelected = cat == _selectedCategory;
-                return ChoiceChip(
-                  label: Text(cat),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      setState(() => _selectedCategory = cat);
-                      ref
-                          .read(exercisesFilterProvider.notifier)
-                          .updateFilter(query: _query, category: cat);
-                    }
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: exercisesAsync.when(
-              data: (exercises) {
-                if (exercises.isEmpty) {
-                  return const Center(child: Text('No exercises found'));
-                }
-                return ListView.separated(
-                  itemCount: exercises.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, idx) {
-                    final ex = exercises[idx];
-                    return ListTile(
-                      title: Text(
-                        ex.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: Text(
-                        '${ex.category} • ${ex.targetMuscle}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                      trailing: const Icon(Icons.add_circle_outline_rounded,
-                          color: AppColors.limeGreen),
-                      onTap: () => widget.onExerciseSelected(ex),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
-            ),
-          ),
-        ],
       ),
     );
   }

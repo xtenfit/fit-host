@@ -1,0 +1,202 @@
+{
+  "ex-incline-barbell-press": {
+    "old_exercise_id": "ex-incline-barbell-press",
+    "canonical_exercise_id": "0a01618b-0e07-59b4-929d-5e49d63a2cb2",
+    "canonical_name": "Barbell Incline Bench Press",
+    "old_name": "Incline Barbell Press",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-dumbbell-pullover": {
+    "old_exercise_id": "ex-dumbbell-pullover",
+    "canonical_exercise_id": "afcff09d-5a46-5482-a8e3-d5ea17c19537",
+    "canonical_name": "Dumbbell Pullover",
+    "old_name": "Dumbbell Pullover",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-lateral-raise-db": {
+    "old_exercise_id": "ex-lateral-raise-db",
+    "canonical_exercise_id": "e6758033-e5d5-5d3f-b132-ac7fcf020df2",
+    "canonical_name": "Dumbbell Lateral Raise",
+    "old_name": "Lateral Raise (Dumbbell)",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-arnold-press": {
+    "old_exercise_id": "ex-arnold-press",
+    "canonical_exercise_id": "e0ba8e0b-efd0-5e42-82f1-72dec303f8a1",
+    "canonical_name": "Dumbbell Arnold Press",
+    "old_name": "Arnold Press",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-cable-crossover": {
+    "old_exercise_id": "ex-cable-crossover",
+    "canonical_exercise_id": "1c090a5d-4a8f-536e-a66b-d1c22abc506b",
+    "canonical_name": "Cable Cross-Over Lateral Pulldown",
+    "old_name": "Cable Crossover",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-weighted-pullup": {
+    "old_exercise_id": "ex-weighted-pullup",
+    "canonical_exercise_id": "9c2d7017-e9fe-588f-8a5b-a0e5d7a9d7be",
+    "canonical_name": "Weighted Pull-Up",
+    "old_name": "Weighted Pull-up",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-bench-press": {
+    "old_exercise_id": "ex-bench-press",
+    "canonical_exercise_id": "9da7a605-e3b6-55ae-a0a0-28f417eb3a8f",
+    "canonical_name": "Barbell Bench Press",
+    "old_name": "Bench Press (Barbell)",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-hip-thrust-barbell": {
+    "old_exercise_id": "ex-hip-thrust-barbell",
+    "canonical_exercise_id": "374ada0c-ac82-5dcb-ac39-8b78123c4d84",
+    "canonical_name": "3/4 Sit-Up",
+    "old_name": "Hip Thrust (Barbell)",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-glute-bridge": {
+    "old_exercise_id": "ex-glute-bridge",
+    "canonical_exercise_id": "89513af0-55c3-5f5e-8d4c-08fc69b7ecfc",
+    "canonical_name": "Barbell Glute Bridge",
+    "old_name": "Glute Bridge",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-bulgarian-split-squat": {
+    "old_exercise_id": "ex-bulgarian-split-squat",
+    "canonical_exercise_id": "374ada0c-ac82-5dcb-ac39-8b78123c4d84",
+    "canonical_name": "3/4 Sit-Up",
+    "old_name": "Bulgarian Split Squat",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-hip-abduction-machine": {
+    "old_exercise_id": "ex-hip-abduction-machine",
+    "canonical_exercise_id": "c08b5746-35c9-5d11-a45f-972031d2d200",
+    "canonical_name": "Lever Seated Hip Abduction",
+    "old_name": "Hip Abduction (Machine)",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-cable-kickback": {
+    "old_exercise_id": "ex-cable-kickback",
+    "canonical_exercise_id": "374ada0c-ac82-5dcb-ac39-8b78123c4d84",
+    "canonical_name": "3/4 Sit-Up",
+    "old_name": "Cable Kickback",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-step-ups": {
+    "old_exercise_id": "ex-step-ups",
+    "canonical_exercise_id": "56de631b-33ba-5da8-a61d-a013523c947e",
+    "canonical_name": "Dumbbell Step-Up",
+    "old_name": "Step-ups",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-russian-twist": {
+    "old_exercise_id": "ex-russian-twist",
+    "canonical_exercise_id": "57c32258-860c-592c-b08c-1c47e7db54f1",
+    "canonical_name": "Russian Twist",
+    "old_name": "Russian Twist",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-side-plank": {
+    "old_exercise_id": "ex-side-plank",
+    "canonical_exercise_id": "87e672b6-fd67-5fbe-90b4-a1e0d1c0bd97",
+    "canonical_name": "Bodyweight Incline Side Plank",
+    "old_name": "Side Plank",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-pushup": {
+    "old_exercise_id": "ex-pushup",
+    "canonical_exercise_id": "db5eb5ad-0f11-55e1-aa70-9bc984030377",
+    "canonical_name": "Push-Up",
+    "old_name": "Standard Push-Up",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-barbell-squat": {
+    "old_exercise_id": "ex-barbell-squat",
+    "canonical_exercise_id": "451fe126-c77b-5be6-8ef3-4690d283096e",
+    "canonical_name": "Barbell Full Squat",
+    "old_name": "Barbell Back Squat",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-lunges": {
+    "old_exercise_id": "ex-lunges",
+    "canonical_exercise_id": "1b3bc40e-561e-5d63-9ecb-2fcbcfb1833b",
+    "canonical_name": "Dumbbell Lunge",
+    "old_name": "Walking Lunges",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-deadlift": {
+    "old_exercise_id": "ex-deadlift",
+    "canonical_exercise_id": "70ed073d-9ef7-52d3-a8a8-8eed2028110a",
+    "canonical_name": "Barbell Deadlift",
+    "old_name": "Conventional Deadlift",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-pullup": {
+    "old_exercise_id": "ex-pullup",
+    "canonical_exercise_id": "ea15170a-6e1d-5e39-a83a-b1d13bd9fa99",
+    "canonical_name": "Pull-Up",
+    "old_name": "Standard Pull-up",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-barbell-row": {
+    "old_exercise_id": "ex-barbell-row",
+    "canonical_exercise_id": "87517ccf-d112-51c5-b482-b2ee9f42eb1b",
+    "canonical_name": "Barbell Bent Over Row",
+    "old_name": "Barbell Bent-Over Row",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-lateral-raise": {
+    "old_exercise_id": "ex-lateral-raise",
+    "canonical_exercise_id": "e6758033-e5d5-5d3f-b132-ac7fcf020df2",
+    "canonical_name": "Dumbbell Lateral Raise",
+    "old_name": "Side Lateral Raise",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-bicep-curl": {
+    "old_exercise_id": "ex-bicep-curl",
+    "canonical_exercise_id": "0ddd1277-bffd-5a29-8c86-dc9cbf15a483",
+    "canonical_name": "Barbell Curl",
+    "old_name": "Barbell Bicep Curl",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-tricep-pushdown": {
+    "old_exercise_id": "ex-tricep-pushdown",
+    "canonical_exercise_id": "da1e063e-24c7-5ea5-b6fb-ca3f394acb86",
+    "canonical_name": "Cable Pushdown",
+    "old_name": "Triceps Pushdown (Cable)",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  },
+  "ex-plank": {
+    "old_exercise_id": "ex-plank",
+    "canonical_exercise_id": "9825cdb8-81c9-5273-9bac-039ab80b8f1f",
+    "canonical_name": "Front Plank With Twist",
+    "old_name": "Standard Plank",
+    "confidence": "high",
+    "mapped_at": "2026-10-21T08:40:10.282039+00:00"
+  }
+}

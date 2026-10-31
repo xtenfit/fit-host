@@ -101,15 +101,15 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1B2332) : const Color(0xFFEEF5FF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.blueAccent.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           IconButton(
             icon: Icon(
-              _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+              _isPlaying
+                  ? Icons.pause_circle_filled_rounded
+                  : Icons.play_circle_fill_rounded,
               color: Colors.blueAccent,
               size: 34,
             ),
@@ -125,11 +125,19 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.mic_rounded, size: 14, color: Colors.blueAccent),
+                        Icon(
+                          Icons.mic_rounded,
+                          size: 14,
+                          color: Colors.blueAccent,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Voice Memo Note',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueAccent,
+                          ),
                         ),
                       ],
                     ),
@@ -138,7 +146,9 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -146,15 +156,22 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 3,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 5,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 10,
+                    ),
                     activeTrackColor: Colors.blueAccent,
-                    inactiveTrackColor: isDark ? Colors.white12 : Colors.black12,
+                    inactiveTrackColor: isDark
+                        ? Colors.white12
+                        : Colors.black12,
                     thumbColor: Colors.blueAccent,
                   ),
                   child: Slider(
                     value: _duration.inMilliseconds > 0
-                        ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
+                        ? (_position.inMilliseconds / _duration.inMilliseconds)
+                              .clamp(0.0, 1.0)
                         : 0.0,
                     onChanged: (val) {
                       final targetMs = (val * _duration.inMilliseconds).round();
@@ -167,7 +184,11 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
           ),
           if (widget.onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: Colors.redAccent,
+              ),
               onPressed: widget.onDelete,
             ),
         ],
@@ -180,13 +201,11 @@ class _VoiceMemoPlayerWidgetState extends State<VoiceMemoPlayerWidget> {
 class VoiceMemoRecorderWidget extends StatefulWidget {
   final Function(String path, int durationSeconds) onRecordingComplete;
 
-  const VoiceMemoRecorderWidget({
-    super.key,
-    required this.onRecordingComplete,
-  });
+  const VoiceMemoRecorderWidget({super.key, required this.onRecordingComplete});
 
   @override
-  State<VoiceMemoRecorderWidget> createState() => _VoiceMemoRecorderWidgetState();
+  State<VoiceMemoRecorderWidget> createState() =>
+      _VoiceMemoRecorderWidgetState();
 }
 
 class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
@@ -214,17 +233,24 @@ class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
       if (!hasPermission) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Microphone permission required for voice notes.')),
+            const SnackBar(
+              content: Text('Microphone permission required for voice notes.'),
+            ),
           );
         }
         return;
       }
 
       final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/diary_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final filePath =
+          '${tempDir.path}/diary_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       await _recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
         path: filePath,
       );
 
@@ -260,9 +286,9 @@ class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
     } catch (e) {
       setState(() => _isRecording = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving voice note: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving voice note: $e')));
       }
     }
   }
@@ -300,12 +326,21 @@ class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Recording Voice Note...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent)),
+                  const Text(
+                    'Recording Voice Note...',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Colors.redAccent,
+                    ),
+                  ),
                   Text(
                     'Elapsed: ${_formatTimer(_secondsRecorded)}',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -316,10 +351,15 @@ class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: const Icon(Icons.stop_rounded, size: 18),
-              label: const Text('Stop & Attach', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              label: const Text(
+                'Stop & Attach',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -332,7 +372,9 @@ class _VoiceMemoRecorderWidgetState extends State<VoiceMemoRecorderWidget> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         side: BorderSide(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       icon: const Icon(Icons.mic_rounded, color: Colors.blueAccent, size: 20),

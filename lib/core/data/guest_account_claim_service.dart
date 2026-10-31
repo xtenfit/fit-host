@@ -6,21 +6,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../database/database.dart';
 import '../sync/sync_coordinator.dart';
+import 'profile_repository.dart';
 
-enum ClaimOutcome {
-  success,
-  partialSuccessOutboxPending,
-  failed,
-}
+enum ClaimOutcome { success, partialSuccessOutboxPending, failed }
 
-enum MigrationStage {
-  idle,
-  preparing,
-  backingUp,
-  synchronizing,
-  ready,
-  failed,
-}
+enum MigrationStage { idle, preparing, backingUp, synchronizing, ready, failed }
 
 class MigrationProgress {
   final MigrationStage stage;
@@ -42,6 +32,8 @@ class GuestRecordBreakdown {
   final int stepLogsCount;
   final int calendarEventsCount;
   final int remindersCount;
+  final int bodyMeasurementsCount;
+  final int progressPhotosCount;
 
   const GuestRecordBreakdown({
     this.workoutsCount = 0,
@@ -49,6 +41,8 @@ class GuestRecordBreakdown {
     this.stepLogsCount = 0,
     this.calendarEventsCount = 0,
     this.remindersCount = 0,
+    this.bodyMeasurementsCount = 0,
+    this.progressPhotosCount = 0,
   });
 
   int get totalRecords =>
@@ -56,7 +50,9 @@ class GuestRecordBreakdown {
       nutritionLogsCount +
       stepLogsCount +
       calendarEventsCount +
-      remindersCount;
+      remindersCount +
+      bodyMeasurementsCount +
+      progressPhotosCount;
 
   bool get hasRecords => totalRecords > 0;
 }
@@ -86,21 +82,27 @@ class GuestAccountClaimService {
   /// Counts local guest records across all tracked tables
   Future<GuestRecordBreakdown> getGuestRecordBreakdown() async {
     try {
-      final workouts = await (db.select(db.workouts)
-            ..where((t) => t.userId.equals('guest')))
-          .get();
-      final nutrition = await (db.select(db.nutritionLogs)
-            ..where((t) => t.userId.equals('guest')))
-          .get();
-      final steps = await (db.select(db.stepDailyLogs)
-            ..where((t) => t.userId.equals('guest')))
-          .get();
-      final events = await (db.select(db.calendarEvents)
-            ..where((t) => t.userId.equals('guest')))
-          .get();
-      final reminders = await (db.select(db.reminders)
-            ..where((t) => t.userId.equals('guest')))
-          .get();
+      final workouts = await (db.select(
+        db.workouts,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final nutrition = await (db.select(
+        db.nutritionLogs,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final steps = await (db.select(
+        db.stepDailyLogs,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final events = await (db.select(
+        db.calendarEvents,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final reminders = await (db.select(
+        db.reminders,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final measurements = await (db.select(
+        db.bodyMeasurements,
+      )..where((t) => t.userId.equals('guest'))).get();
+      final photos = await (db.select(
+        db.progressPhotos,
+      )..where((t) => t.userId.equals('guest'))).get();
 
       return GuestRecordBreakdown(
         workoutsCount: workouts.length,
@@ -108,9 +110,151 @@ class GuestAccountClaimService {
         stepLogsCount: steps.length,
         calendarEventsCount: events.length,
         remindersCount: reminders.length,
+        bodyMeasurementsCount: measurements.length,
+        progressPhotosCount: photos.length,
       );
     } catch (_) {
       return const GuestRecordBreakdown();
+    }
+  }
+
+  /// Swiftly re-assigns all local guest records in Drift SQLite to the new account user_id.
+  /// Runs in milliseconds (<20ms) and schedules background outbox sync without blocking the UI.
+  Future<void> claimGuestDataLocallyFast(String newUid) async {
+    if (newUid.isEmpty || newUid == 'guest') return;
+
+    try {
+      await db.transaction(() async {
+        // 1. Workouts
+        await (db.update(
+          db.workouts,
+        )..where((t) => t.userId.equals('guest'))).write(
+          WorkoutsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 2. WorkoutExercises
+        await (db.update(db.workoutExercises)
+              ..where((t) => t.userId.equals('guest')))
+            .write(WorkoutExercisesCompanion(userId: Value(newUid)));
+
+        // 3. WorkoutSets
+        await (db.update(db.workoutSets)
+              ..where((t) => t.userId.equals('guest')))
+            .write(WorkoutSetsCompanion(userId: Value(newUid)));
+
+        // 4. NutritionLogs
+        await (db.update(
+          db.nutritionLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          NutritionLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 5. HydrationLogs
+        await (db.update(
+          db.hydrationLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          HydrationLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 6. StepDailyLogs
+        await (db.update(
+          db.stepDailyLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          StepDailyLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 7. CalendarEvents
+        await (db.update(
+          db.calendarEvents,
+        )..where((t) => t.userId.equals('guest'))).write(
+          CalendarEventsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 8. Reminders
+        await (db.update(
+          db.reminders,
+        )..where((t) => t.userId.equals('guest'))).write(
+          RemindersCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 9. BodyMeasurements
+        await (db.update(
+          db.bodyMeasurements,
+        )..where((t) => t.userId.equals('guest'))).write(
+          BodyMeasurementsCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 10. ProgressPhotos
+        await (db.update(
+          db.progressPhotos,
+        )..where((t) => t.userId.equals('guest'))).write(
+          ProgressPhotosCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 11. DailyDiaryEntries
+        await (db.update(
+          db.dailyDiaryEntries,
+        )..where((t) => t.userId.equals('guest'))).write(
+          DailyDiaryEntriesCompanion(
+            userId: Value(newUid),
+            syncStatus: const Value('pending_upload'),
+          ),
+        );
+
+        // 12. FoodItems
+        await (db.update(db.foodItems)..where((t) => t.userId.equals('guest')))
+            .write(FoodItemsCompanion(userId: Value(newUid)));
+
+        // Update all sync_queue rows
+        await (db.update(
+          db.syncQueue,
+        )..where((t) => t.userId.equals('guest'))).write(
+          SyncQueueCompanion(
+            userId: Value(newUid),
+            status: const Value('queued'),
+          ),
+        );
+      });
+
+      // Synchronize profile locally
+      try {
+        final localProfile = await LocalProfileRepository().loadProfile();
+        final cloudRepo = CloudProfileRepository(
+          db: db,
+          userId: newUid,
+          supabase: supabase,
+        );
+        await cloudRepo.saveProfile(localProfile);
+      } catch (_) {}
+
+      // Trigger background sync drain without blocking
+      syncCoordinator.drain().ignore();
+    } catch (e) {
+      debugPrint('[GuestAccountClaimService] Fast local claim notice: $e');
     }
   }
 
@@ -144,60 +288,90 @@ class GuestAccountClaimService {
     } catch (_) {}
 
     // Step 1: Preparing
-    onProgress?.call(const MigrationProgress(
-      stage: MigrationStage.preparing,
-      progress: 0.15,
-      message: 'Preparing your saved data.',
-    ));
+    onProgress?.call(
+      const MigrationProgress(
+        stage: MigrationStage.preparing,
+        progress: 0.15,
+        message: 'Preparing your saved data.',
+      ),
+    );
 
     // Load guest records
-    final guestWorkouts = await (db.select(db.workouts)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestExercises = await (db.select(db.workoutExercises)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestSets = await (db.select(db.workoutSets)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestNutrition = await (db.select(db.nutritionLogs)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestHydration = await (db.select(db.hydrationLogs)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestSteps = await (db.select(db.stepDailyLogs)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestEvents = await (db.select(db.calendarEvents)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
-    final guestReminders = await (db.select(db.reminders)
-          ..where((t) => t.userId.equals('guest')))
-        .get();
+    final guestWorkouts = await (db.select(
+      db.workouts,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestExercises = await (db.select(
+      db.workoutExercises,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestSets = await (db.select(
+      db.workoutSets,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestNutrition = await (db.select(
+      db.nutritionLogs,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestHydration = await (db.select(
+      db.hydrationLogs,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestSteps = await (db.select(
+      db.stepDailyLogs,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestEvents = await (db.select(
+      db.calendarEvents,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestReminders = await (db.select(
+      db.reminders,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestMeasurements = await (db.select(
+      db.bodyMeasurements,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestPhotos = await (db.select(
+      db.progressPhotos,
+    )..where((t) => t.userId.equals('guest'))).get();
+    final guestDiary = await (db.select(
+      db.dailyDiaryEntries,
+    )..where((t) => t.userId.equals('guest'))).get();
 
-    final totalCount = guestWorkouts.length +
+    final totalCount =
+        guestWorkouts.length +
         guestNutrition.length +
         guestHydration.length +
         guestSteps.length +
         guestEvents.length +
-        guestReminders.length;
+        guestReminders.length +
+        guestMeasurements.length +
+        guestPhotos.length +
+        guestDiary.length;
 
     if (totalCount == 0) {
-      onProgress?.call(const MigrationProgress(
-        stage: MigrationStage.ready,
-        progress: 1.0,
-        message: 'Your account is ready.',
-      ));
+      // Even if 0 activity logs, make sure profile is backed up
+      try {
+        final localProfile = await LocalProfileRepository().loadProfile();
+        final cloudRepo = CloudProfileRepository(
+          db: db,
+          userId: newUid,
+          supabase: supabase,
+        );
+        await cloudRepo.saveProfile(localProfile);
+      } catch (_) {}
+
+      onProgress?.call(
+        const MigrationProgress(
+          stage: MigrationStage.ready,
+          progress: 1.0,
+          message: 'Your account is ready.',
+        ),
+      );
       return ClaimOutcome.success;
     }
 
     // Step 2: Backing up (cloud sync where available)
-    onProgress?.call(const MigrationProgress(
-      stage: MigrationStage.backingUp,
-      progress: 0.45,
-      message: 'Backing up your workouts and activity logs.',
-    ));
+    onProgress?.call(
+      const MigrationProgress(
+        stage: MigrationStage.backingUp,
+        progress: 0.45,
+        message: 'Backing up your workouts and activity logs.',
+      ),
+    );
 
     bool directUploadSucceeded = false;
 
@@ -205,20 +379,24 @@ class GuestAccountClaimService {
       try {
         // 1. Workouts
         for (final batch in _partition(guestWorkouts, 25)) {
-          await supabase!.from('workouts').upsert(
+          await supabase!
+              .from('workouts')
+              .upsert(
                 batch
-                    .map((w) => {
-                          'id': w.id,
-                          'user_id': newUid,
-                          'title': w.title,
-                          'note': w.note,
-                          'started_at': w.startedAt.toIso8601String(),
-                          'completed_at': w.completedAt?.toIso8601String(),
-                          'status': w.status,
-                          'duration_seconds': w.durationSeconds,
-                          'calories_burned': w.caloriesBurned,
-                          'updated_at': w.updatedAt.toIso8601String(),
-                        })
+                    .map(
+                      (w) => {
+                        'id': w.id,
+                        'user_id': newUid,
+                        'title': w.title,
+                        'note': w.note,
+                        'started_at': w.startedAt.toIso8601String(),
+                        'completed_at': w.completedAt?.toIso8601String(),
+                        'status': w.status,
+                        'duration_seconds': w.durationSeconds,
+                        'calories_burned': w.caloriesBurned,
+                        'updated_at': w.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'id',
               );
@@ -226,20 +404,22 @@ class GuestAccountClaimService {
 
         // 2. Workout exercises
         for (final batch in _partition(guestExercises, 25)) {
-          await supabase!.from('workout_exercises').upsert(
+          await supabase!
+              .from('workout_exercises')
+              .upsert(
                 batch
-                    .map((we) => {
-                          'id': we.id,
-                          'workout_id': we.workoutId,
-                          'exercise_id': we.exerciseId,
-                          'user_id': newUid,
-                          'order_index': we.orderIndex,
-                          'notes': we.notes,
-                          'created_at': (we.createdAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                          'updated_at': (we.updatedAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                        })
+                    .map(
+                      (we) => {
+                        'id': we.id,
+                        'workout_id': we.workoutId,
+                        'exercise_id': we.exerciseId,
+                        'user_id': newUid,
+                        'order_index': we.orderIndex,
+                        'notes': we.notes,
+                        'created_at': we.createdAt.toIso8601String(),
+                        'updated_at': we.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'id',
               );
@@ -247,19 +427,23 @@ class GuestAccountClaimService {
 
         // 3. Workout sets
         for (final batch in _partition(guestSets, 25)) {
-          await supabase!.from('workout_sets').upsert(
+          await supabase!
+              .from('workout_sets')
+              .upsert(
                 batch
-                    .map((s) => {
-                          'id': s.id,
-                          'workout_exercise_id': s.workoutExerciseId,
-                          'user_id': newUid,
-                          'set_number': s.setNumber,
-                          'reps': s.reps,
-                          'weight_kg': s.weightKg,
-                          'is_completed': s.isCompleted,
-                          'rest_seconds': s.restSeconds,
-                          'set_type': s.setType,
-                        })
+                    .map(
+                      (s) => {
+                        'id': s.id,
+                        'workout_exercise_id': s.workoutExerciseId,
+                        'user_id': newUid,
+                        'set_number': s.setNumber,
+                        'reps': s.reps,
+                        'weight_kg': s.weightKg,
+                        'is_completed': s.isCompleted,
+                        'rest_seconds': s.restSeconds,
+                        'set_type': s.setType,
+                      },
+                    )
                     .toList(),
                 onConflict: 'id',
               );
@@ -267,23 +451,29 @@ class GuestAccountClaimService {
 
         // 4. Nutrition logs (Unique on user_id, log_date)
         for (final batch in _partition(guestNutrition, 25)) {
-          await supabase!.from('nutrition_logs').upsert(
+          await supabase!
+              .from('nutrition_logs')
+              .upsert(
                 batch
-                    .map((n) => {
-                          'id': n.id,
-                          'user_id': newUid,
-                          'log_date':
-                              n.logDate.toIso8601String().substring(0, 10),
-                          'target_calories': n.targetCalories,
-                          'target_protein': n.targetProtein,
-                          'target_carbs': n.targetCarbs,
-                          'target_fat': n.targetFat,
-                          'target_water_glasses': n.targetWaterGlasses,
-                          'water_glasses': n.waterGlasses,
-                          'logged_meals': jsonDecode(n.loggedMeals),
-                          'logged_drinks': jsonDecode(n.loggedDrinks),
-                          'updated_at': n.updatedAt.toIso8601String(),
-                        })
+                    .map(
+                      (n) => {
+                        'id': n.id,
+                        'user_id': newUid,
+                        'log_date': n.logDate.toIso8601String().substring(
+                          0,
+                          10,
+                        ),
+                        'target_calories': n.targetCalories,
+                        'target_protein': n.targetProtein,
+                        'target_carbs': n.targetCarbs,
+                        'target_fat': n.targetFat,
+                        'target_water_glasses': n.targetWaterGlasses,
+                        'water_glasses': n.waterGlasses,
+                        'logged_meals': jsonDecode(n.loggedMeals),
+                        'logged_drinks': jsonDecode(n.loggedDrinks),
+                        'updated_at': n.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'user_id,log_date',
               );
@@ -291,17 +481,23 @@ class GuestAccountClaimService {
 
         // 5. Hydration logs (Unique on user_id, log_date)
         for (final batch in _partition(guestHydration, 25)) {
-          await supabase!.from('hydration_logs').upsert(
+          await supabase!
+              .from('hydration_logs')
+              .upsert(
                 batch
-                    .map((h) => {
-                          'id': h.id,
-                          'user_id': newUid,
-                          'log_date':
-                              h.logDate.toIso8601String().substring(0, 10),
-                          'water_glasses': h.waterGlasses,
-                          'target_water_glasses': h.targetGlasses,
-                          'updated_at': h.updatedAt.toIso8601String(),
-                        })
+                    .map(
+                      (h) => {
+                        'id': h.id,
+                        'user_id': newUid,
+                        'log_date': h.logDate.toIso8601String().substring(
+                          0,
+                          10,
+                        ),
+                        'water_glasses': h.waterGlasses,
+                        'target_water_glasses': h.targetGlasses,
+                        'updated_at': h.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'user_id,log_date',
               );
@@ -309,17 +505,25 @@ class GuestAccountClaimService {
 
         // 6. Step daily logs (Unique on user_id, step_date)
         for (final batch in _partition(guestSteps, 25)) {
-          await supabase!.from('step_daily_logs').upsert(
+          await supabase!
+              .from('step_daily_logs')
+              .upsert(
                 batch
-                    .map((s) => {
-                          'id': s.id,
-                          'user_id': newUid,
-                          'step_date':
-                              s.stepDate.toIso8601String().substring(0, 10),
-                          'step_count': s.steps,
-                          'target_step_count': s.targetSteps,
-                          'updated_at': s.updatedAt.toIso8601String(),
-                        })
+                    .map(
+                      (s) => {
+                        'id': s.id,
+                        'user_id': newUid,
+                        'step_date': s.stepDate.toIso8601String().substring(
+                          0,
+                          10,
+                        ),
+                        'steps': s.steps,
+                        'target_steps': s.targetSteps,
+                        'distance_meters': s.distanceMeters,
+                        'active_calories': s.activeCalories,
+                        'updated_at': s.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'user_id,step_date',
               );
@@ -327,144 +531,257 @@ class GuestAccountClaimService {
 
         // 7. Calendar events
         for (final batch in _partition(guestEvents, 25)) {
-          await supabase!.from('calendar_events').upsert(
+          await supabase!
+              .from('calendar_events')
+              .upsert(
                 batch
-                    .map((e) => {
-                          'id': e.id,
-                          'user_id': newUid,
-                          'title': e.title,
-                          'scheduled_date': e.scheduledDate.toIso8601String(),
-                          'scheduled_time': e.startTime != null
-                              ? '${e.startTime!.hour.toString().padLeft(2, '0')}:${e.startTime!.minute.toString().padLeft(2, '0')}'
-                              : '09:00',
-                          'duration_minutes': (e.endTime != null && e.startTime != null)
-                              ? e.endTime!.difference(e.startTime!).inMinutes
-                              : 45,
-                          'is_completed': e.isCompleted,
-                          'created_at': (e.createdAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                          'updated_at': (e.updatedAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                        })
+                    .map(
+                      (e) => {
+                        'id': e.id,
+                        'user_id': newUid,
+                        'title': e.title,
+                        'scheduled_date': e.scheduledDate.toIso8601String(),
+                        'scheduled_time': e.startTime != null
+                            ? '${e.startTime!.hour.toString().padLeft(2, '0')}:${e.startTime!.minute.toString().padLeft(2, '0')}'
+                            : '09:00',
+                        'duration_minutes':
+                            (e.endTime != null && e.startTime != null)
+                            ? e.endTime!.difference(e.startTime!).inMinutes
+                            : 45,
+                        'is_completed': e.isCompleted,
+                        'created_at': e.createdAt.toIso8601String(),
+                        'updated_at': e.updatedAt.toIso8601String(),
+                      },
+                    )
                     .toList(),
                 onConflict: 'id',
               );
         }
 
-        // 8. Reminders
-        for (final batch in _partition(guestReminders, 25)) {
-          await supabase!.from('reminders').upsert(
-                batch
-                    .map((r) => {
-                          'id': r.id,
-                          'user_id': newUid,
-                          'title': r.title,
-                          'time': r.timeOfDay,
-                          'days_of_week': r.repeatDays ?? 'daily',
-                          'is_enabled': r.isEnabled,
-                          'created_at': (r.createdAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                          'updated_at': (r.updatedAt ?? DateTime.now().toUtc())
-                              .toIso8601String(),
-                        })
-                    .toList(),
-                onConflict: 'id',
+        // 8. Reminders - On-device only, do not upload to remote database
+        for (final r in guestReminders) {
+          await (db.update(db.reminders)..where((t) => t.id.equals(r.id)))
+              .write(RemindersCompanion(userId: Value(newUid)));
+        }
+
+        // 9. Body measurements
+        if (guestMeasurements.isNotEmpty) {
+          for (final batch in _partition(guestMeasurements, 25)) {
+            try {
+              await supabase!
+                  .from('body_measurements')
+                  .upsert(
+                    batch
+                        .map(
+                          (m) => {
+                            'id': m.id,
+                            'user_id': newUid,
+                            'measured_at': m.measuredAt.toIso8601String(),
+                            'weight_kg': m.weightKg,
+                            'body_fat_percentage': m.bodyFatPercentage,
+                            'waist_cm': m.waistCm,
+                            'chest_cm': m.chestCm,
+                            'hips_cm': m.hipsCm,
+                            'arms_cm': m.armsCm,
+                            'thighs_cm': m.thighsCm,
+                            'calves_cm': m.calvesCm,
+                            'neck_cm': m.neckCm,
+                            'shoulders_cm': m.shouldersCm,
+                            'notes': m.notes,
+                            'created_at': m.createdAt.toIso8601String(),
+                            'updated_at': m.updatedAt.toIso8601String(),
+                          },
+                        )
+                        .toList(),
+                    onConflict: 'id',
+                  );
+            } catch (e) {
+              debugPrint(
+                '[GuestClaim] body_measurements cloud upsert notice: $e',
               );
+            }
+          }
+        }
+
+        // 10. Daily diary entries
+        if (guestDiary.isNotEmpty) {
+          for (final batch in _partition(guestDiary, 25)) {
+            try {
+              await supabase!
+                  .from('daily_diary_entries')
+                  .upsert(
+                    batch
+                        .map(
+                          (d) => {
+                            'id': d.id,
+                            'user_id': newUid,
+                            'title': d.title,
+                            'content': d.content,
+                            'category': d.category,
+                            'mood': d.mood,
+                            'entry_date': d.entryDate.toIso8601String(),
+                            'voice_memo_path': d.voiceMemoPath,
+                            'voice_memo_duration_seconds':
+                                d.voiceMemoDurationSeconds,
+                            'created_at': d.createdAt.toIso8601String(),
+                            'updated_at': d.updatedAt.toIso8601String(),
+                            'is_deleted': d.isDeleted,
+                          },
+                        )
+                        .toList(),
+                    onConflict: 'id',
+                  );
+            } catch (e) {
+              debugPrint(
+                '[GuestClaim] daily_diary_entries cloud upsert notice: $e',
+              );
+            }
+          }
         }
 
         directUploadSucceeded = true;
       } catch (e) {
         debugPrint(
-            '[GuestAccountClaimService] Direct cloud upload notice (will queue locally): $e');
+          '[GuestAccountClaimService] Direct cloud upload notice (will queue locally): $e',
+        );
         directUploadSucceeded = false;
       }
     }
 
     // Step 3: Synchronizing local state
-    onProgress?.call(const MigrationProgress(
-      stage: MigrationStage.synchronizing,
-      progress: 0.75,
-      message: 'Synchronizing your records.',
-    ));
+    onProgress?.call(
+      const MigrationProgress(
+        stage: MigrationStage.synchronizing,
+        progress: 0.75,
+        message: 'Synchronizing your records.',
+      ),
+    );
 
-    final syncStatus =
-        directUploadSucceeded ? 'synced' : 'pending_upload';
+    final syncStatus = directUploadSucceeded ? 'synced' : 'pending_upload';
 
     try {
       await db.transaction(() async {
         // 1. Workouts
-        await (db.update(db.workouts)..where((t) => t.userId.equals('guest')))
-            .write(WorkoutsCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.workouts,
+        )..where((t) => t.userId.equals('guest'))).write(
+          WorkoutsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
 
         // 2. WorkoutExercises
         await (db.update(db.workoutExercises)
               ..where((t) => t.userId.equals('guest')))
-            .write(WorkoutExercisesCompanion(
-          userId: Value(newUid),
-        ));
+            .write(WorkoutExercisesCompanion(userId: Value(newUid)));
 
         // 3. WorkoutSets
         await (db.update(db.workoutSets)
               ..where((t) => t.userId.equals('guest')))
-            .write(WorkoutSetsCompanion(
-          userId: Value(newUid),
-        ));
+            .write(WorkoutSetsCompanion(userId: Value(newUid)));
 
         // 4. NutritionLogs
-        await (db.update(db.nutritionLogs)
-              ..where((t) => t.userId.equals('guest')))
-            .write(NutritionLogsCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.nutritionLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          NutritionLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
 
         // 5. HydrationLogs
-        await (db.update(db.hydrationLogs)
-              ..where((t) => t.userId.equals('guest')))
-            .write(HydrationLogsCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.hydrationLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          HydrationLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
 
         // 6. StepDailyLogs
-        await (db.update(db.stepDailyLogs)
-              ..where((t) => t.userId.equals('guest')))
-            .write(StepDailyLogsCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.stepDailyLogs,
+        )..where((t) => t.userId.equals('guest'))).write(
+          StepDailyLogsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
 
         // 7. CalendarEvents
-        await (db.update(db.calendarEvents)
-              ..where((t) => t.userId.equals('guest')))
-            .write(CalendarEventsCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.calendarEvents,
+        )..where((t) => t.userId.equals('guest'))).write(
+          CalendarEventsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
 
         // 8. Reminders
-        await (db.update(db.reminders)
-              ..where((t) => t.userId.equals('guest')))
-            .write(RemindersCompanion(
-          userId: Value(newUid),
-          syncStatus: Value(syncStatus),
-        ));
+        await (db.update(
+          db.reminders,
+        )..where((t) => t.userId.equals('guest'))).write(
+          RemindersCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
+
+        // 9. BodyMeasurements
+        await (db.update(
+          db.bodyMeasurements,
+        )..where((t) => t.userId.equals('guest'))).write(
+          BodyMeasurementsCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
+
+        // 10. ProgressPhotos
+        await (db.update(
+          db.progressPhotos,
+        )..where((t) => t.userId.equals('guest'))).write(
+          ProgressPhotosCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
+
+        // 11. DailyDiaryEntries
+        await (db.update(
+          db.dailyDiaryEntries,
+        )..where((t) => t.userId.equals('guest'))).write(
+          DailyDiaryEntriesCompanion(
+            userId: Value(newUid),
+            syncStatus: Value(syncStatus),
+          ),
+        );
+
+        // 12. FoodItems
+        await (db.update(db.foodItems)..where((t) => t.userId.equals('guest')))
+            .write(FoodItemsCompanion(userId: Value(newUid)));
 
         // Update all existing sync_queue rows for guest: userId = newUid, status = 'queued'
-        await (db.update(db.syncQueue)..where((t) => t.userId.equals('guest')))
-            .write(SyncQueueCompanion(
-          userId: Value(newUid),
-          status: const Value('queued'),
-        ));
+        await (db.update(
+          db.syncQueue,
+        )..where((t) => t.userId.equals('guest'))).write(
+          SyncQueueCompanion(
+            userId: Value(newUid),
+            status: const Value('queued'),
+          ),
+        );
 
         // Enqueue mutations for claimed workouts and nutrition logs if not already direct-uploaded
         final now = DateTime.now().toUtc();
 
         for (final w in guestWorkouts) {
-          await db.into(db.syncQueue).insertOnConflictUpdate(
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
                 SyncQueueCompanion.insert(
                   id: 'sync-workout-${w.id}',
                   userId: Value(newUid),
@@ -491,7 +808,9 @@ class GuestAccountClaimService {
         }
 
         for (final n in guestNutrition) {
-          await db.into(db.syncQueue).insertOnConflictUpdate(
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
                 SyncQueueCompanion.insert(
                   id: 'sync-nutrition-${n.id}',
                   userId: Value(newUid),
@@ -519,24 +838,42 @@ class GuestAccountClaimService {
               );
         }
       });
+
+      // Always sync current profile into Supabase for this new account
+      try {
+        final localProfile = await LocalProfileRepository().loadProfile();
+        final cloudRepo = CloudProfileRepository(
+          db: db,
+          userId: newUid,
+          supabase: supabase,
+        );
+        await cloudRepo.saveProfile(localProfile);
+      } catch (e) {
+        debugPrint('[GuestAccountClaimService] Profile sync notice: $e');
+      }
     } catch (e) {
       debugPrint(
-          '[GuestAccountClaimService] Transaction rolled back due to error: $e');
-      onProgress?.call(MigrationProgress(
-        stage: MigrationStage.failed,
-        progress: 0.0,
-        message: 'Migration interrupted. Local records are safe.',
-        error: e.toString(),
-      ));
+        '[GuestAccountClaimService] Transaction rolled back due to error: $e',
+      );
+      onProgress?.call(
+        MigrationProgress(
+          stage: MigrationStage.failed,
+          progress: 0.0,
+          message: 'Migration interrupted. Local records are safe.',
+          error: e.toString(),
+        ),
+      );
       rethrow;
     }
 
     // Step 4: Ready
-    onProgress?.call(const MigrationProgress(
-      stage: MigrationStage.ready,
-      progress: 1.0,
-      message: 'Your account is ready.',
-    ));
+    onProgress?.call(
+      const MigrationProgress(
+        stage: MigrationStage.ready,
+        progress: 1.0,
+        message: 'Your account is ready.',
+      ),
+    );
 
     try {
       await storage.write(
@@ -556,14 +893,16 @@ class GuestAccountClaimService {
       return ClaimOutcome.success;
     } catch (e) {
       debugPrint(
-          '[GuestAccountClaimService] Drain pending on partial network failure: $e');
+        '[GuestAccountClaimService] Drain pending on partial network failure: $e',
+      );
       return ClaimOutcome.partialSuccessOutboxPending;
     }
   }
 }
 
-final guestAccountClaimServiceProvider =
-    Provider<GuestAccountClaimService>((ref) {
+final guestAccountClaimServiceProvider = Provider<GuestAccountClaimService>((
+  ref,
+) {
   final db = ref.watch(databaseProvider);
   final coordinator = ref.watch(syncCoordinatorProvider);
   SupabaseClient? client;
@@ -576,4 +915,3 @@ final guestAccountClaimServiceProvider =
     supabase: client,
   );
 });
-

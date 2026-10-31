@@ -16,6 +16,7 @@ import {
   getAllMobileReleases,
   getMobileReleaseBySlug,
 } from "@/lib/github/releases";
+import { getPublishedUpdate } from "@/lib/content/public";
 
 interface ReleasePageProps {
   params: Promise<{ slug: string }>;
@@ -28,6 +29,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: ReleasePageProps): Promise<Metadata> {
   const { slug } = await params;
+  const managed = await getPublishedUpdate(slug);
+  if (managed) {
+    return { title: `${managed.title} | Fit Host Update`, description: managed.summary };
+  }
   const release = await getMobileReleaseBySlug(slug);
   if (!release) return { title: "Release Not Found | Fit Host" };
 
@@ -39,6 +44,25 @@ export async function generateMetadata({ params }: ReleasePageProps): Promise<Me
 
 export default async function ReleaseDetailPage({ params }: ReleasePageProps) {
   const { slug } = await params;
+  const managed = await getPublishedUpdate(slug);
+  if (managed) {
+    return (
+      <div className="relative overflow-hidden py-12 md:py-20">
+        <div className="mx-auto max-w-4xl space-y-8 px-4 sm:px-6 lg:px-8">
+          <Link href="/updates" className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-brand-green">
+            <ArrowLeft className="h-4 w-4" /> Back to Updates
+          </Link>
+          <article className="space-y-6">
+            <div className="text-xs font-bold uppercase tracking-wider text-brand-green">{managed.version || "Product update"}</div>
+            <h1 className="text-3xl font-black leading-tight text-white sm:text-5xl">{managed.title}</h1>
+            <p className="text-lg leading-relaxed text-zinc-300">{managed.summary}</p>
+            <div className="whitespace-pre-wrap border-t border-brand-border pt-8 text-sm leading-8 text-zinc-300">{managed.body}</div>
+          </article>
+          <DownloadCTA variant="banner" />
+        </div>
+      </div>
+    );
+  }
   const release = await getMobileReleaseBySlug(slug);
 
   if (!release) {

@@ -39,15 +39,18 @@ class TargetTimelineStep extends StatelessWidget {
     } else if (paceKgPerWeek <= 0.5) {
       paceColor = const Color(0xFFFFD54F);
       paceLabel = 'Moderate & Optimal';
-      paceDescription = 'Balanced rate of progression with solid muscle preservation.';
+      paceDescription =
+          'Balanced rate of progression with solid muscle preservation.';
     } else if (paceKgPerWeek <= 0.75) {
       paceColor = const Color(0xFFFF9800);
       paceLabel = 'Aggressive';
-      paceDescription = 'Requires strict nutrition discipline and optimal recovery.';
+      paceDescription =
+          'Requires strict nutrition discipline and optimal recovery.';
     } else {
       paceColor = const Color(0xFFFF5252);
       paceLabel = 'Not Recommended';
-      paceDescription = 'Overly aggressive pace risks muscle loss and metabolic slowdown.';
+      paceDescription =
+          'Overly aggressive pace risks muscle loss and metabolic slowdown.';
     }
 
     final displayWeight = useMetricUnits
@@ -193,8 +196,20 @@ class TargetTimelineStep extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('4 weeks', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                      Text('52 weeks (1 yr)', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                      Text(
+                        '4 weeks',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '52 weeks (1 yr)',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -210,7 +225,10 @@ class TargetTimelineStep extends StatelessWidget {
             decoration: BoxDecoration(
               color: paceColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: paceColor.withValues(alpha: 0.3), width: 1.5),
+              border: Border.all(
+                color: paceColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
             ),
             child: Row(
               children: [

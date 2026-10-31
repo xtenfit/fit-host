@@ -41,7 +41,11 @@ class CalendarRangeState {
       case RangeFilter.month:
         return DateTime(today.year, today.month, 1);
       case RangeFilter.custom:
-        return DateTime(customStartDate.year, customStartDate.month, customStartDate.day);
+        return DateTime(
+          customStartDate.year,
+          customStartDate.month,
+          customStartDate.day,
+        );
     }
   }
 
@@ -58,7 +62,11 @@ class CalendarRangeState {
       case RangeFilter.month:
         return DateTime(today.year, today.month + 1, 0);
       case RangeFilter.custom:
-        return DateTime(customEndDate.year, customEndDate.month, customEndDate.day);
+        return DateTime(
+          customEndDate.year,
+          customEndDate.month,
+          customEndDate.day,
+        );
     }
   }
 
@@ -98,18 +106,13 @@ class CalendarRangeNotifier extends Notifier<CalendarRangeState> {
   void selectFilter(RangeFilter filter, {required bool isGuest}) {
     // Deliverable D: Advanced Aggregation = ACCOUNT ONLY
     // Guests see today + this week. Tapping Month or Custom shows a lock card.
-    if (isGuest && (filter == RangeFilter.month || filter == RangeFilter.custom)) {
-      state = state.copyWith(
-        selectedFilter: filter,
-        showLockCard: true,
-      );
+    if (isGuest &&
+        (filter == RangeFilter.month || filter == RangeFilter.custom)) {
+      state = state.copyWith(selectedFilter: filter, showLockCard: true);
       return;
     }
 
-    state = state.copyWith(
-      selectedFilter: filter,
-      showLockCard: false,
-    );
+    state = state.copyWith(selectedFilter: filter, showLockCard: false);
   }
 
   void setCustomRange(DateTime start, DateTime end, {required bool isGuest}) {
@@ -140,12 +143,11 @@ class CalendarRangeNotifier extends Notifier<CalendarRangeState> {
 
 final calendarRangeProvider =
     NotifierProvider<CalendarRangeNotifier, CalendarRangeState>(
-  CalendarRangeNotifier.new,
-);
+      CalendarRangeNotifier.new,
+    );
 
 /// Stream provider for day summaries in the selected range
-final rangeSummariesStreamProvider =
-    StreamProvider<RangeAggregation>((ref) {
+final rangeSummariesStreamProvider = StreamProvider<RangeAggregation>((ref) {
   final rangeState = ref.watch(calendarRangeProvider);
   final service = ref.watch(daySummaryServiceProvider);
   final auth = ref.watch(authProvider);
@@ -153,36 +155,45 @@ final rangeSummariesStreamProvider =
   final isGuest = auth.isGuest;
 
   // If locked, return empty summaries to prevent data leak before sign-up
-  if (isGuest && (rangeState.selectedFilter == RangeFilter.month || rangeState.selectedFilter == RangeFilter.custom)) {
-    return Stream.value(RangeAggregation(
-      startDate: rangeState.startDate,
-      endDate: rangeState.endDate,
-      dailySummaries: const [],
-    ));
+  if (isGuest &&
+      (rangeState.selectedFilter == RangeFilter.month ||
+          rangeState.selectedFilter == RangeFilter.custom)) {
+    return Stream.value(
+      RangeAggregation(
+        startDate: rangeState.startDate,
+        endDate: rangeState.endDate,
+        dailySummaries: const [],
+      ),
+    );
   }
 
   return service
       .watchDaySummaries(rangeState.startDate, rangeState.endDate)
-      .map((summaries) => RangeAggregation(
-            startDate: rangeState.startDate,
-            endDate: rangeState.endDate,
-            dailySummaries: summaries,
-          ));
+      .map(
+        (summaries) => RangeAggregation(
+          startDate: rangeState.startDate,
+          endDate: rangeState.endDate,
+          dailySummaries: summaries,
+        ),
+      );
 });
 
 /// Stream provider for month day summaries (for month grid badges and rings)
 final monthSummariesMapProvider =
     StreamProvider.family<Map<String, DaySummary>, DateTime>((ref, month) {
-  final service = ref.watch(daySummaryServiceProvider);
-  final startOfMonth = DateTime(month.year, month.month, 1);
-  final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+      final service = ref.watch(daySummaryServiceProvider);
+      final startOfMonth = DateTime(month.year, month.month, 1);
+      final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
 
-  return service.watchDaySummaries(startOfMonth, endOfMonth).map((summaries) {
-    final Map<String, DaySummary> map = {};
-    for (final s in summaries) {
-      final key = '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
-      map[key] = s;
-    }
-    return map;
-  });
-});
+      return service.watchDaySummaries(startOfMonth, endOfMonth).map((
+        summaries,
+      ) {
+        final Map<String, DaySummary> map = {};
+        for (final s in summaries) {
+          final key =
+              '${s.date.year}-${s.date.month.toString().padLeft(2, '0')}-${s.date.day.toString().padLeft(2, '0')}';
+          map[key] = s;
+        }
+        return map;
+      });
+    });

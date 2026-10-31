@@ -1,15 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:drift/drift.dart' hide Column;
 import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/core/theme/theme_provider.dart';
 import 'package:fit_host/core/services/supabase_service.dart';
+import 'package:fit_host/core/services/external_links.dart';
+import 'package:fit_host/core/database/database.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
+import 'dart:convert';
 import 'controllers/user_profile_controller.dart';
 import 'widgets/sync_status_indicator.dart';
 import 'widgets/avatar_picker_sheet.dart';
 import '../../auth/presentation/dialogs/sign_out_dialog.dart';
 import '../../auth/presentation/dialogs/delete_account_dialog.dart';
+
+class _ProfileDataSummary {
+  final int workouts;
+  final int meals;
+  final int measurements;
+
+  const _ProfileDataSummary({
+    required this.workouts,
+    required this.meals,
+    required this.measurements,
+  });
+}
+
+class _DataSummaryError extends StatelessWidget {
+  final String message;
+  final bool isDark;
+
+  const _DataSummaryError({required this.message, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: isDark
+              ? AppColors.darkTextSecondary
+              : AppColors.lightTextSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+final _profileDataSummaryProvider =
+    FutureProvider.autoDispose<_ProfileDataSummary>((ref) async {
+      final db = ref.watch(databaseProvider);
+      final auth = ref.watch(authProvider);
+      final userId = auth.user?.id ?? 'guest';
+      ref.watch(workoutsStreamProvider);
+
+      final workouts =
+          await (db.select(db.workouts)..where(
+                (row) =>
+                    row.userId.equals(userId) &
+                    row.status.equals('completed') &
+                    row.isDeleted.equals(false),
+              ))
+              .get();
+      final nutritionLogs =
+          await (db.select(db.nutritionLogs)..where(
+                (row) =>
+                    row.userId.equals(userId) & row.isDeleted.equals(false),
+              ))
+              .get();
+      final measurements =
+          await (db.select(db.bodyMeasurements)..where(
+                (row) =>
+                    row.userId.equals(userId) & row.isDeleted.equals(false),
+              ))
+              .get();
+
+      var mealCount = 0;
+      for (final log in nutritionLogs) {
+        try {
+          final meals = jsonDecode(log.loggedMeals);
+          if (meals is List) mealCount += meals.length;
+        } on FormatException {
+          // Ignore malformed legacy meal payloads without inventing a count.
+        }
+      }
+
+      return _ProfileDataSummary(
+        workouts: workouts.length,
+        meals: mealCount,
+        measurements: measurements.length,
+      );
+    });
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -17,20 +101,16 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final workoutsAsync = ref.watch(workoutsStreamProvider);
     final authState = ref.watch(authProvider);
     final profile = ref.watch(userProfileProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final completedWorkoutsCount = workoutsAsync.maybeWhen(
-      data: (workouts) => workouts.where((w) => w.status == 'completed').length,
-      orElse: () => 0,
-    );
+    final dataSummary = ref.watch(_profileDataSummaryProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile & Settings'),
+        title: const Text('Settings'),
         leading: Navigator.of(context).canPop()
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
@@ -67,6 +147,9 @@ class ProfileScreen extends ConsumerWidget {
                   // Avatar with border
                   AppAvatar(
                     avatarId: profile.avatarId,
+                    avatarUrl: profile.avatarId.startsWith('http')
+                        ? profile.avatarId
+                        : authState.avatarUrl,
                     name: authState.displayName ?? profile.name,
                     radius: 29,
                     borderColor: authState.isAuthenticated
@@ -128,7 +211,10 @@ class ProfileScreen extends ConsumerWidget {
 
                   // Status Pill ('Guest' in guest mode)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: authState.isAuthenticated
                           ? AppColors.electricCyan.withValues(alpha: 0.15)
@@ -201,10 +287,7 @@ class ProfileScreen extends ConsumerWidget {
                             SizedBox(height: 2),
                             Text(
                               'Sign in with Google or Email OTP to backup all your workouts and routines.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.3,
-                              ),
+                              style: TextStyle(fontSize: 11, height: 1.3),
                             ),
                           ],
                         ),
@@ -240,9 +323,13 @@ class ProfileScreen extends ConsumerWidget {
                         child: OutlinedButton(
                           onPressed: () => context.push('/auth/sign-in'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white : Colors.black87,
+                            foregroundColor: isDark
+                                ? Colors.white
+                                : Colors.black87,
                             side: BorderSide(
-                              color: isDark ? AppColors.limeGreen.withValues(alpha: 0.5) : Colors.black26,
+                              color: isDark
+                                  ? AppColors.limeGreen.withValues(alpha: 0.5)
+                                  : Colors.black26,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -272,36 +359,47 @@ class ProfileScreen extends ConsumerWidget {
                 color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                  color: isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder,
                 ),
               ),
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.cloud_done_rounded, color: AppColors.electricCyan, size: 22),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Fit Host Cloud Active',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
-                              Text(
-                                'Workouts and health metrics live synced',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                      const Icon(
+                        Icons.cloud_done_rounded,
+                        color: AppColors.electricCyan,
+                        size: 22,
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Account sync',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'Account sync status and pending changes',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       const SyncStatusIndicator(compact: true),
                     ],
                   ),
@@ -313,14 +411,36 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       TextButton.icon(
                         onPressed: () => SignOutDialog.show(context),
-                        icon: const Icon(Icons.logout_rounded, size: 16, color: Colors.orangeAccent),
-                        label: const Text('Sign Out', style: TextStyle(color: Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.logout_rounded,
+                          size: 16,
+                          color: Colors.orangeAccent,
+                        ),
+                        label: const Text(
+                          'Sign Out',
+                          style: TextStyle(
+                            color: Colors.orangeAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       TextButton.icon(
                         onPressed: () => DeleteAccountDialog.show(context),
-                        icon: const Icon(Icons.delete_forever_rounded, size: 16, color: AppColors.error),
-                        label: const Text('Delete Account', style: TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.delete_forever_rounded,
+                          size: 16,
+                          color: AppColors.error,
+                        ),
+                        label: const Text(
+                          'Delete Account',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -330,8 +450,6 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 20),
           ],
 
-
-
           // Health Intelligence & Metabolism Card
           Container(
             padding: const EdgeInsets.all(18),
@@ -339,7 +457,9 @@ class ProfileScreen extends ConsumerWidget {
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
               boxShadow: [
                 BoxShadow(
@@ -360,7 +480,11 @@ class ProfileScreen extends ConsumerWidget {
                         color: AppColors.electricCyan.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.insights_rounded, color: AppColors.electricCyan, size: 18),
+                      child: const Icon(
+                        Icons.insights_rounded,
+                        color: AppColors.electricCyan,
+                        size: 18,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -372,7 +496,10 @@ class ProfileScreen extends ConsumerWidget {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               'Health Intelligence',
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
                               maxLines: 1,
                             ),
                           ),
@@ -382,7 +509,9 @@ class ProfileScreen extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                         ],
@@ -390,7 +519,10 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.limeGreen.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
@@ -399,7 +531,11 @@ class ProfileScreen extends ConsumerWidget {
                         'BMI ${profile.bmi} • ${profile.bmiCategory}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.limeGreen),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.limeGreen,
+                        ),
                       ),
                     ),
                   ],
@@ -427,11 +563,15 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     _buildProfileTargetMiniBox(
                       'Energy Delta',
-                      profile.calorieDelta >= 0 ? '+${profile.calorieDelta}' : '${profile.calorieDelta}',
+                      profile.calorieDelta >= 0
+                          ? '+${profile.calorieDelta}'
+                          : '${profile.calorieDelta}',
                       'kcal',
                       profile.calorieDelta > 0
                           ? AppColors.limeGreen
-                          : (profile.calorieDelta < 0 ? const Color(0xFFFF5252) : Colors.grey),
+                          : (profile.calorieDelta < 0
+                                ? const Color(0xFFFF5252)
+                                : Colors.grey),
                       isDark,
                     ),
                   ],
@@ -447,14 +587,19 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         const Text(
                           'Caloric Macro Ratio',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           'P: ${profile.proteinCaloriesPercent}%  •  C: ${profile.carbsCaloriesPercent}%  •  F: ${profile.fatsCaloriesPercent}%',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary,
                           ),
                         ),
                       ],
@@ -466,15 +611,24 @@ class ProfileScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             flex: profile.proteinCaloriesPercent.clamp(5, 80),
-                            child: Container(height: 7, color: AppColors.electricCyan),
+                            child: Container(
+                              height: 7,
+                              color: AppColors.electricCyan,
+                            ),
                           ),
                           Expanded(
                             flex: profile.carbsCaloriesPercent.clamp(5, 80),
-                            child: Container(height: 7, color: const Color(0xFFF59E0B)),
+                            child: Container(
+                              height: 7,
+                              color: const Color(0xFFF59E0B),
+                            ),
                           ),
                           Expanded(
                             flex: profile.fatsCaloriesPercent.clamp(5, 80),
-                            child: Container(height: 7, color: const Color(0xFFA855F7)),
+                            child: Container(
+                              height: 7,
+                              color: const Color(0xFFA855F7),
+                            ),
                           ),
                         ],
                       ),
@@ -484,16 +638,24 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // Target Weight Timeline (if goal weight set)
-                if (profile.targetWeightKg != null && (profile.weightKg - profile.targetWeightKg!).abs() > 0.1) ...[
+                if (profile.targetWeightKg != null &&
+                    (profile.weightKg - profile.targetWeightKg!).abs() >
+                        0.1) ...[
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurfaceElevated : Colors.grey.shade100,
+                      color: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.trending_up_rounded, size: 20, color: AppColors.limeGreen),
+                        const Icon(
+                          Icons.trending_up_rounded,
+                          size: 20,
+                          color: AppColors.limeGreen,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -501,14 +663,19 @@ class ProfileScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 '${profile.weightKg.toStringAsFixed(1)} kg  ➔  ${profile.targetWeightKg!.toStringAsFixed(1)} kg',
-                                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Estimated ~${profile.estimatedWeeksToGoal} weeks at ${profile.targetPaceKgPerWeek} kg/week pace',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  color: isDark
+                                      ? AppColors.darkTextSecondary
+                                      : AppColors.lightTextSecondary,
                                 ),
                               ),
                             ],
@@ -525,11 +692,36 @@ class ProfileScreen extends ConsumerWidget {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    _buildLifestyleChip(Icons.water_drop_rounded, '${profile.targetWaterMl} ml/day', AppColors.electricCyan, isDark),
-                    _buildLifestyleChip(Icons.bedtime_rounded, '${profile.targetSleepHours.toStringAsFixed(1)}h sleep', const Color(0xFFA855F7), isDark),
-                    _buildLifestyleChip(Icons.directions_walk_rounded, '${profile.dailyStepsGoal} steps', const Color(0xFFFFB300), isDark),
-                    _buildLifestyleChip(Icons.timer_outlined, profile.fastingProtocolLabel, AppColors.limeGreen, isDark),
-                    _buildLifestyleChip(Icons.bolt_rounded, profile.activityLevelLabel, AppColors.electricBlue, isDark),
+                    _buildLifestyleChip(
+                      Icons.water_drop_rounded,
+                      '${profile.targetWaterMl} ml/day',
+                      AppColors.electricCyan,
+                      isDark,
+                    ),
+                    _buildLifestyleChip(
+                      Icons.bedtime_rounded,
+                      '${profile.targetSleepHours.toStringAsFixed(1)}h sleep',
+                      const Color(0xFFA855F7),
+                      isDark,
+                    ),
+                    _buildLifestyleChip(
+                      Icons.directions_walk_rounded,
+                      '${profile.dailyStepsGoal} steps',
+                      const Color(0xFFFFB300),
+                      isDark,
+                    ),
+                    _buildLifestyleChip(
+                      Icons.timer_outlined,
+                      profile.fastingProtocolLabel,
+                      AppColors.limeGreen,
+                      isDark,
+                    ),
+                    _buildLifestyleChip(
+                      Icons.bolt_rounded,
+                      profile.activityLevelLabel,
+                      AppColors.electricBlue,
+                      isDark,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -540,11 +732,15 @@ class ProfileScreen extends ConsumerWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          await ref.read(userProfileProvider.notifier).recalculateSuggestedTargets();
+                          await ref
+                              .read(userProfileProvider.notifier)
+                              .recalculateSuggestedTargets();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Targets recalculated using Mifflin-St Jeor formula.'),
+                                content: Text(
+                                  'Targets recalculated using Mifflin-St Jeor formula.',
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
@@ -552,26 +748,43 @@ class ProfileScreen extends ConsumerWidget {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         icon: const Icon(Icons.sync_rounded, size: 15),
-                        label: const Text('Recalculate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: const Text(
+                          'Recalculate',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () async {
-                          await ref.read(userProfileProvider.notifier).toggleMetricUnits();
+                          await ref
+                              .read(userProfileProvider.notifier)
+                              .toggleMetricUnits();
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         icon: const Icon(Icons.straighten_rounded, size: 15),
                         label: Text(
-                          profile.useMetricUnits ? 'Units: kg/cm' : 'Units: lbs/ft',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          profile.useMetricUnits
+                              ? 'Units: kg/cm'
+                              : 'Units: lbs/ft',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -582,33 +795,74 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // Real User Summary Metrics
-          Row(
-            children: [
-              Expanded(
-                child: _SummaryBox(
-                  title: 'Workouts Completed',
-                  value: '$completedWorkoutsCount',
-                  icon: Icons.fitness_center_rounded,
-                  color: AppColors.limeGreen,
-                  isDark: isDark,
-                ),
+          Text(
+            'Your Data',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SummaryBox(
-                  title: 'Data Storage',
-                  value: '100% Local',
-                  icon: Icons.sd_card_rounded,
-                  color: AppColors.electricCyan,
-                  isDark: isDark,
-                ),
+            ),
+            child: dataSummary.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Center(child: CircularProgressIndicator()),
               ),
-            ],
+              error: (err, stack) => _DataSummaryError(
+                message: 'Unable to load your data summary.',
+                isDark: isDark,
+              ),
+              data: (summary) => Row(
+                children: [
+                  Expanded(
+                    child: _SummaryBox(
+                      title: 'Workouts',
+                      value: '${summary.workouts}',
+                      icon: Icons.fitness_center_rounded,
+                      color: AppColors.limeGreen,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SummaryBox(
+                      title: 'Meals',
+                      value: '${summary.meals}',
+                      icon: Icons.restaurant_rounded,
+                      color: AppColors.warmCoral,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _SummaryBox(
+                      title: 'Measurements',
+                      value: '${summary.measurements}',
+                      icon: Icons.straighten_rounded,
+                      color: AppColors.electricCyan,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 24),
-
-
 
           // Settings Section
           Text(
@@ -616,12 +870,23 @@ class ProfileScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 8),
 
+          _SettingsTile(
+            icon: Icons.auto_fix_high_rounded,
+            iconColor: const Color(0xFF00E5FF),
+            title: 'Redo Fitness Setup Wizard',
+            subtitle:
+                'Re-personalize your 20-step plan, targets & goals (preserves workout history)',
+            isDark: isDark,
+            onTap: () => context.push('/setup-wizard?redo=true'),
+          ),
           _SettingsTile(
             icon: Icons.notifications_active_rounded,
             iconColor: const Color(0xFF00B4D8),
@@ -633,10 +898,19 @@ class ProfileScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.security_rounded,
             iconColor: AppColors.limeGreen,
-            title: 'System Permissions Manager',
-            subtitle: 'Exact alarms, lockscreen popups, notifications & battery',
+            title: 'Permissions & Integrations',
+            subtitle:
+                'Notifications, exact alarms, Health Connect & Google Calendar',
             isDark: isDark,
             onTap: () => context.push('/permission-settings'),
+          ),
+          _SettingsTile(
+            icon: Icons.health_and_safety_outlined,
+            iconColor: AppColors.electricCyan,
+            title: 'Health Connect',
+            subtitle: 'Read daily steps from Android Health Connect',
+            isDark: isDark,
+            onTap: () => context.push('/settings/health-connect'),
           ),
           _SettingsTile(
             icon: Icons.volume_up_rounded,
@@ -650,7 +924,8 @@ class ProfileScreen extends ConsumerWidget {
             icon: Icons.backup_table_rounded,
             iconColor: Colors.teal,
             title: 'Backup & Data Export',
-            subtitle: 'Export audit report as PDF, Excel (.xlsx) spreadsheet or JSON',
+            subtitle:
+                'Export audit report as PDF, Excel (.xlsx) spreadsheet or JSON',
             isDark: isDark,
             onTap: () => context.push('/settings/privacy'),
           ),
@@ -658,17 +933,19 @@ class ProfileScreen extends ConsumerWidget {
             icon: Icons.support_agent_rounded,
             iconColor: AppColors.electricCyan,
             title: 'Support & Feedback',
-            subtitle: 'Direct support (support@amitrana.tech) with email templates',
+            subtitle:
+                'Direct support (support@amitrana.tech) with email templates',
             isDark: isDark,
-            onTap: () => context.push('/settings/support'),
+            onTap: () => openExternalLink(context, ExternalLinks.support),
           ),
           _SettingsTile(
             icon: Icons.lock_outline_rounded,
             iconColor: AppColors.electricCyan,
             title: 'Privacy Policy & Encryption',
-            subtitle: 'End-to-end user encryption & transparent service data usage',
+            subtitle:
+                'End-to-end user encryption & transparent service data usage',
             isDark: isDark,
-            onTap: () => context.push('/settings/privacy-policy'),
+            onTap: () => openExternalLink(context, ExternalLinks.privacy),
           ),
           _SettingsTile(
             icon: Icons.gavel_rounded,
@@ -676,7 +953,7 @@ class ProfileScreen extends ConsumerWidget {
             title: 'Terms & Conditions',
             subtitle: 'User license, service agreements & amitrana copyrights',
             isDark: isDark,
-            onTap: () => context.push('/settings/terms-of-service'),
+            onTap: () => openExternalLink(context, ExternalLinks.terms),
           ),
 
           const SizedBox(height: 24),
@@ -687,7 +964,9 @@ class ProfileScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -711,17 +990,31 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     Icon(Icons.palette_outlined, size: 22),
                     SizedBox(width: 14),
-                    Text('Theme Mode', style: TextStyle(fontWeight: FontWeight.w600)),
+                    Text(
+                      'Theme Mode',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   ],
                 ),
                 DropdownButton<ThemeMode>(
                   value: themeMode,
                   underline: const SizedBox(),
-                  dropdownColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                  dropdownColor: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : Colors.white,
                   items: const [
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text('System'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text('Light'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text('Dark'),
+                    ),
                   ],
                   onChanged: (val) {
                     if (val != null) {
@@ -740,7 +1033,9 @@ class ProfileScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -763,16 +1058,27 @@ class ProfileScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('App Version', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                    const Text(
+                      'App Version',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.limeGreen.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.limeGreen.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: AppColors.limeGreen.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: const Text(
-                        '1.2.2v2',
+                        '1.3.0',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
@@ -791,7 +1097,11 @@ class ProfileScreen extends ConsumerWidget {
                         color: AppColors.electricCyan.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.verified_rounded, size: 18, color: AppColors.electricCyan),
+                      child: const Icon(
+                        Icons.verified_rounded,
+                        size: 18,
+                        color: AppColors.electricCyan,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -800,13 +1110,18 @@ class ProfileScreen extends ConsumerWidget {
                         children: [
                           const Text(
                             'Powered by amitrana',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                           Text(
                             'Developed by amitrana team  •  Managed by amitrana team',
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                             ),
                           ),
                         ],
@@ -820,7 +1135,9 @@ class ProfileScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     height: 1.45,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
                 const Divider(height: 24),
@@ -867,7 +1184,9 @@ class _SummaryBox extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Column(
@@ -876,12 +1195,18 @@ class _SummaryBox extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
+                  ),
                 ),
               ),
               Icon(icon, size: 16, color: color),
@@ -926,7 +1251,9 @@ class _SettingsTile extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Material(
@@ -943,12 +1270,17 @@ class _SettingsTile extends StatelessWidget {
             ),
             child: Icon(icon, color: iconColor, size: 20),
           ),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
           subtitle: Text(
             subtitle,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           trailing: const Icon(Icons.chevron_right_rounded, size: 20),
@@ -959,16 +1291,19 @@ class _SettingsTile extends StatelessWidget {
 }
 
 Widget _buildProfileTargetMiniBox(
-    String label, String value, String unit, Color color, bool isDark) {
+  String label,
+  String value,
+  String unit,
+  Color color,
+  bool isDark,
+) {
   return Expanded(
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurfaceElevated : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -985,10 +1320,7 @@ Widget _buildProfileTargetMiniBox(
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
             maxLines: 1,
           ),
         ],
@@ -997,15 +1329,18 @@ Widget _buildProfileTargetMiniBox(
   );
 }
 
-Widget _buildLifestyleChip(IconData icon, String label, Color color, bool isDark) {
+Widget _buildLifestyleChip(
+  IconData icon,
+  String label,
+  Color color,
+  bool isDark,
+) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
     decoration: BoxDecoration(
       color: color.withValues(alpha: 0.12),
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(
-        color: color.withValues(alpha: 0.25),
-      ),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -1024,4 +1359,3 @@ Widget _buildLifestyleChip(IconData icon, String label, Color color, bool isDark
     ),
   );
 }
-

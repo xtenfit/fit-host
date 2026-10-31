@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AnnouncementBanner from "@/components/marketing/AnnouncementBanner";
+import { PostHogProvider } from "@/components/providers/PostHogProvider";
 
 export const viewport: Viewport = {
   themeColor: "#0A0F0D",
@@ -124,10 +125,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-brand-bg text-brand-text flex flex-col antialiased selection:bg-brand-green selection:text-black">
-        <AnnouncementBanner />
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
+        <PostHogProvider>
+          <AnnouncementBanner />
+          <Navbar />
+          <main className="flex-1 flex flex-col">{children}</main>
+          <Footer />
+        </PostHogProvider>
       </body>
     </html>
   );

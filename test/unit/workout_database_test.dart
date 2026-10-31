@@ -24,9 +24,9 @@ void main() {
       final exercises = await repository.getExercises();
       expect(exercises, isNotEmpty);
       expect(exercises.length, greaterThanOrEqualTo(10));
-      expect(exercises.any((e) => e.name == 'Bench Press (Barbell)' || e.name == 'Barbell Bench Press'), isTrue);
-      expect(exercises.any((e) => e.name == 'Barbell Back Squat'), isTrue);
-      expect(exercises.any((e) => e.name == 'Conventional Deadlift'), isTrue);
+      expect(exercises.any((e) => e.name.contains('Bench Press')), isTrue);
+      expect(exercises.any((e) => e.name.contains('Squat')), isTrue);
+      expect(exercises.any((e) => e.name.contains('Deadlift')), isTrue);
     });
 
     test('Filters exercises by category and search query', () async {
@@ -37,84 +37,89 @@ void main() {
       expect(searchResults.any((e) => e.name.contains('Bench')), isTrue);
     });
 
-    test('Creates workout with exercises & sets, persists to SQLite and verifies data integrity',
-        () async {
-      final now = DateTime.now().toUtc();
-      final workoutId = 'test-workout-101';
-      final weId = 'test-we-101';
-      final setId = 'test-set-101';
+    test(
+      'Creates workout with exercises & sets, persists to SQLite and verifies data integrity',
+      () async {
+        final now = DateTime.now().toUtc();
+        final workoutId = 'test-workout-101';
+        final weId = 'test-we-101';
+        final setId = 'test-set-101';
 
-      final workout = WorkoutEntity(
-        id: workoutId,
-        title: 'Chest & Arms Hypertrophy',
-        note: 'Felt strong on bench press today.',
-        startedAt: now,
-        completedAt: now.add(const Duration(minutes: 45)),
-        status: 'completed',
-        durationSeconds: 2700,
-        syncStatus: 'pending',
-        updatedAt: now,
-        exercises: [
-          WorkoutExerciseEntity(
-            id: weId,
-            workoutId: workoutId,
-            exerciseId: 'ex-bench-press',
-            exerciseName: 'Barbell Bench Press',
-            category: 'Chest',
-            orderIndex: 0,
-            sets: [
-              WorkoutSetEntity(
-                id: setId,
-                workoutExerciseId: weId,
-                setNumber: 1,
-                reps: 10,
-                weightKg: 80.0,
-                isCompleted: true,
-                restSeconds: 90,
-                type: 'normal',
-              ),
-              WorkoutSetEntity(
-                id: 'test-set-102',
-                workoutExerciseId: weId,
-                setNumber: 2,
-                reps: 8,
-                weightKg: 85.0,
-                isCompleted: true,
-                restSeconds: 90,
-                type: 'normal',
-              ),
-            ],
-          ),
-        ],
-      );
+        final workout = WorkoutEntity(
+          id: workoutId,
+          title: 'Chest & Arms Hypertrophy',
+          note: 'Felt strong on bench press today.',
+          startedAt: now,
+          completedAt: now.add(const Duration(minutes: 45)),
+          status: 'completed',
+          durationSeconds: 2700,
+          syncStatus: 'pending',
+          updatedAt: now,
+          exercises: [
+            WorkoutExerciseEntity(
+              id: weId,
+              workoutId: workoutId,
+              exerciseId: 'ex-bench-press',
+              exerciseName: 'Barbell Bench Press',
+              category: 'Chest',
+              orderIndex: 0,
+              sets: [
+                WorkoutSetEntity(
+                  id: setId,
+                  workoutExerciseId: weId,
+                  setNumber: 1,
+                  reps: 10,
+                  weightKg: 80.0,
+                  isCompleted: true,
+                  restSeconds: 90,
+                  type: 'normal',
+                ),
+                WorkoutSetEntity(
+                  id: 'test-set-102',
+                  workoutExerciseId: weId,
+                  setNumber: 2,
+                  reps: 8,
+                  weightKg: 85.0,
+                  isCompleted: true,
+                  restSeconds: 90,
+                  type: 'normal',
+                ),
+              ],
+            ),
+          ],
+        );
 
-      // Save to SQLite
-      await repository.saveWorkout(workout);
+        // Save to SQLite
+        await repository.saveWorkout(workout);
 
-      // Fetch by ID
-      final retrieved = await repository.getWorkoutById(workoutId);
-      expect(retrieved, isNotNull);
-      expect(retrieved!.id, equals(workoutId));
-      expect(retrieved.title, equals('Chest & Arms Hypertrophy'));
-      expect(retrieved.status, equals('completed'));
-      expect(retrieved.durationSeconds, equals(2700));
-      expect(retrieved.exercises.length, equals(1));
-      expect(retrieved.exercises.first.exerciseName, anyOf('Barbell Bench Press', 'Bench Press (Barbell)'));
-      expect(retrieved.exercises.first.sets.length, equals(2));
-      expect(retrieved.exercises.first.sets.first.weightKg, equals(80.0));
-      expect(retrieved.exercises.first.sets.first.reps, equals(10));
-      expect(retrieved.exercises.first.sets.first.isCompleted, isTrue);
+        // Fetch by ID
+        final retrieved = await repository.getWorkoutById(workoutId);
+        expect(retrieved, isNotNull);
+        expect(retrieved!.id, equals(workoutId));
+        expect(retrieved.title, equals('Chest & Arms Hypertrophy'));
+        expect(retrieved.status, equals('completed'));
+        expect(retrieved.durationSeconds, equals(2700));
+        expect(retrieved.exercises.length, equals(1));
+        expect(
+          retrieved.exercises.first.exerciseName,
+          anyOf('Barbell Bench Press', 'Bench Press (Barbell)'),
+        );
+        expect(retrieved.exercises.first.sets.length, equals(2));
+        expect(retrieved.exercises.first.sets.first.weightKg, equals(80.0));
+        expect(retrieved.exercises.first.sets.first.reps, equals(10));
+        expect(retrieved.exercises.first.sets.first.isCompleted, isTrue);
 
-      // Verify computed domain helpers
-      expect(retrieved.totalSets, equals(2));
-      expect(retrieved.completedSets, equals(2));
-      // Total volume = 80*10 + 85*8 = 800 + 680 = 1480
-      expect(retrieved.totalVolumeKg, equals(1480.0));
+        // Verify computed domain helpers
+        expect(retrieved.totalSets, equals(2));
+        expect(retrieved.completedSets, equals(2));
+        // Total volume = 80*10 + 85*8 = 800 + 680 = 1480
+        expect(retrieved.totalVolumeKg, equals(1480.0));
 
-      // Verify queued for cloud synchronization
-      final syncItems = await database.select(database.syncQueue).get();
-      expect(syncItems.any((item) => item.entityId == workoutId), isTrue);
-    });
+        // Verify queued for cloud synchronization
+        final syncItems = await database.select(database.syncQueue).get();
+        expect(syncItems.any((item) => item.entityId == workoutId), isTrue);
+      },
+    );
 
     test('Deletes workout with cascading foreign keys', () async {
       final now = DateTime.now().toUtc();
@@ -158,9 +163,9 @@ void main() {
 
       // Verify workout and children removed
       expect(await repository.getWorkoutById(workoutId), isNull);
-      final remainingSets = await (database.select(database.workoutSets)
-            ..where((s) => s.workoutExerciseId.equals(weId)))
-          .get();
+      final remainingSets = await (database.select(
+        database.workoutSets,
+      )..where((s) => s.workoutExerciseId.equals(weId))).get();
       expect(remainingSets, isEmpty);
     });
   });

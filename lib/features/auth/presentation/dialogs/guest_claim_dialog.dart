@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/data/guest_account_claim_service.dart';
+import '../../../profile/presentation/controllers/user_profile_controller.dart';
 
 typedef AutoGuestMigrationDialog = GuestClaimDialog;
 
@@ -29,10 +30,8 @@ class GuestClaimDialog extends ConsumerStatefulWidget {
       final res = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => GuestClaimDialog(
-          newUserId: newUserId,
-          breakdown: breakdown,
-        ),
+        builder: (ctx) =>
+            GuestClaimDialog(newUserId: newUserId, breakdown: breakdown),
       );
       return res ?? false;
     }
@@ -90,6 +89,10 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
           _statusMessage = 'Your account is ready.';
         });
 
+        try {
+          await ref.read(userProfileProvider.notifier).reloadProfile();
+        } catch (_) {}
+
         await Future.delayed(const Duration(milliseconds: 1200));
         if (mounted) {
           Navigator.of(context).pop(true);
@@ -134,21 +137,21 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
                 color: _isFinished
                     ? AppColors.limeGreen.withValues(alpha: 0.18)
                     : (_currentStage == MigrationStage.failed
-                        ? AppColors.error.withValues(alpha: 0.18)
-                        : AppColors.electricCyan.withValues(alpha: 0.18)),
+                          ? AppColors.error.withValues(alpha: 0.18)
+                          : AppColors.electricCyan.withValues(alpha: 0.18)),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 _isFinished
                     ? Icons.check_circle_rounded
                     : (_currentStage == MigrationStage.failed
-                        ? Icons.warning_amber_rounded
-                        : Icons.cloud_sync_rounded),
+                          ? Icons.warning_amber_rounded
+                          : Icons.cloud_sync_rounded),
                 color: _isFinished
                     ? AppColors.limeGreen
                     : (_currentStage == MigrationStage.failed
-                        ? AppColors.error
-                        : AppColors.electricCyan),
+                          ? AppColors.error
+                          : AppColors.electricCyan),
                 size: 26,
               ),
             ),
@@ -161,8 +164,8 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
                     _isFinished
                         ? 'Account Ready'
                         : (_currentStage == MigrationStage.failed
-                            ? 'Sync Interrupted'
-                            : 'Backing Up Data'),
+                              ? 'Sync Interrupted'
+                              : 'Backing Up Data'),
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 18,
@@ -206,8 +209,8 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
                         _isFinished
                             ? AppColors.limeGreen
                             : (_currentStage == MigrationStage.failed
-                                ? AppColors.error
-                                : AppColors.electricCyan),
+                                  ? AppColors.error
+                                  : AppColors.electricCyan),
                       ),
                     );
                   },
@@ -241,10 +244,10 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
                         color: _currentStage == MigrationStage.failed
                             ? AppColors.error
                             : (_isFinished
-                                ? AppColors.limeGreen
-                                : (isDark
-                                    ? Colors.white
-                                    : Colors.grey.shade900)),
+                                  ? AppColors.limeGreen
+                                  : (isDark
+                                        ? Colors.white
+                                        : Colors.grey.shade900)),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -345,7 +348,8 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
     required MigrationStage stage,
     required bool isDark,
   }) {
-    final bool isCompleted = _stageIndex(_currentStage) > _stageIndex(stage) ||
+    final bool isCompleted =
+        _stageIndex(_currentStage) > _stageIndex(stage) ||
         _currentStage == MigrationStage.ready;
     final bool isCurrent = _currentStage == stage;
 
@@ -377,10 +381,12 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
                 color: isCurrent
                     ? (isDark ? Colors.white : Colors.black87)
                     : (isCompleted
-                        ? (isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary)
-                        : (isDark ? Colors.grey.shade600 : Colors.grey.shade500)),
+                          ? (isDark
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary)
+                          : (isDark
+                                ? Colors.grey.shade600
+                                : Colors.grey.shade500)),
               ),
             ),
           ),
@@ -406,4 +412,3 @@ class _GuestClaimDialogState extends ConsumerState<GuestClaimDialog> {
     }
   }
 }
-

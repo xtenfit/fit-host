@@ -66,7 +66,9 @@ class GoalSelectionCard extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.2 : 0.04,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -111,7 +113,10 @@ class GoalSelectionCard extends StatelessWidget {
                       if (badgeText != null) ...[
                         Container(
                           margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: brandGreen.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(5),
@@ -139,7 +144,9 @@ class GoalSelectionCard extends StatelessWidget {
                           letterSpacing: -0.3,
                           color: isSelected
                               ? brandGreen
-                              : (isDark ? Colors.white : const Color(0xFF111827)),
+                              : (isDark
+                                    ? Colors.white
+                                    : const Color(0xFF111827)),
                         ),
                       ),
                       if (subtitle != null) ...[
@@ -149,7 +156,9 @@ class GoalSelectionCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
-                            color: isDark ? textSecondary : const Color(0xFF6B7280),
+                            color: isDark
+                                ? textSecondary
+                                : const Color(0xFF6B7280),
                             height: 1.3,
                           ),
                           maxLines: 2,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../../core/auth/auth_state_machine.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/image_compression_service.dart';
 import '../../data/services/gemini_nutrition_service.dart';
@@ -28,7 +29,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
     super.initState();
     // Launch camera automatically on screen entry
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _pickImage(ImageSource.camera);
+      if (ref.read(authStateMachineProvider).value?.isAuthenticated == true) {
+        _pickImage(ImageSource.camera);
+      }
     });
   }
 
@@ -49,7 +52,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
         return;
       }
 
-      final compressed = await ImageCompressionService.compressImage(File(pickedFile.path));
+      final compressed = await ImageCompressionService.compressImage(
+        File(pickedFile.path),
+      );
 
       setState(() {
         _imageFile = compressed;
@@ -112,7 +117,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
 
         return AlertDialog(
           backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.help_outline_rounded, color: AppColors.electricCyan),
@@ -123,7 +130,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
           content: Text(
             'We couldn\'t clearly identify all ingredients in this photo with high confidence.\n\nWould you like to search manually or try with another photo?',
             style: TextStyle(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
               fontSize: 14,
             ),
           ),
@@ -155,11 +164,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
     if (choice == 'retake') {
       _pickImage(ImageSource.camera);
     } else if (choice == 'manual') {
-      final res = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          builder: (_) => const FoodSearchScreen(),
-        ),
-      );
+      final res = await Navigator.of(
+        context,
+      ).push<bool>(MaterialPageRoute(builder: (_) => const FoodSearchScreen()));
       if (res == true && mounted) {
         context.pop(true);
       }
@@ -177,6 +184,46 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = ref.watch(authStateMachineProvider).value?.isGuest ?? true;
+    if (isGuest) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Snap Meal'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock_outline_rounded, size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'AI meal photos require an account.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Use Type / Search to log food locally as a guest.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => context.push('/auth/sign-up'),
+                  child: const Text('Create free account'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -197,7 +244,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
           IconButton(
             icon: const Icon(Icons.photo_library_outlined, color: Colors.white),
             tooltip: 'Choose from Gallery',
-            onPressed: _isAnalyzing ? null : () => _pickImage(ImageSource.gallery),
+            onPressed: _isAnalyzing
+                ? null
+                : () => _pickImage(ImageSource.gallery),
           ),
         ],
       ),
@@ -225,7 +274,11 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                   const SizedBox(height: 16),
                   const Text(
                     'Snap a photo of your plate or beverage',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -240,7 +293,10 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.limeGreen,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
                     onPressed: () => _pickImage(ImageSource.camera),
                     icon: const Icon(Icons.camera_rounded),
@@ -273,7 +329,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                         height: 52,
                         child: CircularProgressIndicator(
                           strokeWidth: 4,
-                          valueColor: AlwaysStoppedAnimation(AppColors.electricCyan),
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.electricCyan,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -290,7 +348,9 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
@@ -316,12 +376,18 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.error_outline_rounded, color: Colors.white),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Colors.white,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             _errorMessage!,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],
@@ -332,14 +398,26 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
                       children: [
                         TextButton(
                           onPressed: () => _pickImage(ImageSource.camera),
-                          child: const Text('Retake', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Retake',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 8),
                         TextButton(
                           onPressed: () {
                             context.push('/nutrition/search-food');
                           },
-                          child: const Text('Enter Manually', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Enter Manually',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),

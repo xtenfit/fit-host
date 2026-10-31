@@ -7,4 +7,4 @@ workers_dev = true
 [[send_email]]
 name = "EMAIL"
 remote = true
-allowed_sender_addresses = ["noreply@amitran.tech"]
+allowed_sender_addresses = ["noreply@amitrana.tech"]

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/profile/presentation/widgets/sync_status_indicator.dart';
+import 'package:fit_host/features/reminders/presentation/widgets/in_app_reminder_banner.dart';
 import 'package:fit_host/core/theme/app_motion.dart';
 
 class MainNavigationShell extends ConsumerWidget {
@@ -46,38 +47,49 @@ class MainNavigationShell extends ConsumerWidget {
 
     // 4-item bottom navigation dock (Profile removed as requested; accessible via header / more menu)
     final navItems = [
-      _NavItemData(icon: Icons.home_outlined, selectedIcon: Icons.home_rounded, label: 'Home'),
-      _NavItemData(icon: Icons.fitness_center_outlined, selectedIcon: Icons.fitness_center_rounded, label: 'Workouts'),
-      _NavItemData(icon: Icons.show_chart_rounded, selectedIcon: Icons.show_chart_rounded, label: 'Activity'),
-      _NavItemData(icon: Icons.receipt_long_outlined, selectedIcon: Icons.receipt_long_rounded, label: 'My Diary'),
+      _NavItemData(
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home_rounded,
+        label: 'Home',
+      ),
+      _NavItemData(
+        icon: Icons.fitness_center_outlined,
+        selectedIcon: Icons.fitness_center_rounded,
+        label: 'Workouts',
+      ),
+      _NavItemData(
+        icon: Icons.show_chart_rounded,
+        selectedIcon: Icons.show_chart_rounded,
+        label: 'Activity',
+      ),
+      _NavItemData(
+        icon: Icons.receipt_long_outlined,
+        selectedIcon: Icons.receipt_long_rounded,
+        label: 'My Diary',
+      ),
     ];
 
     return Scaffold(
       body: Stack(
         children: [
-          // Screen Content with Apple iOS Framer-Motion window switch transition
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 240),
-            switchInCurve: AppMotion.iosDecelerate,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, animation) {
-              return AppleTransitions.buildWindowSwitchTransition(
-                child: child,
-                animation: animation,
-              );
-            },
-            child: KeyedSubtree(
-              key: ValueKey<int>(selectedIndex),
-              child: child,
-            ),
-          ),
+          // Screen Content
+          child,
 
-          // Top Offline / Outbox Status Banner
+          // Top Status & In-App Foreground Reminder Banners
           Positioned(
             top: MediaQuery.of(context).padding.top + 6,
-            left: 16,
-            right: 16,
-            child: const OfflineSyncBanner(),
+            left: 0,
+            right: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: OfflineSyncBanner(),
+                ),
+                InAppReminderBanner(),
+              ],
+            ),
           ),
 
           // Active Workout Floating Banner (sitting above floating navigation dock)
@@ -89,9 +101,14 @@ class MainNavigationShell extends ConsumerWidget {
               child: BouncyTap(
                 onTap: () => context.push('/active-workout'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurfaceElevated : AppColors.lightSurfaceElevated,
+                    color: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : AppColors.lightSurfaceElevated,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: AppColors.limeGreen.withValues(alpha: 0.6),
@@ -164,16 +181,23 @@ class MainNavigationShell extends ConsumerWidget {
             child: RepaintBoundary(
               child: Container(
                 height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF161920) : Colors.white,
                   borderRadius: BorderRadius.circular(32),
                   border: Border.all(
-                    color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                    color: isDark
+                        ? AppColors.darkSurfaceBorder
+                        : AppColors.lightSurfaceBorder,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.08),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.45 : 0.08,
+                      ),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -208,7 +232,9 @@ class MainNavigationShell extends ConsumerWidget {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.limeGreen.withValues(alpha: 0.35),
+                                    color: AppColors.limeGreen.withValues(
+                                      alpha: 0.35,
+                                    ),
                                     blurRadius: 10,
                                     offset: const Offset(0, 3),
                                   ),
@@ -223,7 +249,9 @@ class MainNavigationShell extends ConsumerWidget {
                               size: isSelected ? 18 : 22,
                               color: isSelected
                                   ? Colors.black
-                                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                  : (isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary),
                             ),
                             if (isSelected) ...[
                               const SizedBox(width: 6),

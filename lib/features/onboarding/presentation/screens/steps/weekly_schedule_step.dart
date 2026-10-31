@@ -11,7 +11,8 @@ class WeeklyScheduleStep extends StatefulWidget {
     List<int>? weekdays,
     bool? usesEveryDay,
     int? durationMinutes,
-  }) onChanged;
+  })
+  onChanged;
 
   const WeeklyScheduleStep({
     super.key,
@@ -40,8 +41,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
     _selectedDays = List<int>.from(widget.selectedWeekdays);
     _durationMinutes = widget.sessionDurationMinutes;
     _isCustomDuration = ![15, 30, 45, 60, 90].contains(_durationMinutes);
-    _customDurationCtrl =
-        TextEditingController(text: _durationMinutes.toString());
+    _customDurationCtrl = TextEditingController(
+      text: _durationMinutes.toString(),
+    );
   }
 
   @override
@@ -89,11 +91,7 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
       _daysPerWeek = 7;
       _selectedDays = allDays;
     });
-    widget.onChanged(
-      daysPerWeek: 7,
-      weekdays: allDays,
-      usesEveryDay: true,
-    );
+    widget.onChanged(daysPerWeek: 7, weekdays: allDays, usesEveryDay: true);
   }
 
   void _setCustomDuration(int mins) {
@@ -160,7 +158,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF00E676).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
@@ -197,46 +197,54 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                 const SizedBox(height: 12),
 
                 // 7 Day Chips
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(7, (i) {
-                    final dayLabel = kWeekdayLabels[i];
-                    final isSelected = _selectedDays.contains(i);
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final chipWidth = ((constraints.maxWidth - 6 * 6) / 7)
+                        .clamp(32.0, 48.0);
+                    return Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      alignment: WrapAlignment.spaceBetween,
+                      children: List.generate(7, (i) {
+                        final dayLabel = kWeekdayLabels[i];
+                        final isSelected = _selectedDays.contains(i);
 
-                    return GestureDetector(
-                      onTap: () => _onDayToggled(i),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFF00E676)
-                              : const Color(0xFF0A0F0D),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFF00E676)
-                                : Colors.white.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            dayLabel,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                        return GestureDetector(
+                          onTap: () => _onDayToggled(i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: chipWidth,
+                            height: 42,
+                            decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(0xFF0A0F0D)
-                                  : const Color(0xFFF0F6F2),
+                                  ? const Color(0xFF00E676)
+                                  : const Color(0xFF0A0F0D),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFF00E676)
+                                    : Colors.white.withValues(alpha: 0.1),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                dayLabel,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? const Color(0xFF0A0F0D)
+                                      : const Color(0xFFF0F6F2),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     );
-                  }),
+                  },
                 ),
 
                 const SizedBox(height: 16),
@@ -255,7 +263,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                       ),
                       child: const Text('Every Day'),
                     ),
@@ -281,7 +291,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                       ),
                       child: const Text('Custom Days'),
                     ),
@@ -318,7 +330,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF00E676).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
@@ -368,7 +382,8 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                   runSpacing: 8,
                   children: [
                     ...[15, 30, 45, 60, 90].map((mins) {
-                      final isSel = !_isCustomDuration && _durationMinutes == mins;
+                      final isSel =
+                          !_isCustomDuration && _durationMinutes == mins;
                       return ChoiceChip(
                         label: Text('$mins min'),
                         selected: isSel,
@@ -413,8 +428,9 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                         color: _isCustomDuration
                             ? const Color(0xFF0A0F0D)
                             : const Color(0xFFF0F6F2),
-                        fontWeight:
-                            _isCustomDuration ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: _isCustomDuration
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         fontSize: 13,
                       ),
                       shape: RoundedRectangleBorder(
@@ -440,21 +456,26 @@ class _WeeklyScheduleStepState extends State<WeeklyScheduleStep> {
                           decoration: InputDecoration(
                             labelText: 'Minutes (5–180)',
                             labelStyle: const TextStyle(
-                                color: Color(0xFF8FA396), fontSize: 13),
+                              color: Color(0xFF8FA396),
+                              fontSize: 13,
+                            ),
                             suffixText: 'min',
-                            suffixStyle:
-                                const TextStyle(color: Color(0xFF00E676)),
+                            suffixStyle: const TextStyle(
+                              color: Color(0xFF00E676),
+                            ),
                             filled: true,
                             fillColor: const Color(0xFF0A0F0D),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                  color: Colors.white.withValues(alpha: 0.1)),
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  const BorderSide(color: Color(0xFF00E676)),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF00E676),
+                              ),
                             ),
                           ),
                           onChanged: (val) {

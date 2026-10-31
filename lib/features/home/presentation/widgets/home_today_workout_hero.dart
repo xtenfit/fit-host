@@ -49,7 +49,8 @@ class HomeTodayWorkoutHero extends ConsumerStatefulWidget {
   const HomeTodayWorkoutHero({super.key, required this.isDark});
 
   @override
-  ConsumerState<HomeTodayWorkoutHero> createState() => _HomeTodayWorkoutHeroState();
+  ConsumerState<HomeTodayWorkoutHero> createState() =>
+      _HomeTodayWorkoutHeroState();
 }
 
 class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
@@ -66,10 +67,36 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
   void _onScroll() {
     if (_pageController.hasClients) {
       final page = _pageController.page ?? 0.0;
-      setState(() {
-        _activePageIndex = page.round();
-      });
+      final newIndex = page.round();
+      if (newIndex != _activePageIndex) {
+        setState(() {
+          _activePageIndex = newIndex;
+        });
+      }
     }
+  }
+
+  Future<void> _startRoutineFromCard(CarouselWorkoutItem item) async {
+    final routine = item.routine;
+    if (routine == null) return;
+
+    final exercises = await resolveRoutineExercises(
+      ref.read(workoutRepositoryProvider),
+      routine.exerciseIds,
+    );
+    if (!mounted) return;
+    if (exercises.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This routine has no available exercises yet.'),
+        ),
+      );
+      return;
+    }
+    ref
+        .read(activeWorkoutProvider.notifier)
+        .startNewWorkout(title: item.title, initialExercises: exercises);
+    context.push('/active-workout');
   }
 
   @override
@@ -119,7 +146,9 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
       if (durationSec <= 0 && w.completedAt != null) {
         durationSec = w.completedAt!.difference(w.startedAt).inSeconds;
       }
-      final minutes = durationSec >= 60 ? (durationSec / 60).round() : (durationSec > 0 ? 1 : 0);
+      final minutes = durationSec >= 60
+          ? (durationSec / 60).round()
+          : (durationSec > 0 ? 1 : 0);
       final burned = (w.caloriesBurned != null && w.caloriesBurned! > 0)
           ? w.caloriesBurned!
           : (minutes > 0 ? (minutes * 7.5).round() : 0);
@@ -141,21 +170,24 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
 
     // 3. Assigned daily routine (if not completed today yet)
     final assigned = routineState.assignedRoutine;
-    final alreadyDoneAssigned = completedToday.any((w) => w.title == assigned?.title);
+    final alreadyDoneAssigned = completedToday.any(
+      (w) => w.title == assigned?.title,
+    );
     if (assigned != null && !alreadyDoneAssigned) {
       final estCalories = (assigned.durationMinutes * 7.5).round();
       items.add(
         CarouselWorkoutItem(
           id: assigned.id,
           title: assigned.title,
-          subtitle: '${assigned.durationMinutes} min • ${assigned.exerciseIds.length} Exercises',
+          subtitle:
+              '${assigned.durationMinutes} min • ${assigned.exerciseIds.length} Exercises',
           category: assigned.category,
           tag: 'ASSIGNED ROUTINE',
           imageAsset: assigned.imageAsset,
           progress: 0.0,
           durationText: '${assigned.durationMinutes} min',
           caloriesText: '$estCalories Kcal',
-          canMarkDone: true,
+          canMarkDone: false,
           routine: assigned,
         ),
       );
@@ -204,11 +236,11 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
             return Container(
               decoration: BoxDecoration(
                 color: widget.isDark ? AppColors.darkBackground : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
-              padding: EdgeInsets.only(
-                bottom: viewInsets.bottom,
-              ),
+              padding: EdgeInsets.only(bottom: viewInsets.bottom),
               child: SafeArea(
                 top: false,
                 child: SingleChildScrollView(
@@ -223,7 +255,10 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                         children: [
                           const Text(
                             'Add Extra Workout Today',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
@@ -242,7 +277,9 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                         decoration: InputDecoration(
                           labelText: 'Workout Title',
                           errorText: titleError,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           prefixIcon: const Icon(Icons.fitness_center_rounded),
                         ),
                       ),
@@ -262,14 +299,17 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                                 if (d != null && d > 0) {
                                   // Auto-calculate realistic estimated calories (~7 kcal/min)
                                   setModalState(() {
-                                    caloriesController.text = '${(d * 7).round()}';
+                                    caloriesController.text =
+                                        '${(d * 7).round()}';
                                   });
                                 }
                               },
                               decoration: InputDecoration(
                                 labelText: 'Duration (min)',
                                 errorText: durationError,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 prefixIcon: const Icon(Icons.schedule_rounded),
                               ),
                             ),
@@ -288,8 +328,12 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                                 labelText: 'Burned (kcal)',
                                 helperText: 'Estimated • editable',
                                 errorText: caloriesError,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                prefixIcon: const Icon(Icons.local_fire_department_rounded),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.local_fire_department_rounded,
+                                ),
                               ),
                             ),
                           ),
@@ -301,8 +345,12 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                           Expanded(
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               onPressed: isSubmitting
                                   ? null
@@ -319,30 +367,51 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.limeGreen,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                               onPressed: isSubmitting
                                   ? null
                                   : () async {
                                       final title = titleController.text.trim();
-                                      final durationStr = durationController.text.trim();
-                                      final caloriesStr = caloriesController.text.trim();
+                                      final durationStr = durationController
+                                          .text
+                                          .trim();
+                                      final caloriesStr = caloriesController
+                                          .text
+                                          .trim();
 
-                                      final duration = int.tryParse(durationStr);
-                                      final calories = int.tryParse(caloriesStr);
+                                      final duration = int.tryParse(
+                                        durationStr,
+                                      );
+                                      final calories = int.tryParse(
+                                        caloriesStr,
+                                      );
 
                                       bool hasError = false;
                                       if (title.isEmpty) {
-                                        setModalState(() => titleError = 'Title cannot be empty');
+                                        setModalState(
+                                          () => titleError =
+                                              'Title cannot be empty',
+                                        );
                                         hasError = true;
                                       }
                                       if (duration == null || duration <= 0) {
-                                        setModalState(() => durationError = 'Enter valid minutes (>0)');
+                                        setModalState(
+                                          () => durationError =
+                                              'Enter valid minutes (>0)',
+                                        );
                                         hasError = true;
                                       }
                                       if (calories == null || calories < 0) {
-                                        setModalState(() => caloriesError = 'Enter valid kcal');
+                                        setModalState(
+                                          () => caloriesError =
+                                              'Enter valid kcal',
+                                        );
                                         hasError = true;
                                       }
 
@@ -352,17 +421,22 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
 
                                       try {
                                         final now = DateTime.now();
-                                        final repo = ref.read(workoutRepositoryProvider);
+                                        final repo = ref.read(
+                                          workoutRepositoryProvider,
+                                        );
 
                                         final w = WorkoutEntity(
                                           id: 'extra_workout_${DateTime.now().millisecondsSinceEpoch}',
                                           title: title,
                                           category: 'Extra Session',
-                                          startedAt: now.subtract(Duration(minutes: duration!)),
+                                          startedAt: now.subtract(
+                                            Duration(minutes: duration!),
+                                          ),
                                           completedAt: now,
                                           status: 'completed',
                                           durationSeconds: duration * 60,
-                                          caloriesBurned: calories ?? (duration * 7),
+                                          caloriesBurned:
+                                              calories ?? (duration * 7),
                                           updatedAt: now,
                                         );
 
@@ -370,16 +444,23 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                                         ref.invalidate(workoutsStreamProvider);
                                         if (ctx.mounted) Navigator.pop(ctx);
                                         if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
-                                              content: Text('✅ Logged extra workout: $title (+${calories ?? (duration * 7)} kcal)'),
-                                              behavior: SnackBarBehavior.floating,
+                                              content: Text(
+                                                '✅ Logged extra workout: $title (+${calories ?? (duration * 7)} kcal)',
+                                              ),
+                                              behavior:
+                                                  SnackBarBehavior.floating,
                                             ),
                                           );
                                         }
                                       } finally {
                                         if (modalCtx.mounted) {
-                                          setModalState(() => isSubmitting = false);
+                                          setModalState(
+                                            () => isSubmitting = false,
+                                          );
                                         }
                                       }
                                     },
@@ -387,11 +468,16 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.black,
+                                      ),
                                     )
                                   : const Text(
                                       'Log Workout',
-                                      style: TextStyle(fontWeight: FontWeight.w800),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                     ),
                             ),
                           ),
@@ -422,7 +508,8 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
       data: (workouts) => workouts.where((w) {
         if (w.status != 'completed' || w.completedAt == null) return false;
         final now = DateTime.now();
-        final isToday = w.completedAt!.year == now.year &&
+        final isToday =
+            w.completedAt!.year == now.year &&
             w.completedAt!.month == now.month &&
             w.completedAt!.day == now.day;
         if (!isToday) return false;
@@ -471,9 +558,14 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                     onTap: () => _showAddExtraWorkoutSheet(context),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.limeGreen.withValues(alpha: widget.isDark ? 0.16 : 0.12),
+                        color: AppColors.limeGreen.withValues(
+                          alpha: widget.isDark ? 0.16 : 0.12,
+                        ),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: AppColors.limeGreen.withValues(alpha: 0.35),
@@ -483,7 +575,11 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.add_rounded, size: 14, color: AppColors.limeGreen),
+                          Icon(
+                            Icons.add_rounded,
+                            size: 14,
+                            color: AppColors.limeGreen,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Extra Workout',
@@ -512,8 +608,8 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                             color: isCurrent
                                 ? AppColors.limeGreen
                                 : (widget.isDark
-                                    ? Colors.white.withValues(alpha: 0.20)
-                                    : Colors.black.withValues(alpha: 0.15)),
+                                      ? Colors.white.withValues(alpha: 0.20)
+                                      : Colors.black.withValues(alpha: 0.15)),
                             borderRadius: BorderRadius.circular(3),
                           ),
                         );
@@ -550,6 +646,8 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                     context.push('/routines');
                   } else if (item.isLive) {
                     context.push('/active-workout');
+                  } else if (item.routine != null) {
+                    _startRoutineFromCard(item);
                   } else {
                     context.push('/workout/${item.id}');
                   }
@@ -559,10 +657,12 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                     context.push('/routines');
                   } else if (item.isLive) {
                     context.push('/active-workout');
+                  } else if (item.routine != null) {
+                    _startRoutineFromCard(item);
                   } else {
-                    ref.read(activeWorkoutProvider.notifier).startNewWorkout(
-                          title: item.title,
-                        );
+                    ref
+                        .read(activeWorkoutProvider.notifier)
+                        .startNewWorkout(title: item.title);
                     context.push('/active-workout');
                   }
                 },
@@ -574,7 +674,9 @@ class _HomeTodayWorkoutHeroState extends ConsumerState<HomeTodayWorkoutHero> {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('🎉 Completed today\'s workout: ${item.title}!'),
+                              content: Text(
+                                '🎉 Completed today\'s workout: ${item.title}!',
+                              ),
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -706,17 +808,27 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: (isDark ? Colors.black : Colors.white)
-                                        .withValues(alpha: 0.40),
+                                    color:
+                                        (isDark ? Colors.black : Colors.white)
+                                            .withValues(alpha: 0.40),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: item.isCompleted
-                                          ? AppColors.limeGreen.withValues(alpha: 0.4)
+                                          ? AppColors.limeGreen.withValues(
+                                              alpha: 0.4,
+                                            )
                                           : (isDark
-                                              ? Colors.white.withValues(alpha: 0.15)
-                                              : Colors.black.withValues(alpha: 0.10)),
+                                                ? Colors.white.withValues(
+                                                    alpha: 0.15,
+                                                  )
+                                                : Colors.black.withValues(
+                                                    alpha: 0.10,
+                                                  )),
                                     ),
                                   ),
                                   child: Row(
@@ -729,8 +841,8 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                           color: item.isCompleted
                                               ? AppColors.limeGreen
                                               : (item.isLive
-                                                  ? const Color(0xFFFF5252)
-                                                  : AppColors.electricCyan),
+                                                    ? const Color(0xFFFF5252)
+                                                    : AppColors.electricCyan),
                                           shape: BoxShape.circle,
                                         ),
                                       ),
@@ -748,8 +860,13 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                               color: item.isCompleted
                                                   ? AppColors.limeGreen
                                                   : (item.isLive
-                                                      ? const Color(0xFFFF5252)
-                                                      : (isDark ? Colors.white70 : Colors.black87)),
+                                                        ? const Color(
+                                                            0xFFFF5252,
+                                                          )
+                                                        : (isDark
+                                                              ? Colors.white70
+                                                              : Colors
+                                                                    .black87)),
                                               letterSpacing: 0.4,
                                             ),
                                           ),
@@ -759,57 +876,28 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              if (onMarkDone != null)
-                                InkWell(
-                                  onTap: onMarkDone,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.limeGreen.withValues(alpha: 0.20),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: AppColors.limeGreen.withValues(alpha: 0.6),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.check_circle_rounded, size: 14, color: AppColors.limeGreen),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Mark Done',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.limeGreen,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(
+                                    alpha: isDark ? 0.35 : 0.15,
                                   ),
-                                )
-                              else
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.15),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: InkWell(
-                                    onTap: onToggleFavorite,
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(6),
-                                      child: Icon(
-                                        isFavorite
-                                            ? Icons.star_rounded
-                                            : Icons.star_outline_rounded,
-                                        color: const Color(0xFFFFB300),
-                                        size: 18,
-                                      ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: InkWell(
+                                  onTap: onToggleFavorite,
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: Icon(
+                                      isFavorite
+                                          ? Icons.star_rounded
+                                          : Icons.star_outline_rounded,
+                                      color: const Color(0xFFFFB300),
+                                      size: 18,
                                     ),
                                   ),
                                 ),
+                              ),
                             ],
                           ),
 
@@ -827,7 +915,9 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: -0.5,
                                   height: 1.15,
-                                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.lightTextPrimary,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -864,15 +954,22 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                         child: CircularProgressIndicator(
                                           value: item.progress,
                                           strokeWidth: 3.2,
-                                          backgroundColor: (isDark ? Colors.white : Colors.black)
-                                              .withValues(alpha: 0.12),
-                                          valueColor: AlwaysStoppedAnimation<Color>(
-                                            item.isCompleted
-                                                ? AppColors.limeGreen
-                                                : (item.isLive
-                                                    ? const Color(0xFFFF5252)
-                                                    : AppColors.electricCyan),
-                                          ),
+                                          backgroundColor:
+                                              (isDark
+                                                      ? Colors.white
+                                                      : Colors.black)
+                                                  .withValues(alpha: 0.12),
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                item.isCompleted
+                                                    ? AppColors.limeGreen
+                                                    : (item.isLive
+                                                          ? const Color(
+                                                              0xFFFF5252,
+                                                            )
+                                                          : AppColors
+                                                                .electricCyan),
+                                              ),
                                         ),
                                       ),
                                       Container(
@@ -882,16 +979,16 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                           color: item.isCompleted
                                               ? AppColors.limeGreen
                                               : (item.isLive
-                                                  ? const Color(0xFFFF5252)
-                                                  : AppColors.limeGreen),
+                                                    ? const Color(0xFFFF5252)
+                                                    : AppColors.limeGreen),
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           item.isCompleted
                                               ? Icons.check_rounded
                                               : (item.isLive
-                                                  ? Icons.pause_rounded
-                                                  : Icons.play_arrow_rounded),
+                                                    ? Icons.pause_rounded
+                                                    : Icons.play_arrow_rounded),
                                           color: Colors.black,
                                           size: 20,
                                         ),
@@ -912,18 +1009,20 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                       item.isCompleted
                                           ? '100% COMPLETED'
                                           : (item.progress > 0
-                                              ? '${(item.progress * 100).toInt()}% COMPLETED'
-                                              : (item.isDefaultEmptyState
-                                                  ? 'START WORKOUT'
-                                                  : 'START WORKOUT')),
+                                                ? '${(item.progress * 100).toInt()}% COMPLETED'
+                                                : (item.isDefaultEmptyState
+                                                      ? 'START WORKOUT'
+                                                      : 'START WORKOUT')),
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
                                         color: item.isCompleted
                                             ? AppColors.limeGreen
                                             : (item.progress > 0
-                                                ? AppColors.electricCyan
-                                                : (isDark ? Colors.white70 : Colors.black87)),
+                                                  ? AppColors.electricCyan
+                                                  : (isDark
+                                                        ? Colors.white70
+                                                        : Colors.black87)),
                                         letterSpacing: 0.4,
                                       ),
                                     ),
@@ -931,13 +1030,15 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                     Wrap(
                                       spacing: 12,
                                       runSpacing: 2,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      crossAxisAlignment:
+                                          WrapCrossAlignment.center,
                                       children: [
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             const Icon(
-                                              Icons.local_fire_department_rounded,
+                                              Icons
+                                                  .local_fire_department_rounded,
                                               size: 13,
                                               color: Color(0xFFFF7043),
                                             ),
@@ -947,7 +1048,10 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                               style: TextStyle(
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w700,
-                                                color: isDark ? Colors.white70 : AppColors.lightTextPrimary,
+                                                color: isDark
+                                                    ? Colors.white70
+                                                    : AppColors
+                                                          .lightTextPrimary,
                                               ),
                                             ),
                                           ],
@@ -960,7 +1064,8 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                               size: 13,
                                               color: isDark
                                                   ? AppColors.darkTextSecondary
-                                                  : AppColors.lightTextSecondary,
+                                                  : AppColors
+                                                        .lightTextSecondary,
                                             ),
                                             const SizedBox(width: 3),
                                             Text(
@@ -969,8 +1074,10 @@ class _FuturisticWorkoutCard extends StatelessWidget {
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w600,
                                                 color: isDark
-                                                    ? AppColors.darkTextSecondary
-                                                    : AppColors.lightTextSecondary,
+                                                    ? AppColors
+                                                          .darkTextSecondary
+                                                    : AppColors
+                                                          .lightTextSecondary,
                                               ),
                                             ),
                                           ],

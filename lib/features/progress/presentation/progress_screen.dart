@@ -7,6 +7,8 @@ import 'package:fit_host/core/services/supabase_service.dart';
 import 'package:fit_host/features/auth/presentation/dialogs/feature_upsell_sheet.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/steps/presentation/controllers/step_controller.dart';
+import 'package:fit_host/core/widgets/charts/volume_trend_chart.dart';
+import 'package:fit_host/core/widgets/charts/weekly_steps_chart.dart';
 
 class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
@@ -18,19 +20,24 @@ class ProgressScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Progress & Analytics'),
-      ),
+      appBar: AppBar(title: const Text('Progress & Analytics')),
       body: workoutsAsync.when(
         data: (workouts) {
-          final completed =
-              workouts.where((w) => w.status == 'completed').toList();
-          final totalVolume =
-              completed.fold(0.0, (sum, w) => sum + w.totalVolumeKg);
-          final totalSets =
-              completed.fold(0, (sum, w) => sum + w.completedSets);
-          final totalMinutes =
-              completed.fold(0, (sum, w) => sum + (w.durationSeconds ~/ 60));
+          final completed = workouts
+              .where((w) => w.status == 'completed')
+              .toList();
+          final totalVolume = completed.fold(
+            0.0,
+            (sum, w) => sum + w.totalVolumeKg,
+          );
+          final totalSets = completed.fold(
+            0,
+            (sum, w) => sum + w.completedSets,
+          );
+          final totalMinutes = completed.fold(
+            0,
+            (sum, w) => sum + (w.durationSeconds ~/ 60),
+          );
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
@@ -56,8 +63,11 @@ class ProgressScreen extends ConsumerWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.bolt_rounded,
-                            color: AppColors.limeGreen, size: 24),
+                        const Icon(
+                          Icons.bolt_rounded,
+                          color: AppColors.limeGreen,
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'All-Time Training Volume',
@@ -128,91 +138,54 @@ class ProgressScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // Daily Steps & Movement Analytics Card (Deliverable E)
+              // Daily Steps & Movement Analytics Card
               _StepMovementCard(isDark: isDark),
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
 
-              const Text(
-                'Recent Volume Progression',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // 7-Day Interactive Step Bar Chart
+              Consumer(
+                builder: (context, ref, _) {
+                  final stepState = ref.watch(stepControllerProvider);
+                  return WeeklyStepsChart(
+                    history: stepState.history,
+                    todaySteps: stepState.todaySteps,
+                    targetSteps: stepState.targetSteps,
+                    isDark: isDark,
+                  );
+                },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              if (completed.isEmpty)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Center(
-                      child: Text(
-                        'Complete workouts to visualize volume graphs and progressive overload.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                        ),
-                      ),
+              // Part 4: Body Measurements & Progress Photo Gallery
+              Row(
+                children: [
+                  Expanded(
+                    child: _QuickNavigationCard(
+                      icon: Icons.straighten_rounded,
+                      title: 'Body Metrics',
+                      subtitle: 'Tape & weight log',
+                      color: AppColors.limeGreen,
+                      onTap: () => context.push('/progress/measurements'),
+                      isDark: isDark,
                     ),
                   ),
-                )
-              else
-                ...completed.take(5).map((w) {
-                  final maxVol = completed.fold(
-                      1.0,
-                      (max, item) =>
-                          item.totalVolumeKg > max ? item.totalVolumeKg : max);
-                  final ratio = (w.totalVolumeKg / maxVol).clamp(0.05, 1.0);
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkSurface : Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isDark
-                            ? AppColors.darkSurfaceBorder
-                            : AppColors.lightSurfaceBorder,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _QuickNavigationCard(
+                      icon: Icons.photo_library_outlined,
+                      title: 'Photo Gallery',
+                      subtitle: 'Before & After tool',
+                      color: AppColors.electricCyan,
+                      onTap: () => context.push('/progress/gallery'),
+                      isDark: isDark,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              w.title,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              '${w.totalVolumeKg.toInt()} kg',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.limeGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: ratio,
-                            minHeight: 6,
-                            backgroundColor: isDark
-                                ? AppColors.darkSurfaceElevated
-                                : AppColors.lightSurfaceElevated,
-                            valueColor: const AlwaysStoppedAnimation(
-                              AppColors.limeGreen,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
+              // 14-Day Interactive Volume Progression Curve
+              VolumeTrendChart(workouts: completed, days: 14, isDark: isDark),
               const SizedBox(height: 24),
               // Advanced Progress Charts (>7d) - Gated for guests
               Row(
@@ -224,7 +197,10 @@ class ProgressScreen extends ConsumerWidget {
                   ),
                   if (ref.watch(authProvider).isGuest)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
@@ -232,7 +208,11 @@ class ProgressScreen extends ConsumerWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.lock_rounded, size: 12, color: Colors.amber),
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 12,
+                            color: Colors.amber,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Account Only',
@@ -268,8 +248,14 @@ class ProgressScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: isDark
-                              ? [const Color(0xFF19251E), const Color(0xFF141F28)]
-                              : [const Color(0xFFF0FDF4), const Color(0xFFE8F6FE)],
+                              ? [
+                                  const Color(0xFF19251E),
+                                  const Color(0xFF141F28),
+                                ]
+                              : [
+                                  const Color(0xFFF0FDF4),
+                                  const Color(0xFFE8F6FE),
+                                ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -287,7 +273,9 @@ class ProgressScreen extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.limeGreen.withValues(alpha: 0.15),
+                                  color: AppColors.limeGreen.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -333,7 +321,10 @@ class ProgressScreen extends ConsumerWidget {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.limeGreen,
                               foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -341,7 +332,10 @@ class ProgressScreen extends ConsumerWidget {
                             icon: const Icon(Icons.lock_open_rounded, size: 16),
                             label: const Text(
                               'Unlock Advanced Charts',
-                              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -350,57 +344,7 @@ class ProgressScreen extends ConsumerWidget {
                   ),
                 )
               else
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkSurface : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkSurfaceBorder
-                          : AppColors.lightSurfaceBorder,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '30-Day Training Load',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.electricCyan.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'PRO ANALYTICS',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.electricCyan,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Total 30-Day Volume: ${(totalVolume / 1000).toStringAsFixed(1)} tons across ${completed.length} sessions.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark
-                              ? AppColors.darkTextSecondary
-                              : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                VolumeTrendChart(workouts: completed, days: 30, isDark: isDark),
             ],
           );
         },
@@ -432,7 +376,9 @@ class _AnalyticsCard extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Column(
@@ -449,7 +395,9 @@ class _AnalyticsCard extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
         ],
@@ -492,7 +440,11 @@ class _StepMovementCard extends ConsumerWidget {
                     color: AppColors.limeGreen.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.directions_walk_rounded, color: AppColors.limeGreen, size: 22),
+                  child: const Icon(
+                    Icons.directions_walk_rounded,
+                    color: AppColors.limeGreen,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -501,14 +453,19 @@ class _StepMovementCard extends ConsumerWidget {
                     children: [
                       const Text(
                         'Daily Movement & Pedometer',
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${NumberFormat('#,###').format(steps.todaySteps)} / ${NumberFormat('#,###').format(steps.targetSteps)} steps ($pct%)',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
@@ -516,10 +473,18 @@ class _StepMovementCard extends ConsumerWidget {
                 ),
                 Text(
                   steps.formattedDistance,
-                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.electricCyan, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.electricCyan,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Colors.grey),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: Colors.grey,
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -529,7 +494,9 @@ class _StepMovementCard extends ConsumerWidget {
                 value: steps.progressPercentage,
                 minHeight: 6,
                 backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.limeGreen),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.limeGreen,
+                ),
               ),
             ),
           ],
@@ -539,3 +506,86 @@ class _StepMovementCard extends ConsumerWidget {
   }
 }
 
+class _QuickNavigationCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _QuickNavigationCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 16,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -36,21 +36,33 @@ void main() {
       await memoryDb.close();
     });
 
-    test('Exponential backoff calculation adheres to exponential curve with upper bound and jitter', () {
-      expect(worker.calculateBackoff(0), equals(Duration.zero));
-      expect(worker.calculateBackoff(1, withJitter: false), equals(const Duration(milliseconds: 3000)));
-      expect(worker.calculateBackoff(2, withJitter: false), equals(const Duration(milliseconds: 6000)));
-      expect(worker.calculateBackoff(3, withJitter: false), equals(const Duration(milliseconds: 12000)));
+    test(
+      'Exponential backoff calculation adheres to exponential curve with upper bound and jitter',
+      () {
+        expect(worker.calculateBackoff(0), equals(Duration.zero));
+        expect(
+          worker.calculateBackoff(1, withJitter: false),
+          equals(const Duration(milliseconds: 3000)),
+        );
+        expect(
+          worker.calculateBackoff(2, withJitter: false),
+          equals(const Duration(milliseconds: 6000)),
+        );
+        expect(
+          worker.calculateBackoff(3, withJitter: false),
+          equals(const Duration(milliseconds: 12000)),
+        );
 
-      // With jitter (±20% range)
-      final j1 = worker.calculateBackoff(1);
-      expect(j1.inMilliseconds, greaterThanOrEqualTo(2400));
-      expect(j1.inMilliseconds, lessThanOrEqualTo(3600));
+        // With jitter (±20% range)
+        final j1 = worker.calculateBackoff(1);
+        expect(j1.inMilliseconds, greaterThanOrEqualTo(2400));
+        expect(j1.inMilliseconds, lessThanOrEqualTo(3600));
 
-      // High attempts do not exceed maximum backoff ceiling (300s ± 20%)
-      final maxBackoff = worker.calculateBackoff(20);
-      expect(maxBackoff.inSeconds, lessThanOrEqualTo(360));
-    });
+        // High attempts do not exceed maximum backoff ceiling (300s ± 20%)
+        final maxBackoff = worker.calculateBackoff(20);
+        expect(maxBackoff.inSeconds, lessThanOrEqualTo(360));
+      },
+    );
 
     test('Enqueueing mutation stores payload with explicit user_id', () async {
       const userId = 'auth-uid-777';
@@ -85,24 +97,27 @@ void main() {
       expect(decodedPayload['title'], equals('Evening Core & Flexibility'));
     });
 
-    test('Offline guard prevents queue draining when connection is unavailable', () async {
-      connectivity.isOnline = false;
+    test(
+      'Offline guard prevents queue draining when connection is unavailable',
+      () async {
+        connectivity.isOnline = false;
 
-      await worker.enqueueMutation(
-        userId: 'auth-uid-888',
-        entityType: 'hydration_logs',
-        entityId: 'hydration-log-1',
-        operation: 'INSERT',
-        payload: {'water_glasses': 8},
-      );
+        await worker.enqueueMutation(
+          userId: 'auth-uid-888',
+          entityType: 'hydration_logs',
+          entityId: 'hydration-log-1',
+          operation: 'INSERT',
+          payload: {'water_glasses': 8},
+        );
 
-      final drainedCount = await worker.drainQueue();
-      expect(drainedCount, equals(0));
+        final drainedCount = await worker.drainQueue();
+        expect(drainedCount, equals(0));
 
-      // Item remains intact in pending state
-      final item = await memoryDb.select(memoryDb.syncQueue).getSingle();
-      expect(item.status, equals('pending'));
-      expect(item.attempts, equals(0));
-    });
+        // Item remains intact in pending state
+        final item = await memoryDb.select(memoryDb.syncQueue).getSingle();
+        expect(item.status, equals('pending'));
+        expect(item.attempts, equals(0));
+      },
+    );
   });
 }

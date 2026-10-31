@@ -51,21 +51,27 @@ class WorkoutPlanGenerator {
         .map((g) => goalToTag[g] ?? g.toLowerCase().replaceAll(' ', '_'))
         .toSet();
 
-    final matchesGenderGoal = exercise.recommendedFor.any((tag) => genderGoalTags.contains(tag));
+    final matchesGenderGoal = exercise.recommendedFor.any(
+      (tag) => genderGoalTags.contains(tag),
+    );
     if (matchesGenderGoal) {
       return 3.0;
     }
 
     // 2. Matches focusAreas (2.0x)
-    final normFocusAreas = focusAreas.map((f) => f.toLowerCase().replaceAll(' ', '_')).toSet();
+    final normFocusAreas = focusAreas
+        .map((f) => f.toLowerCase().replaceAll(' ', '_'))
+        .toSet();
     final catNorm = exercise.category.toLowerCase().replaceAll(' ', '_');
     final muscleNorm = exercise.targetMuscle.toLowerCase();
-    final matchesFocus = normFocusAreas.any((f) =>
-        f == catNorm ||
-        f == 'full_body' ||
-        catNorm.contains(f) ||
-        muscleNorm.contains(f.replaceAll('_', ' ')) ||
-        exercise.recommendedFor.contains(f));
+    final matchesFocus = normFocusAreas.any(
+      (f) =>
+          f == catNorm ||
+          f == 'full_body' ||
+          catNorm.contains(f) ||
+          muscleNorm.contains(f.replaceAll('_', ' ')) ||
+          exercise.recommendedFor.contains(f),
+    );
     if (matchesFocus) {
       return 2.0;
     }
@@ -109,8 +115,14 @@ class WorkoutPlanGenerator {
     // Sort descending by weight
     weighted.sort((a, b) => b.value.compareTo(a.value));
 
-    final topPriority = weighted.where((entry) => entry.value >= 3.0).map((e) => e.key).toList();
-    final otherExercises = weighted.where((entry) => entry.value < 3.0).map((e) => e.key).toList();
+    final topPriority = weighted
+        .where((entry) => entry.value >= 3.0)
+        .map((e) => e.key)
+        .toList();
+    final otherExercises = weighted
+        .where((entry) => entry.value < 3.0)
+        .map((e) => e.key)
+        .toList();
 
     final result = <ExerciseEntity>[];
 

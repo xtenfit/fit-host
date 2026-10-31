@@ -10,7 +10,11 @@ import '../../features/nutrition/domain/models/nutrition_models.dart';
 
 abstract class HydrationRepository {
   Future<int> getWaterGlasses(DateTime date);
-  Future<void> setWaterGlasses(DateTime date, int glasses, {int targetGlasses = 10});
+  Future<void> setWaterGlasses(
+    DateTime date,
+    int glasses, {
+    int targetGlasses = 10,
+  });
   Future<List<LiquidDrinkEntry>> getLoggedDrinks(DateTime date);
   Future<void> logDrink(LiquidDrinkEntry drink, {DateTime? date});
   Future<void> removeDrink(String drinkId);
@@ -27,36 +31,53 @@ class LocalHydrationRepository implements HydrationRepository {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-    final row = await (db.select(db.hydrationLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(startOfDay) &
-              t.logDate.isSmallerOrEqualValue(endOfDay))
-          ..orderBy([(t) => drift.OrderingTerm(expression: t.updatedAt, mode: drift.OrderingMode.desc)])
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (db.select(db.hydrationLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.logDate.isBiggerOrEqualValue(startOfDay) &
+                    t.logDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..orderBy([
+                (t) => drift.OrderingTerm(
+                  expression: t.updatedAt,
+                  mode: drift.OrderingMode.desc,
+                ),
+              ])
+              ..limit(1))
+            .getSingleOrNull();
 
     return row?.waterGlasses ?? 0;
   }
 
   @override
-  Future<void> setWaterGlasses(DateTime date, int glasses, {int targetGlasses = 10}) async {
+  Future<void> setWaterGlasses(
+    DateTime date,
+    int glasses, {
+    int targetGlasses = 10,
+  }) async {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
     final now = DateTime.now();
 
-    final existing = await (db.select(db.hydrationLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(startOfDay) &
-              t.logDate.isSmallerOrEqualValue(endOfDay))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (db.select(db.hydrationLogs)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.deletedAt.isNull() &
+                    t.logDate.isBiggerOrEqualValue(startOfDay) &
+                    t.logDate.isSmallerOrEqualValue(endOfDay),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
     if (existing != null) {
-      await (db.update(db.hydrationLogs)..where((t) => t.id.equals(existing.id))).write(
+      await (db.update(
+        db.hydrationLogs,
+      )..where((t) => t.id.equals(existing.id))).write(
         HydrationLogsCompanion(
           waterGlasses: drift.Value(glasses),
           targetGlasses: drift.Value(targetGlasses),
@@ -64,7 +85,9 @@ class LocalHydrationRepository implements HydrationRepository {
         ),
       );
     } else {
-      await db.into(db.hydrationLogs).insert(
+      await db
+          .into(db.hydrationLogs)
+          .insert(
             HydrationLogsCompanion.insert(
               id: const Uuid().v4(),
               userId: drift.Value(userId),
@@ -87,7 +110,9 @@ class LocalHydrationRepository implements HydrationRepository {
   @override
   Future<void> logDrink(LiquidDrinkEntry drink, {DateTime? date}) async {
     final now = DateTime.now();
-    await db.into(db.hydrationLogs).insert(
+    await db
+        .into(db.hydrationLogs)
+        .insert(
           HydrationLogsCompanion.insert(
             id: drink.id,
             userId: drift.Value(userId),
@@ -104,7 +129,9 @@ class LocalHydrationRepository implements HydrationRepository {
 
   @override
   Future<void> removeDrink(String drinkId) async {
-    await (db.update(db.hydrationLogs)..where((t) => t.id.equals(drinkId))).write(
+    await (db.update(
+      db.hydrationLogs,
+    )..where((t) => t.id.equals(drinkId))).write(
       HydrationLogsCompanion(
         deletedAt: drift.Value(DateTime.now()),
         updatedAt: drift.Value(DateTime.now()),
@@ -135,7 +162,11 @@ class CloudHydrationRepository implements HydrationRepository {
   }
 
   @override
-  Future<void> setWaterGlasses(DateTime date, int glasses, {int targetGlasses = 10}) async {
+  Future<void> setWaterGlasses(
+    DateTime date,
+    int glasses, {
+    int targetGlasses = 10,
+  }) async {
     await _local.setWaterGlasses(date, glasses, targetGlasses: targetGlasses);
 
     final dateStr =
@@ -217,10 +248,13 @@ class CloudHydrationRepository implements HydrationRepository {
 
     if (supabase != null) {
       try {
-        await supabase!.from('hydration_logs').update({
-          'deleted_at': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        }).match({'id': drinkId, 'user_id': userId});
+        await supabase!
+            .from('hydration_logs')
+            .update({
+              'deleted_at': DateTime.now().toUtc().toIso8601String(),
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .match({'id': drinkId, 'user_id': userId});
         return;
       } catch (e) {
         debugPrint('[CloudHydrationRepository] Drink cloud delete error: $e');
@@ -262,7 +296,9 @@ class CloudHydrationRepository implements HydrationRepository {
         final createdAt = DateTime.parse(r['created_at'] as String);
         final updatedAt = DateTime.parse(r['updated_at'] as String);
 
-        await db.into(db.hydrationLogs).insertOnConflictUpdate(
+        await db
+            .into(db.hydrationLogs)
+            .insertOnConflictUpdate(
               HydrationLogsCompanion.insert(
                 id: id,
                 userId: drift.Value(userId),

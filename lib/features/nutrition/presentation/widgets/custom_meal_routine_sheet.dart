@@ -26,7 +26,8 @@ class CustomMealRoutineSheet extends ConsumerStatefulWidget {
 class _CustomMealRoutineSheetState
     extends ConsumerState<CustomMealRoutineSheet> {
   String _selectedDiet = 'all'; // 'all', 'vegan', 'non_veg', etc.
-  final String _selectedMealCategory = 'all'; // 'all', 'breakfast', 'lunch', 'dinner', 'snack'
+  final String _selectedMealCategory =
+      'all'; // 'all', 'breakfast', 'lunch', 'dinner', 'snack'
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +42,8 @@ class _CustomMealRoutineSheetState
       if (_selectedDiet != 'all' && m.dietType != _selectedDiet) {
         return false;
       }
-      if (_selectedMealCategory != 'all' && m.mealType != _selectedMealCategory) {
+      if (_selectedMealCategory != 'all' &&
+          m.mealType != _selectedMealCategory) {
         return false;
       }
       return true;
@@ -130,7 +132,10 @@ class _CustomMealRoutineSheetState
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   children: [
                     // 1. Calorie Balance Card (Gain vs Burn vs Remaining)
                     _CalorieBalanceCard(
@@ -141,10 +146,7 @@ class _CustomMealRoutineSheetState
                     const SizedBox(height: 16),
 
                     // 2. Macro Split Progress
-                    _MacroSplitBar(
-                      nutrition: nutrition,
-                      isDark: isDark,
-                    ),
+                    _MacroSplitBar(nutrition: nutrition, isDark: isDark),
                     const SizedBox(height: 20),
 
                     // 3. Goal Mode Switcher
@@ -224,7 +226,11 @@ class _CustomMealRoutineSheetState
                               vertical: 8,
                             ),
                           ),
-                          icon: const Icon(Icons.add_rounded, size: 16, color: Colors.black),
+                          icon: const Icon(
+                            Icons.add_rounded,
+                            size: 16,
+                            color: Colors.black,
+                          ),
                           label: const Text(
                             'Custom Meal',
                             style: TextStyle(
@@ -254,10 +260,13 @@ class _CustomMealRoutineSheetState
                           const SizedBox(width: 8),
                           if (profile.dietType.isNotEmpty) ...[
                             _DietFilterPill(
-                              label: '🎯 My Diet (${profile.dietType.replaceAll('_', ' ')})',
+                              label:
+                                  '🎯 My Diet (${profile.dietType.replaceAll('_', ' ')})',
                               icon: Icons.stars_rounded,
                               isSelected: _selectedDiet == profile.dietType,
-                              onTap: () => setState(() => _selectedDiet = profile.dietType),
+                              onTap: () => setState(
+                                () => _selectedDiet = profile.dietType,
+                              ),
                               isDark: isDark,
                             ),
                             const SizedBox(width: 8),
@@ -266,7 +275,8 @@ class _CustomMealRoutineSheetState
                             label: '🥩 High Protein',
                             icon: Icons.fitness_center_rounded,
                             isSelected: _selectedDiet == 'high_protein',
-                            onTap: () => setState(() => _selectedDiet = 'high_protein'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'high_protein'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -274,7 +284,8 @@ class _CustomMealRoutineSheetState
                             label: '🥑 Low Carb',
                             icon: Icons.egg_alt_rounded,
                             isSelected: _selectedDiet == 'low_carb',
-                            onTap: () => setState(() => _selectedDiet = 'low_carb'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'low_carb'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -282,7 +293,8 @@ class _CustomMealRoutineSheetState
                             label: '🧀 Vegetarian',
                             icon: Icons.spa_rounded,
                             isSelected: _selectedDiet == 'vegetarian',
-                            onTap: () => setState(() => _selectedDiet = 'vegetarian'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'vegetarian'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -290,7 +302,8 @@ class _CustomMealRoutineSheetState
                             label: '🥗 Vegan',
                             icon: Icons.eco_rounded,
                             isSelected: _selectedDiet == 'vegan',
-                            onTap: () => setState(() => _selectedDiet = 'vegan'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'vegan'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -298,7 +311,8 @@ class _CustomMealRoutineSheetState
                             label: '🫒 Mediterranean',
                             icon: Icons.local_dining_rounded,
                             isSelected: _selectedDiet == 'mediterranean',
-                            onTap: () => setState(() => _selectedDiet = 'mediterranean'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'mediterranean'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -306,7 +320,8 @@ class _CustomMealRoutineSheetState
                             label: '⚖️ Balanced',
                             icon: Icons.tune_rounded,
                             isSelected: _selectedDiet == 'balanced',
-                            onTap: () => setState(() => _selectedDiet = 'balanced'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'balanced'),
                             isDark: isDark,
                           ),
                           const SizedBox(width: 8),
@@ -314,7 +329,8 @@ class _CustomMealRoutineSheetState
                             label: '🍗 Non-Veg',
                             icon: Icons.restaurant_rounded,
                             isSelected: _selectedDiet == 'non_veg',
-                            onTap: () => setState(() => _selectedDiet = 'non_veg'),
+                            onTap: () =>
+                                setState(() => _selectedDiet = 'non_veg'),
                             isDark: isDark,
                           ),
                         ],
@@ -331,7 +347,9 @@ class _CustomMealRoutineSheetState
                           notifier.logMeal(meal);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Logged ${meal.name} (+${meal.calories} kcal)'),
+                              content: Text(
+                                'Logged ${meal.name} (+${meal.calories} kcal)',
+                              ),
                               duration: const Duration(seconds: 1),
                               behavior: SnackBarBehavior.floating,
                             ),
@@ -368,7 +386,9 @@ class _CustomMealRoutineSheetState
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkSurface : Colors.grey.shade100,
+                          color: isDark
+                              ? AppColors.darkSurface
+                              : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Center(
@@ -408,7 +428,9 @@ class _CustomMealRoutineSheetState
     final carbsCtrl = TextEditingController();
     final fatCtrl = TextEditingController();
     String mealType = 'lunch';
-    String dietType = profile.dietType.isNotEmpty ? profile.dietType : 'high_protein';
+    String dietType = profile.dietType.isNotEmpty
+        ? profile.dietType
+        : 'high_protein';
 
     void autoCalculateCalories(StateSetter setDlgState) {
       final p = double.tryParse(proteinCtrl.text) ?? 0.0;
@@ -445,15 +467,38 @@ class _CustomMealRoutineSheetState
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: dietType,
-                          decoration: const InputDecoration(labelText: 'Diet Type'),
+                          decoration: const InputDecoration(
+                            labelText: 'Diet Type',
+                          ),
                           items: const [
-                            DropdownMenuItem(value: 'high_protein', child: Text('🥩 High Protein')),
-                            DropdownMenuItem(value: 'low_carb', child: Text('🥑 Low Carb')),
-                            DropdownMenuItem(value: 'vegetarian', child: Text('🧀 Vegetarian')),
-                            DropdownMenuItem(value: 'vegan', child: Text('🥗 Vegan')),
-                            DropdownMenuItem(value: 'mediterranean', child: Text('🫒 Mediterranean')),
-                            DropdownMenuItem(value: 'balanced', child: Text('⚖️ Balanced')),
-                            DropdownMenuItem(value: 'non_veg', child: Text('🍗 Non-Veg')),
+                            DropdownMenuItem(
+                              value: 'high_protein',
+                              child: Text('🥩 High Protein'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'low_carb',
+                              child: Text('🥑 Low Carb'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'vegetarian',
+                              child: Text('🧀 Vegetarian'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'vegan',
+                              child: Text('🥗 Vegan'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'mediterranean',
+                              child: Text('🫒 Mediterranean'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'balanced',
+                              child: Text('⚖️ Balanced'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'non_veg',
+                              child: Text('🍗 Non-Veg'),
+                            ),
                           ],
                           onChanged: (v) => setDlgState(() => dietType = v!),
                         ),
@@ -462,12 +507,26 @@ class _CustomMealRoutineSheetState
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: mealType,
-                          decoration: const InputDecoration(labelText: 'Meal Type'),
+                          decoration: const InputDecoration(
+                            labelText: 'Meal Type',
+                          ),
                           items: const [
-                            DropdownMenuItem(value: 'breakfast', child: Text('Breakfast')),
-                            DropdownMenuItem(value: 'lunch', child: Text('Lunch')),
-                            DropdownMenuItem(value: 'dinner', child: Text('Dinner')),
-                            DropdownMenuItem(value: 'snack', child: Text('Snack')),
+                            DropdownMenuItem(
+                              value: 'breakfast',
+                              child: Text('Breakfast'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'lunch',
+                              child: Text('Lunch'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'dinner',
+                              child: Text('Dinner'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'snack',
+                              child: Text('Snack'),
+                            ),
                           ],
                           onChanged: (v) => setDlgState(() => mealType = v!),
                         ),
@@ -490,7 +549,10 @@ class _CustomMealRoutineSheetState
                       const SizedBox(width: 8),
                       TextButton.icon(
                         icon: const Icon(Icons.calculate_rounded, size: 16),
-                        label: const Text('Auto-calc', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'Auto-calc',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         onPressed: () => autoCalculateCalories(setDlgState),
                       ),
                     ],
@@ -566,7 +628,9 @@ class _CustomMealRoutineSheetState
                     loggedAt: DateTime.now(),
                   );
 
-                  ref.read(nutritionProvider.notifier).addCustomMeal(customMeal);
+                  ref
+                      .read(nutritionProvider.notifier)
+                      .addCustomMeal(customMeal);
                   Navigator.pop(ctx);
                 },
                 child: const Text('Save & Log Meal'),
@@ -602,7 +666,9 @@ class _CalorieBalanceCard extends StatelessWidget {
         color: isDark ? AppColors.darkSurfaceElevated : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Column(
@@ -612,24 +678,26 @@ class _CalorieBalanceCard extends StatelessWidget {
             children: [
               const Text(
                 'Energy Balance Equations',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (remaining >= 0 ? AppColors.limeGreen : AppColors.warning)
-                      .withValues(alpha: 0.15),
+                  color:
+                      (remaining >= 0 ? AppColors.limeGreen : AppColors.warning)
+                          .withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  remaining >= 0 ? '$remaining kcal left' : '${remaining.abs()} kcal surplus',
+                  remaining >= 0
+                      ? '$remaining kcal left'
+                      : '${remaining.abs()} kcal surplus',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: remaining >= 0 ? AppColors.limeGreen : AppColors.warning,
+                    color: remaining >= 0
+                        ? AppColors.limeGreen
+                        : AppColors.warning,
                   ),
                 ),
               ),
@@ -648,7 +716,11 @@ class _CalorieBalanceCard extends StatelessWidget {
                 color: AppColors.limeGreen,
                 icon: Icons.fastfood_rounded,
               ),
-              Container(width: 1, height: 48, color: isDark ? Colors.white12 : Colors.black12),
+              Container(
+                width: 1,
+                height: 48,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
               _MetricCol(
                 label: 'Calories Burned',
                 value: '$burned',
@@ -657,7 +729,11 @@ class _CalorieBalanceCard extends StatelessWidget {
                 icon: Icons.local_fire_department_rounded,
                 onAdd: onAddBurn,
               ),
-              Container(width: 1, height: 48, color: isDark ? Colors.white12 : Colors.black12),
+              Container(
+                width: 1,
+                height: 48,
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
               _MetricCol(
                 label: 'Daily Target',
                 value: '${nutrition.targetCalories}',
@@ -719,14 +795,20 @@ class _MetricCol extends StatelessWidget {
           children: [
             Text(
               sub,
-              style: const TextStyle(fontSize: 10, color: AppColors.darkTextSecondary),
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppColors.darkTextSecondary,
+              ),
             ),
             if (onAdd != null) ...[
               const SizedBox(width: 2),
               InkWell(
                 onTap: onAdd,
-                child: const Icon(Icons.add_circle_outline_rounded,
-                    size: 13, color: Color(0xFFFF5252)),
+                child: const Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 13,
+                  color: Color(0xFFFF5252),
+                ),
               ),
             ],
           ],
@@ -740,16 +822,20 @@ class _MacroSplitBar extends StatelessWidget {
   final DailyNutritionState nutrition;
   final bool isDark;
 
-  const _MacroSplitBar({
-    required this.nutrition,
-    required this.isDark,
-  });
+  const _MacroSplitBar({required this.nutrition, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    final proteinP = (nutrition.totalProteinGained / nutrition.targetProtein).clamp(0.0, 1.0);
-    final carbsP = (nutrition.totalCarbsGained / nutrition.targetCarbs).clamp(0.0, 1.0);
-    final fatP = (nutrition.totalFatGained / nutrition.targetFat).clamp(0.0, 1.0);
+    final proteinP = (nutrition.totalProteinGained / nutrition.targetProtein)
+        .clamp(0.0, 1.0);
+    final carbsP = (nutrition.totalCarbsGained / nutrition.targetCarbs).clamp(
+      0.0,
+      1.0,
+    );
+    final fatP = (nutrition.totalFatGained / nutrition.targetFat).clamp(
+      0.0,
+      1.0,
+    );
 
     return Column(
       children: [
@@ -808,9 +894,14 @@ class _MacroRow extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            Text('$current / ${target}g',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '$current / ${target}g',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -853,7 +944,9 @@ class _GoalChip extends StatelessWidget {
         fontWeight: FontWeight.bold,
         color: isSelected
             ? AppColors.limeGreen
-            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+            : (isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary),
       ),
     );
   }
@@ -888,21 +981,31 @@ class _DietFilterPill extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? AppColors.limeGreen
-                : (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder),
+                : (isDark
+                      ? AppColors.darkSurfaceBorder
+                      : AppColors.lightSurfaceBorder),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 14, color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected
+                  ? Colors.black
+                  : (isDark ? Colors.white70 : Colors.black87),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
+                color: isSelected
+                    ? Colors.black
+                    : (isDark ? Colors.white : Colors.black87),
               ),
             ),
           ],
@@ -963,7 +1066,10 @@ class _MealRoutineItemCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: (isVegan ? Colors.green : Colors.deepOrange)
                               .withValues(alpha: 0.15),
@@ -985,7 +1091,9 @@ class _MealRoutineItemCard extends StatelessWidget {
                     '${meal.calories} kcal • ${meal.proteinGrams.toInt()}g P • ${meal.carbsGrams.toInt()}g C • ${meal.fatGrams.toInt()}g F',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                 ],
@@ -1024,7 +1132,9 @@ class _LoggedMealTile extends StatelessWidget {
         color: isDark ? AppColors.darkSurface : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: Row(
@@ -1036,11 +1146,17 @@ class _LoggedMealTile extends StatelessWidget {
               children: [
                 Text(
                   meal.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
                 Text(
                   '${DateFormat('h:mm a').format(meal.loggedAt)} • ${meal.proteinGrams.toInt()}g Protein',
-                  style: const TextStyle(fontSize: 11, color: AppColors.darkTextSecondary),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.darkTextSecondary,
+                  ),
                 ),
               ],
             ),
@@ -1049,7 +1165,10 @@ class _LoggedMealTile extends StatelessWidget {
             children: [
               Text(
                 '+${meal.calories} kcal',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.limeGreen),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.limeGreen,
+                ),
               ),
               const SizedBox(width: 8),
               IconButton(

@@ -37,7 +37,10 @@ class DaySummaryService {
 
   /// Generates DST-safe list of calendar dates between [startDate] and [endDate] inclusive.
   /// Uses DateTime(year, month, day + 1) to naturally traverse 23h/25h DST boundaries.
-  static List<DateTime> generateDateRange(DateTime startDate, DateTime endDate) {
+  static List<DateTime> generateDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     final List<DateTime> dates = [];
     var current = DateTime(startDate.year, startDate.month, startDate.day);
     final targetEnd = DateTime(endDate.year, endDate.month, endDate.day);
@@ -52,7 +55,10 @@ class DaySummaryService {
   /// Batch query for a given date range.
   /// If signed in and online, attempts server RPC `get_day_summaries`.
   /// Falls back to 1 local batch query per repository and aggregates in Dart.
-  Future<List<DaySummary>> getDaySummaries(DateTime startDate, DateTime endDate) async {
+  Future<List<DaySummary>> getDaySummaries(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
 
@@ -62,13 +68,12 @@ class DaySummaryService {
         final startStr = DateFormat('yyyy-MM-dd').format(start);
         final endStr = DateFormat('yyyy-MM-dd').format(end);
 
-        final response = await supabase!.rpc(
-          'get_day_summaries',
-          params: {
-            'start_date': startStr,
-            'end_date': endStr,
-          },
-        ).timeout(const Duration(milliseconds: 1500));
+        final response = await supabase!
+            .rpc(
+              'get_day_summaries',
+              params: {'start_date': startStr, 'end_date': endStr},
+            )
+            .timeout(const Duration(milliseconds: 1500));
 
         if (response != null && response is List) {
           final serverSummaries = response
@@ -89,7 +94,10 @@ class DaySummaryService {
 
   /// Reactive watch stream across the date range.
   /// Emits new [DaySummary] list immediately whenever any underlying table mutates.
-  Stream<List<DaySummary>> watchDaySummaries(DateTime startDate, DateTime endDate) {
+  Stream<List<DaySummary>> watchDaySummaries(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
 
@@ -111,47 +119,57 @@ class DaySummaryService {
 
     emitLatest();
 
-    final sub1 = (db.select(db.workouts)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.isDeleted.equals(false) &
-              t.status.equals('completed') &
-              t.startedAt.isBiggerOrEqualValue(start) &
-              t.startedAt.isSmallerOrEqualValue(end)))
-        .watch()
-        .listen((_) => emitLatest(), onError: (_) {});
+    final sub1 =
+        (db.select(db.workouts)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.isDeleted.equals(false) &
+                  t.status.equals('completed') &
+                  t.startedAt.isBiggerOrEqualValue(start) &
+                  t.startedAt.isSmallerOrEqualValue(end),
+            ))
+            .watch()
+            .listen((_) => emitLatest(), onError: (_) {});
 
-    final sub2 = (db.select(db.nutritionLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(start) &
-              t.logDate.isSmallerOrEqualValue(end)))
-        .watch()
-        .listen((_) => emitLatest(), onError: (_) {});
+    final sub2 =
+        (db.select(db.nutritionLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.logDate.isBiggerOrEqualValue(start) &
+                  t.logDate.isSmallerOrEqualValue(end),
+            ))
+            .watch()
+            .listen((_) => emitLatest(), onError: (_) {});
 
-    final sub3 = (db.select(db.hydrationLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(start) &
-              t.logDate.isSmallerOrEqualValue(end)))
-        .watch()
-        .listen((_) => emitLatest(), onError: (_) {});
+    final sub3 =
+        (db.select(db.hydrationLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.logDate.isBiggerOrEqualValue(start) &
+                  t.logDate.isSmallerOrEqualValue(end),
+            ))
+            .watch()
+            .listen((_) => emitLatest(), onError: (_) {});
 
-    final sub4 = (db.select(db.stepDailyLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.stepDate.isBiggerOrEqualValue(start) &
-              t.stepDate.isSmallerOrEqualValue(end)))
-        .watch()
-        .listen((_) => emitLatest(), onError: (_) {});
+    final sub4 =
+        (db.select(db.stepDailyLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.stepDate.isBiggerOrEqualValue(start) &
+                  t.stepDate.isSmallerOrEqualValue(end),
+            ))
+            .watch()
+            .listen((_) => emitLatest(), onError: (_) {});
 
-    final sub5 = (db.select(db.reminders)
-          ..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false)))
-        .watch()
-        .listen((_) => emitLatest(), onError: (_) {});
+    final sub5 =
+        (db.select(db.reminders)..where(
+              (t) => t.userId.equals(userId) & t.isDeleted.equals(false),
+            ))
+            .watch()
+            .listen((_) => emitLatest(), onError: (_) {});
 
     controller.onCancel = () {
       sub1.cancel();
@@ -164,43 +182,54 @@ class DaySummaryService {
     return controller.stream;
   }
 
-  Future<List<DaySummary>> _aggregateLocalRange(DateTime start, DateTime end) async {
-    final workouts = await (db.select(db.workouts)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.isDeleted.equals(false) &
-              t.status.equals('completed') &
-              t.startedAt.isBiggerOrEqualValue(start) &
-              t.startedAt.isSmallerOrEqualValue(end)))
-        .get();
+  Future<List<DaySummary>> _aggregateLocalRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final workouts =
+        await (db.select(db.workouts)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.isDeleted.equals(false) &
+                  t.status.equals('completed') &
+                  t.startedAt.isBiggerOrEqualValue(start) &
+                  t.startedAt.isSmallerOrEqualValue(end),
+            ))
+            .get();
 
-    final nutritionLogs = await (db.select(db.nutritionLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(start) &
-              t.logDate.isSmallerOrEqualValue(end)))
-        .get();
+    final nutritionLogs =
+        await (db.select(db.nutritionLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.logDate.isBiggerOrEqualValue(start) &
+                  t.logDate.isSmallerOrEqualValue(end),
+            ))
+            .get();
 
-    final hydrationLogs = await (db.select(db.hydrationLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.logDate.isBiggerOrEqualValue(start) &
-              t.logDate.isSmallerOrEqualValue(end)))
-        .get();
+    final hydrationLogs =
+        await (db.select(db.hydrationLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.logDate.isBiggerOrEqualValue(start) &
+                  t.logDate.isSmallerOrEqualValue(end),
+            ))
+            .get();
 
-    final stepLogs = await (db.select(db.stepDailyLogs)
-          ..where((t) =>
-              t.userId.equals(userId) &
-              t.deletedAt.isNull() &
-              t.stepDate.isBiggerOrEqualValue(start) &
-              t.stepDate.isSmallerOrEqualValue(end)))
-        .get();
+    final stepLogs =
+        await (db.select(db.stepDailyLogs)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.deletedAt.isNull() &
+                  t.stepDate.isBiggerOrEqualValue(start) &
+                  t.stepDate.isSmallerOrEqualValue(end),
+            ))
+            .get();
 
-    final reminders = await (db.select(db.reminders)
-          ..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false)))
-        .get();
+    final reminders = await (db.select(
+      db.reminders,
+    )..where((t) => t.userId.equals(userId) & t.isDeleted.equals(false))).get();
 
     return _combineIntoSummaries(
       start: start,
@@ -261,7 +290,9 @@ class DaySummaryService {
       final dayWorkouts = workoutsByDay[dateKey] ?? [];
       final workoutCount = dayWorkouts.length;
       final workoutDurationMin = dayWorkouts.fold(
-          0, (sum, w) => sum + (w.durationSeconds ~/ 60));
+        0,
+        (sum, w) => sum + (w.durationSeconds ~/ 60),
+      );
       // Calorie burn estimate: ~8 kcal/min for completed workouts
       final workoutCalories = workoutDurationMin * 8;
 
@@ -276,7 +307,8 @@ class DaySummaryService {
       if (nutritionRow != null) {
         waterFromNutrition = nutritionRow.waterGlasses * 250;
         try {
-          final mealsList = jsonDecode(nutritionRow.loggedMeals) as List<dynamic>;
+          final mealsList =
+              jsonDecode(nutritionRow.loggedMeals) as List<dynamic>;
           for (final m in mealsList) {
             final map = m as Map<String, dynamic>;
             calIn += (map['calories'] as num?)?.toInt() ?? 0;
@@ -291,10 +323,12 @@ class DaySummaryService {
       final hydrationRow = hydrationByDay[dateKey];
       final waterFromHydration = hydrationRow != null
           ? (hydrationRow.totalMl > 0
-              ? hydrationRow.totalMl
-              : hydrationRow.waterGlasses * 250)
+                ? hydrationRow.totalMl
+                : hydrationRow.waterGlasses * 250)
           : 0;
-      final totalWaterMl = waterFromHydration > 0 ? waterFromHydration : waterFromNutrition;
+      final totalWaterMl = waterFromHydration > 0
+          ? waterFromHydration
+          : waterFromNutrition;
 
       // Steps
       final stepsRow = stepsByDay[dateKey];
@@ -317,22 +351,24 @@ class DaySummaryService {
         }
       }
 
-      summaries.add(DaySummary(
-        date: d,
-        steps: stepsCount,
-        distanceKm: distKm,
-        workoutCount: workoutCount,
-        workoutDurationMin: workoutDurationMin,
-        caloriesBurned: workoutCalories + stepCalories,
-        caloriesIn: calIn,
-        proteinG: double.parse(protG.toStringAsFixed(1)),
-        carbsG: double.parse(carbG.toStringAsFixed(1)),
-        fatsG: double.parse(fatG.toStringAsFixed(1)),
-        waterMl: totalWaterMl,
-        hasReminder: hasReminder,
-        completedReminders: compReminders,
-        missedReminders: missReminders,
-      ));
+      summaries.add(
+        DaySummary(
+          date: d,
+          steps: stepsCount,
+          distanceKm: distKm,
+          workoutCount: workoutCount,
+          workoutDurationMin: workoutDurationMin,
+          caloriesBurned: workoutCalories + stepCalories,
+          caloriesIn: calIn,
+          proteinG: double.parse(protG.toStringAsFixed(1)),
+          carbsG: double.parse(carbG.toStringAsFixed(1)),
+          fatsG: double.parse(fatG.toStringAsFixed(1)),
+          waterMl: totalWaterMl,
+          hasReminder: hasReminder,
+          completedReminders: compReminders,
+          missedReminders: missReminders,
+        ),
+      );
     }
 
     return summaries;

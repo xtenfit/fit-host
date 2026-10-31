@@ -6,9 +6,15 @@ import 'package:fit_host/features/workouts/presentation/screens/workouts_screen.
 import 'package:fit_host/features/workouts/presentation/screens/active_workout_screen.dart';
 import 'package:fit_host/features/workouts/presentation/screens/workout_detail_screen.dart';
 import 'package:fit_host/features/workouts/presentation/screens/exercise_library_screen.dart';
+import 'package:fit_host/features/workouts/presentation/screens/exercise_wiki_screen.dart';
 import 'package:fit_host/features/workouts/presentation/screens/all_routines_screen.dart';
+import 'package:fit_host/features/workouts/presentation/screens/routine_builder_screen.dart';
+import 'package:fit_host/features/workouts/presentation/screens/workout_summary_screen.dart';
+import 'package:fit_host/features/workouts/domain/models/workout_models.dart';
 import 'package:fit_host/features/workouts/presentation/screens/workout_category_detail_screen.dart';
 import 'package:fit_host/features/progress/presentation/progress_screen.dart';
+import 'package:fit_host/features/progress/presentation/screens/body_measurements_screen.dart';
+import 'package:fit_host/features/progress/presentation/screens/progress_gallery_screen.dart';
 import 'package:fit_host/features/nutrition/presentation/nutrition_screen.dart';
 import 'package:fit_host/features/nutrition/presentation/screens/hydration_detail_screen.dart';
 import 'package:fit_host/features/nutrition/presentation/screens/add_meal_screen.dart';
@@ -19,7 +25,9 @@ import 'package:fit_host/features/nutrition/presentation/screens/food_search_scr
 import 'package:fit_host/features/profile/presentation/profile_screen.dart';
 import 'package:fit_host/features/shell/main_navigation_shell.dart';
 import 'package:fit_host/features/calendar/presentation/screens/calendar_screen.dart';
+import 'package:fit_host/features/calendar/presentation/screens/calendar_sync_screen.dart';
 import 'package:fit_host/features/reminders/presentation/screens/reminders_screen.dart';
+import 'package:fit_host/features/notifications/presentation/screens/notification_center_screen.dart';
 import 'package:fit_host/features/planner/presentation/daily_planner_screen.dart';
 import 'package:fit_host/features/more/presentation/more_screen.dart';
 import 'package:fit_host/features/settings/presentation/notification_settings_screen.dart';
@@ -36,25 +44,87 @@ import 'package:fit_host/features/auth/presentation/screens/update_password_scre
 import 'package:fit_host/features/auth/presentation/screens/auth_decision_screen.dart';
 import 'package:fit_host/features/onboarding/presentation/startup_gate_screen.dart';
 import 'package:fit_host/features/onboarding/presentation/splash_screen.dart';
-import 'package:fit_host/features/settings/presentation/privacy_policy_screen.dart';
-import 'package:fit_host/features/settings/presentation/terms_of_service_screen.dart';
 import 'package:fit_host/features/settings/presentation/delete_account_screen.dart';
-import 'package:fit_host/features/settings/presentation/support_feedback_screen.dart';
 import 'package:fit_host/features/settings/presentation/user_manual_screen.dart';
 import 'package:fit_host/features/reminders/presentation/screens/sound_settings_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fit_host/features/reminders/presentation/screens/fullscreen_alarm_screen.dart';
 import 'package:fit_host/features/settings/presentation/permission_settings_screen.dart';
 import 'package:fit_host/features/settings/presentation/home_widgets_hub_screen.dart';
+import 'package:fit_host/features/settings/presentation/health_connect_settings_screen.dart';
 import 'package:fit_host/features/diary/presentation/daily_diary_screen.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'root');
-final GlobalKey<NavigatorState> _shellNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'shell');
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
+final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'shell',
+);
+
+/// Listenable that notifies GoRouter whenever Supabase auth state changes,
+/// ensuring routes are immediately re-evaluated to eliminate auth screen repetition.
+class RouterAuthNotifier extends ChangeNotifier {
+  static final RouterAuthNotifier instance = RouterAuthNotifier._();
+  dynamic _subscription;
+
+  RouterAuthNotifier._() {
+    _tryAttachListener();
+  }
+
+  void _tryAttachListener() {
+    if (_subscription != null) return;
+    try {
+      final client = Supabase.instance.client;
+      _subscription = client.auth.onAuthStateChange.listen((_) {
+        notifyListeners();
+      });
+    } catch (_) {}
+  }
+
+  void initialize(SupabaseClient client) {
+    try {
+      _subscription?.cancel();
+    } catch (_) {}
+    try {
+      _subscription = client.auth.onAuthStateChange.listen((_) {
+        notifyListeners();
+      });
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  void notifyAuthChanged() {
+    _tryAttachListener();
+    notifyListeners();
+  }
+}
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/',
+  refreshListenable: RouterAuthNotifier.instance,
+  redirect: (BuildContext context, GoRouterState state) {
+    final path = state.matchedLocation;
+    final isAuthScreen =
+        path == '/auth-decision' ||
+        path == '/auth' ||
+        path == '/auth/sign-in' ||
+        path == '/auth/sign-up' ||
+        path == '/auth/verify-email';
+
+    if (isAuthScreen) {
+      try {
+        final session = Supabase.instance.client.auth.currentSession;
+        if (session != null) {
+          debugPrint(
+            '[AppRouter] Active session detected -> redirecting from $path to /home',
+          );
+          return '/home';
+        }
+      } catch (_) {}
+    }
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/',
@@ -69,7 +139,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/auth-decision',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (context, state) => const AuthDecisionScreen(),
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const AuthDecisionScreen(),
+      ),
     ),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -79,10 +152,8 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/home',
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const HomeScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              NoTransitionPage(key: state.pageKey, child: const HomeScreen()),
         ),
         GoRoute(
           path: '/workouts',
@@ -140,6 +211,14 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/notifications',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const NotificationCenterScreen(),
+      ),
+    ),
+    GoRoute(
       path: '/alarm',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
@@ -148,7 +227,8 @@ final appRouter = GoRouter(
         final body = state.uri.queryParameters['body'] ?? '';
         final channel = state.uri.queryParameters['channel'];
         final snoozeMinutes =
-            int.tryParse(state.uri.queryParameters['snoozeMinutes'] ?? '') ?? 10;
+            int.tryParse(state.uri.queryParameters['snoozeMinutes'] ?? '') ??
+            10;
         return AppleTransitions.iosModal(
           key: state.pageKey,
           child: FullscreenAlarmScreen(
@@ -164,10 +244,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/permission-settings',
       parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => AppleTransitions.iosPage(
-        key: state.pageKey,
-        child: const PermissionSettingsScreen(),
-      ),
+      pageBuilder: (context, state) {
+        final isPostOnboarding =
+            state.uri.queryParameters['postOnboarding'] == 'true';
+        return AppleTransitions.iosPage(
+          key: state.pageKey,
+          child: PermissionSettingsScreen(isPostOnboarding: isPostOnboarding),
+        );
+      },
     ),
     GoRoute(
       path: '/planner',
@@ -194,6 +278,17 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: '/routines/builder',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final routineId = state.uri.queryParameters['id'];
+        return AppleTransitions.iosPage(
+          key: state.pageKey,
+          child: RoutineBuilderScreen(routineId: routineId),
+        );
+      },
+    ),
+    GoRoute(
       path: '/workout-category/:category',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
@@ -203,6 +298,22 @@ final appRouter = GoRouter(
           child: WorkoutCategoryDetailScreen(categoryName: category),
         );
       },
+    ),
+    GoRoute(
+      path: '/progress/measurements',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const BodyMeasurementsScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/progress/gallery',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const ProgressGalleryScreen(),
+      ),
     ),
     GoRoute(
       path: '/hydration',
@@ -285,22 +396,6 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
-      path: '/settings/privacy-policy',
-      parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => AppleTransitions.iosPage(
-        key: state.pageKey,
-        child: const PrivacyPolicyScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/settings/terms-of-service',
-      parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => AppleTransitions.iosPage(
-        key: state.pageKey,
-        child: const TermsOfServiceScreen(),
-      ),
-    ),
-    GoRoute(
       path: '/settings/delete-account',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => AppleTransitions.iosPage(
@@ -314,14 +409,6 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => AppleTransitions.iosPage(
         key: state.pageKey,
         child: const DailyDiaryScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/settings/support',
-      parentNavigatorKey: _rootNavigatorKey,
-      pageBuilder: (context, state) => AppleTransitions.iosPage(
-        key: state.pageKey,
-        child: const SupportFeedbackScreen(),
       ),
     ),
     GoRoute(
@@ -346,6 +433,22 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => AppleTransitions.iosPage(
         key: state.pageKey,
         child: const HomeWidgetsHubScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/settings/health-connect',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const HealthConnectSettingsScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/settings/calendar-sync',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const CalendarSyncScreen(),
       ),
     ),
     GoRoute(
@@ -376,11 +479,30 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/workout-summary',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final workout = state.extra as WorkoutEntity;
+        return AppleTransitions.iosPage(
+          key: state.pageKey,
+          child: WorkoutSummaryScreen(workout: workout),
+        );
+      },
+    ),
+    GoRoute(
       path: '/exercises',
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => AppleTransitions.iosPage(
         key: state.pageKey,
         child: const ExerciseLibraryScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/exercise-wiki',
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AppleTransitions.iosPage(
+        key: state.pageKey,
+        child: const ExerciseWikiScreen(),
       ),
     ),
     GoRoute(
@@ -402,9 +524,30 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/setup-wizard',
       parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final stepParam = state.uri.queryParameters['step'];
+        final isRedo = state.uri.queryParameters['redo'] == 'true';
+        final initialStep = stepParam != null
+            ? (int.tryParse(stepParam) ?? 0)
+            : 0;
+        return AppleTransitions.iosPage(
+          key: state.pageKey,
+          child: FitnessSetupWizardScreen(
+            isInitialSetup: !isRedo,
+            initialScreen: initialStep,
+          ),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/setup-wizard-plan',
+      parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) => AppleTransitions.iosPage(
         key: state.pageKey,
-        child: const FitnessSetupWizardScreen(isInitialSetup: true),
+        child: const FitnessSetupWizardScreen(
+          isInitialSetup: true,
+          initialScreen: 19,
+        ),
       ),
     ),
     GoRoute(

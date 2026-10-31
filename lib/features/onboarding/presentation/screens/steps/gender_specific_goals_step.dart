@@ -53,7 +53,10 @@ class GenderSpecificGoalsStep extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? const Color(0xFF00E676).withValues(alpha: 0.08)
@@ -108,7 +111,9 @@ class GenderSpecificGoalsStep extends StatelessWidget {
                           border: Border.all(
                             color: isSelected
                                 ? const Color(0xFF00E676)
-                                : const Color(0xFF8FA396).withValues(alpha: 0.4),
+                                : const Color(
+                                    0xFF8FA396,
+                                  ).withValues(alpha: 0.4),
                             width: 2,
                           ),
                         ),

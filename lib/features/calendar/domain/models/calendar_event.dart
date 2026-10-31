@@ -5,13 +5,41 @@ import '../../../../core/database/database.dart' as db;
 import '../../../../core/theme/app_colors.dart';
 
 enum CalendarEventType {
-  workout(label: 'Workout', icon: Icons.fitness_center_rounded, color: AppColors.electricBlue),
-  restDay(label: 'Rest Day', icon: Icons.spa_rounded, color: AppColors.limeGreen),
-  meal(label: 'Meal / Nutrition', icon: Icons.restaurant_rounded, color: Color(0xFFFF6B4A)),
-  hydration(label: 'Hydration', icon: Icons.water_drop_rounded, color: Color(0xFF00B4D8)),
-  sleep(label: 'Sleep & Recovery', icon: Icons.bedtime_rounded, color: Color(0xFF9D4EDD)),
-  weighIn(label: 'Weigh-in', icon: Icons.monitor_weight_rounded, color: Color(0xFFE0AAFF)),
-  custom(label: 'Custom Activity', icon: Icons.star_rounded, color: Color(0xFFFFD166));
+  workout(
+    label: 'Workout',
+    icon: Icons.fitness_center_rounded,
+    color: AppColors.electricBlue,
+  ),
+  restDay(
+    label: 'Rest Day',
+    icon: Icons.spa_rounded,
+    color: AppColors.limeGreen,
+  ),
+  meal(
+    label: 'Meal / Nutrition',
+    icon: Icons.restaurant_rounded,
+    color: Color(0xFFFF6B4A),
+  ),
+  hydration(
+    label: 'Hydration',
+    icon: Icons.water_drop_rounded,
+    color: Color(0xFF00B4D8),
+  ),
+  sleep(
+    label: 'Sleep & Recovery',
+    icon: Icons.bedtime_rounded,
+    color: Color(0xFF9D4EDD),
+  ),
+  weighIn(
+    label: 'Weigh-in',
+    icon: Icons.monitor_weight_rounded,
+    color: Color(0xFFE0AAFF),
+  ),
+  custom(
+    label: 'Custom Activity',
+    icon: Icons.star_rounded,
+    color: Color(0xFFFFD166),
+  );
 
   final String label;
   final IconData icon;
@@ -141,7 +169,11 @@ class CalendarEvent {
   bool get isPast {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final scheduled = DateTime(scheduledDate.year, scheduledDate.month, scheduledDate.day);
+    final scheduled = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+    );
     return scheduled.isBefore(today);
   }
 
@@ -157,6 +189,14 @@ class CalendarEvent {
     if (isMissed || (isPast && !isCompleted)) return 'Missed';
     if (isToday) return 'Today';
     return 'Upcoming';
+  }
+
+  String? get googleEventId => targetMetrics?['google_event_id'] as String?;
+
+  CalendarEvent withGoogleEventId(String eventId) {
+    final updatedMetrics = Map<String, dynamic>.from(targetMetrics ?? {});
+    updatedMetrics['google_event_id'] = eventId;
+    return copyWith(targetMetrics: updatedMetrics);
   }
 
   Color get statusColor {
@@ -238,7 +278,9 @@ class CalendarEvent {
       isCompleted: drift.Value(isCompleted),
       isMissed: drift.Value(isMissed),
       recurrenceRule: drift.Value(recurrenceRule.dbValue),
-      targetMetrics: drift.Value(targetMetrics != null ? jsonEncode(targetMetrics) : null),
+      targetMetrics: drift.Value(
+        targetMetrics != null ? jsonEncode(targetMetrics) : null,
+      ),
       createdAt: drift.Value(createdAt),
       updatedAt: drift.Value(updatedAt),
       syncStatus: drift.Value(syncStatus),

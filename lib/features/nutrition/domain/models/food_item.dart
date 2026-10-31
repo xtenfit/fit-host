@@ -3,38 +3,44 @@ import 'dart:convert';
 enum FoodSource {
   seeded,
   openfoodfacts,
+  usda,
   gemini,
   // ignore: constant_identifier_names
   user_custom,
+}
+
+extension FoodSourceX on FoodSource {
+  String get label {
+    switch (this) {
+      case FoodSource.seeded:
+        return 'Fit Host Verified';
+      case FoodSource.usda:
+        return 'USDA FoodData';
+      case FoodSource.openfoodfacts:
+        return 'Open Food Facts';
+      case FoodSource.gemini:
+        return 'AI Estimate';
+      case FoodSource.user_custom:
+        return 'Custom Food';
+    }
+  }
 }
 
 class ServingPreset {
   final String label;
   final double grams;
 
-  const ServingPreset({
-    required this.label,
-    required this.grams,
-  });
+  const ServingPreset({required this.label, required this.grams});
 
-  Map<String, dynamic> toJson() => {
-        'label': label,
-        'grams': grams,
-      };
+  Map<String, dynamic> toJson() => {'label': label, 'grams': grams};
 
   factory ServingPreset.fromJson(Map<String, dynamic> json) => ServingPreset(
-        label: json['label'] as String? ?? '100g',
-        grams: (json['grams'] as num?)?.toDouble() ?? 100.0,
-      );
+    label: json['label'] as String? ?? '100g',
+    grams: (json['grams'] as num?)?.toDouble() ?? 100.0,
+  );
 
-  ServingPreset copyWith({
-    String? label,
-    double? grams,
-  }) =>
-      ServingPreset(
-        label: label ?? this.label,
-        grams: grams ?? this.grams,
-      );
+  ServingPreset copyWith({String? label, double? grams}) =>
+      ServingPreset(label: label ?? this.label, grams: grams ?? this.grams);
 }
 
 class FoodItem {
@@ -82,38 +88,37 @@ class FoodItem {
     FoodSource? source,
     String? imageUrl,
     DateTime? createdAt,
-  }) =>
-      FoodItem(
-        id: id ?? this.id,
-        barcode: barcode ?? this.barcode,
-        name: name ?? this.name,
-        brand: brand ?? this.brand,
-        servingUnit: servingUnit ?? this.servingUnit,
-        servingPresets: servingPresets ?? this.servingPresets,
-        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
-        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
-        fatsPer100g: fatsPer100g ?? this.fatsPer100g,
-        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
-        source: source ?? this.source,
-        imageUrl: imageUrl ?? this.imageUrl,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  }) => FoodItem(
+    id: id ?? this.id,
+    barcode: barcode ?? this.barcode,
+    name: name ?? this.name,
+    brand: brand ?? this.brand,
+    servingUnit: servingUnit ?? this.servingUnit,
+    servingPresets: servingPresets ?? this.servingPresets,
+    proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+    carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+    fatsPer100g: fatsPer100g ?? this.fatsPer100g,
+    caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+    source: source ?? this.source,
+    imageUrl: imageUrl ?? this.imageUrl,
+    createdAt: createdAt ?? this.createdAt,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'barcode': barcode,
-        'name': name,
-        'brand': brand,
-        'serving_unit': servingUnit,
-        'serving_presets': servingPresets.map((p) => p.toJson()).toList(),
-        'protein_per_100g': proteinPer100g,
-        'carbs_per_100g': carbsPer100g,
-        'fats_per_100g': fatsPer100g,
-        'calories_per_100g': caloriesPer100g,
-        'source': source.name,
-        'image_url': imageUrl,
-        'created_at': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'barcode': barcode,
+    'name': name,
+    'brand': brand,
+    'serving_unit': servingUnit,
+    'serving_presets': servingPresets.map((p) => p.toJson()).toList(),
+    'protein_per_100g': proteinPer100g,
+    'carbs_per_100g': carbsPer100g,
+    'fats_per_100g': fatsPer100g,
+    'calories_per_100g': caloriesPer100g,
+    'source': source.name,
+    'image_url': imageUrl,
+    'created_at': createdAt.toIso8601String(),
+  };
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
     List<ServingPreset> presets = [];

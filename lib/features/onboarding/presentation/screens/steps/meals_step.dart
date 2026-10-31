@@ -71,8 +71,10 @@ class MealsStep extends StatelessWidget {
                         : Colors.white.withValues(alpha: 0.08),
                   ),
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               );
             }).toList(),
           ),
@@ -95,12 +97,16 @@ class MealsStep extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10.0),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF121A16),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -127,16 +133,14 @@ class MealsStep extends StatelessWidget {
                           initialTime: const TimeOfDay(hour: 12, minute: 0),
                         );
                         if (time != null && context.mounted) {
-                          onUpdateMeal(
-                            idx,
-                            meal.name,
-                            time.format(context),
-                          );
+                          onUpdateMeal(idx, meal.name, time.format(context));
                         }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF00E676).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),

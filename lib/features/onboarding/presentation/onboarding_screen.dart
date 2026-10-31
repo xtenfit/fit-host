@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/services/startup_gate_service.dart';
-import '../../../../core/services/permission_service.dart';
+import '../../../../core/services/supabase_service.dart';
 import '../domain/models/onboarding_models.dart';
 import 'controllers/onboarding_controller.dart';
+import 'widgets/plan_summary_reveal_card.dart';
 
 // Modular Step Widgets
 import 'screens/steps/welcome_step.dart';
@@ -57,15 +58,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             children: [
               // HEADER (Steps 2..16)
-              if (state.currentStep > 1 && state.currentStep <= kTotalWizardSteps) ...[
+              if (state.currentStep > 1 &&
+                  state.currentStep <= kTotalWizardSteps) ...[
                 _buildHeader(state, notifier),
                 const SizedBox(height: 16),
               ],
 
               // STEP BODY
-              Expanded(
-                child: _buildStepContent(state, notifier),
-              ),
+              Expanded(child: _buildStepContent(state, notifier)),
 
               // BOTTOM BUTTONS (Steps 2..17)
               if (state.currentStep > 1) ...[
@@ -81,8 +81,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildHeader(OnboardingState state, OnboardingNotifier notifier) {
-    final double progress = (state.currentStep / kTotalWizardSteps.toDouble()).clamp(0.0, 1.0);
-    final bool showSkip = _isStepSkippable(state.currentStep, state.isGenderBranch);
+    final double progress = (state.currentStep / kTotalWizardSteps.toDouble())
+        .clamp(0.0, 1.0);
+    final bool showSkip = _isStepSkippable(
+      state.currentStep,
+      state.isGenderBranch,
+    );
     final String stepBadgeText = state.isGenderBranch
         ? 'Step 8b of $kTotalWizardSteps'
         : 'Step ${state.currentStep} of $kTotalWizardSteps';
@@ -94,7 +98,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           children: [
             // Back button
             IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFFF0F6F2), size: 22),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Color(0xFFF0F6F2),
+                size: 22,
+              ),
               onPressed: () => notifier.previousStep(),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -203,20 +211,46 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     if (state.currentStep == 5) {
       return BodyCompositionStep(
+        weightKg: state.weightKg,
         bodyFatPercentage: state.bodyFatPercentage,
         waistCm: state.waistCm,
         hipCm: state.hipCm,
         chestCm: state.chestCm,
+        armsCm: state.armsCm,
+        thighsCm: state.thighsCm,
+        calvesCm: state.calvesCm,
         neckCm: state.neckCm,
-        onChanged: ({bodyFatPercentage, waistCm, hipCm, chestCm, neckCm}) {
-          notifier.updateBodyComposition(
-            bodyFatPercentage: bodyFatPercentage,
-            waistCm: waistCm,
-            hipCm: hipCm,
-            chestCm: chestCm,
-            neckCm: neckCm,
-          );
-        },
+        shouldersCm: state.shouldersCm,
+        notes: state.measurementNotes,
+        useMetricUnits: state.useMetricUnits,
+        onChanged:
+            ({
+              weightKg,
+              bodyFatPercentage,
+              waistCm,
+              hipCm,
+              chestCm,
+              armsCm,
+              thighsCm,
+              calvesCm,
+              neckCm,
+              shouldersCm,
+              notes,
+            }) {
+              notifier.updateBodyComposition(
+                weightKg: weightKg,
+                bodyFatPercentage: bodyFatPercentage,
+                waistCm: waistCm,
+                hipCm: hipCm,
+                chestCm: chestCm,
+                armsCm: armsCm,
+                thighsCm: thighsCm,
+                calvesCm: calvesCm,
+                neckCm: neckCm,
+                shouldersCm: shouldersCm,
+                notes: notes,
+              );
+            },
       );
     }
 
@@ -347,14 +381,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         reminderFrequencyHours: state.reminderFrequencyHours,
         quietHoursStart: state.quietHoursStart,
         quietHoursEnd: state.quietHoursEnd,
-        onChanged: ({dailyWaterMl, reminderFrequencyHours, quietHoursStart, quietHoursEnd}) {
-          notifier.setHydrationTarget(
-            dailyWaterMl: dailyWaterMl,
-            reminderFrequencyHours: reminderFrequencyHours,
-            quietHoursStart: quietHoursStart,
-            quietHoursEnd: quietHoursEnd,
-          );
-        },
+        onChanged:
+            ({
+              dailyWaterMl,
+              reminderFrequencyHours,
+              quietHoursStart,
+              quietHoursEnd,
+            }) {
+              notifier.setHydrationTarget(
+                dailyWaterMl: dailyWaterMl,
+                reminderFrequencyHours: reminderFrequencyHours,
+                quietHoursStart: quietHoursStart,
+                quietHoursEnd: quietHoursEnd,
+              );
+            },
       );
     }
 
@@ -379,50 +419,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return _buildPlanReadyAndAccountDecision(state, notifier);
   }
 
-  Widget _buildPlanReadyAndAccountDecision(OnboardingState state, OnboardingNotifier notifier) {
+  Widget _buildPlanReadyAndAccountDecision(
+    OnboardingState state,
+    OnboardingNotifier notifier,
+  ) {
+    final expLevel = state.experienceLevel.isNotEmpty
+        ? state.experienceLevel[0].toUpperCase() +
+              state.experienceLevel.substring(1).toLowerCase()
+        : 'Beginner';
+    final targetArea = state.focusAreas.isNotEmpty
+        ? state.focusAreas.map((f) => f.replaceAll('_', ' ')).take(2).join(', ')
+        : 'Full Body';
+    final equipmentStr = state.equipment.isNotEmpty
+        ? state.equipment.map((e) => e.replaceAll('_', ' ')).take(2).join(', ')
+        : 'No Equipment';
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: const Color(0xFF00E676).withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF00E676).withValues(alpha: 0.3), width: 2),
-              ),
-              child: const Center(
-                child: Icon(Icons.check_circle_rounded, color: Color(0xFF00E676), size: 40),
-              ),
-            ),
+          PlanSummaryRevealCard(
+            planTitle: state.recommendedWorkoutPlanName,
+            dailyTime: '${state.sessionDurationMinutes} Min',
+            experienceLevel: expLevel,
+            targetArea: targetArea,
+            equipment: equipmentStr,
+            gender: state.gender ?? 'male',
+            showActionButtons: false,
+            isScrollable: false,
           ),
-          const SizedBox(height: 20),
-          const Center(
-            child: Text(
-              'Your Plan is Ready',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFFF0F6F2),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Center(
-            child: Text(
-              'Customized architecture engineered for your physiology.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF8FA396),
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
 
           // Daily Targets Card
           Container(
@@ -448,10 +475,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildMacroItem('Calories', '${state.estimatedDailyCalories}', 'kcal', const Color(0xFF29B6F6)),
-                    _buildMacroItem('Protein', '${state.recommendedProteinGrams}g', 'build', const Color(0xFF00E676)),
-                    _buildMacroItem('Carbs', '${state.recommendedCarbsGrams}g', 'fuel', const Color(0xFFFFD54F)),
-                    _buildMacroItem('Fats', '${state.recommendedFatsGrams}g', 'essential', const Color(0xFFFF8A65)),
+                    _buildMacroItem(
+                      'Calories',
+                      '${state.estimatedDailyCalories}',
+                      'kcal',
+                      const Color(0xFF29B6F6),
+                    ),
+                    _buildMacroItem(
+                      'Protein',
+                      '${state.recommendedProteinGrams}g',
+                      'build',
+                      const Color(0xFF00E676),
+                    ),
+                    _buildMacroItem(
+                      'Carbs',
+                      '${state.recommendedCarbsGrams}g',
+                      'fuel',
+                      const Color(0xFFFFD54F),
+                    ),
+                    _buildMacroItem(
+                      'Fats',
+                      '${state.recommendedFatsGrams}g',
+                      'essential',
+                      const Color(0xFFFF8A65),
+                    ),
                   ],
                 ),
               ],
@@ -488,7 +535,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         color: const Color(0xFF00E676).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.fitness_center_rounded, color: Color(0xFF00E676), size: 24),
+                      child: const Icon(
+                        Icons.fitness_center_rounded,
+                        color: Color(0xFF00E676),
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -534,16 +585,40 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('💧 Hydration Goal', style: TextStyle(color: Color(0xFFF0F6F2), fontWeight: FontWeight.w600)),
-                    Text('${state.dailyWaterMl} ml/day', style: const TextStyle(color: Color(0xFF00E676), fontWeight: FontWeight.w700)),
+                    const Text(
+                      '💧 Hydration Goal',
+                      style: TextStyle(
+                        color: Color(0xFFF0F6F2),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '${state.dailyWaterMl} ml/day',
+                      style: const TextStyle(
+                        color: Color(0xFF00E676),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
                 const Divider(height: 20, color: Colors.white10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('🌙 Recovery Sleep', style: TextStyle(color: Color(0xFFF0F6F2), fontWeight: FontWeight.w600)),
-                    Text('${state.sleepHours} hrs/night', style: const TextStyle(color: Color(0xFFF0F6F2), fontWeight: FontWeight.w600)),
+                    const Text(
+                      '🌙 Recovery Sleep',
+                      style: TextStyle(
+                        color: Color(0xFFF0F6F2),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      '${state.sleepHours} hrs/night',
+                      style: const TextStyle(
+                        color: Color(0xFFF0F6F2),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -555,7 +630,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _buildMacroItem(String label, String value, String subtitle, Color color) {
+  Widget _buildMacroItem(
+    String label,
+    String value,
+    String subtitle,
+    Color color,
+  ) {
     return Column(
       children: [
         Text(
@@ -577,63 +657,34 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ),
         Text(
           subtitle,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Color(0xFF8FA396),
-          ),
+          style: const TextStyle(fontSize: 10, color: Color(0xFF8FA396)),
         ),
       ],
     );
   }
 
-  Widget _buildBottomControls(OnboardingState state, OnboardingNotifier notifier) {
-    // Terminal Screen (Step 17+): Account Decision
+  Widget _buildBottomControls(
+    OnboardingState state,
+    OnboardingNotifier notifier,
+  ) {
+    // Terminal screen: authentication is offered before the wizard. Finish
+    // directly instead of presenting a second auth flow after setup.
     if (state.currentStep >= 17) {
       return Column(
         children: [
           PrimaryButton(
-            text: 'Create Account',
+            text: 'Finish Setup',
             onPressed: () async {
-              await notifier.completeOnboarding(isGuest: false);
-              await ref.read(startupGateServiceProvider).setFirstLaunchCompleted(true);
-              if (mounted) context.push('/auth/sign-up');
+              final isAuthenticated = ref.read(authProvider).isAuthenticated;
+              await notifier.completeOnboarding(isGuest: !isAuthenticated);
+              await ref
+                  .read(startupGateServiceProvider)
+                  .setFirstLaunchCompleted(true);
+              await ref
+                  .read(startupGateServiceProvider)
+                  .setAuthDecisionMade(true);
+              if (mounted) context.go('/home');
             },
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFF0F6F2),
-                side: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  width: 1.5,
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: () async {
-                await notifier.completeOnboarding(isGuest: false);
-                await ref.read(startupGateServiceProvider).setFirstLaunchCompleted(true);
-                if (mounted) context.push('/auth/sign-in');
-              },
-              child: const Text(
-                'Sign In',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextButton(
-            onPressed: () => _confirmContinueAsGuest(notifier),
-            child: const Text(
-              'Continue as Guest',
-              style: TextStyle(
-                color: Color(0xFF8FA396),
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
           ),
         ],
       );
@@ -646,52 +697,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       text: state.currentStep == 16 ? 'View My Plan →' : 'Continue →',
       onPressed: isStep2Valid
           ? () async {
-              if (state.currentStep == 15 || state.currentStep == 16) {
-                await PermissionService.instance.requestReminderPermissions(context);
-              }
               notifier.nextStep();
             }
           : null,
     );
-  }
-
-  Future<void> _confirmContinueAsGuest(OnboardingNotifier notifier) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF121A16),
-        title: const Text(
-          'Continue as Guest?',
-          style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFFF0F6F2)),
-        ),
-        content: const Text(
-          'Guest data stays on this device only. You can create an account later to sync.',
-          style: TextStyle(color: Color(0xFF8FA396)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF8FA396))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00E676),
-              foregroundColor: const Color(0xFF0A0F0D),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await notifier.completeOnboarding(isGuest: true);
-      await ref.read(startupGateServiceProvider).setFirstLaunchCompleted(true);
-      await ref.read(startupGateServiceProvider).setAuthDecisionMade(true);
-      if (mounted) context.go('/profile-setup');
-    }
   }
 }
 

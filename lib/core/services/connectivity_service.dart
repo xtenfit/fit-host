@@ -17,9 +17,9 @@ class ConnectivityServiceImpl implements ConnectivityService {
   ConnectivityServiceImpl({
     Connectivity? connectivity,
     InternetConnectionChecker? connectionChecker,
-  })  : _connectivity = connectivity ?? Connectivity(),
-        _connectionChecker =
-            connectionChecker ?? InternetConnectionChecker.createInstance();
+  }) : _connectivity = connectivity ?? Connectivity(),
+       _connectionChecker =
+           connectionChecker ?? InternetConnectionChecker.createInstance();
 
   @override
   Future<bool> hasInternetConnection() async {
@@ -39,12 +39,22 @@ class ConnectivityServiceImpl implements ConnectivityService {
   Stream<bool> get onConnectivityChanged {
     _controller ??= StreamController<bool>.broadcast(
       onListen: () {
-        _connectivity.onConnectivityChanged.listen((_) async {
-          final connected = await hasInternetConnection();
-          if (!(_controller?.isClosed ?? true)) {
-            _controller?.add(connected);
-          }
-        });
+        _connectivity.onConnectivityChanged.listen(
+          (_) async {
+            final connected = await hasInternetConnection();
+            if (!(_controller?.isClosed ?? true)) {
+              _controller?.add(connected);
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            debugPrint(
+              '[ConnectivityService] Connectivity stream error: $error',
+            );
+            if (!(_controller?.isClosed ?? true)) {
+              _controller?.add(false);
+            }
+          },
+        );
       },
     );
     return _controller!.stream;

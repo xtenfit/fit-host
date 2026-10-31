@@ -20,17 +20,12 @@ export function isAuthorizedAdminEmail(email?: string | null): boolean {
     .filter(Boolean);
 
   // If ADMIN_EMAILS is configured, check against it
-  if (configuredAdminEmails.length > 0) {
-    return configuredAdminEmails.includes(normalized);
-  }
-
-  // Built-in verified domain administrators
-  if (normalized.endsWith('@amitrana.tech') || normalized.endsWith('@amitran.tech')) {
+  if (configuredAdminEmails.length > 0 && configuredAdminEmails.includes(normalized)) {
     return true;
   }
 
-  // In development environment, allow local test session
-  if (process.env.NODE_ENV === 'development') {
+  // Designated account fallback (server-side only, never leaked to client)
+  if (normalized === 'xtenfit@gmail.com') {
     return true;
   }
 
@@ -38,7 +33,7 @@ export function isAuthorizedAdminEmail(email?: string | null): boolean {
 }
 
 /**
- * Server-side authorization check for administrative email routes and actions.
+ * Server-side authorization check for administrative routes and actions.
  * Verifies Supabase authentication token and administrative privileges.
  */
 export async function verifyAdminAuthorization(request?: Request): Promise<AdminAuthResult> {
@@ -59,43 +54,25 @@ export async function verifyAdminAuthorization(request?: Request): Promise<Admin
     } = await supabase.auth.getUser();
 
     if (error || !user) {
-      // In development mode, allow seamless local inspection if enabled
-      if (process.env.NODE_ENV === 'development') {
-        return {
-          authorized: true,
-          userEmail: 'dev-admin@fithost.local',
-        };
-      }
-
       return {
         authorized: false,
-        reason: 'Unauthenticated: Sign in to an authorized administrator account to access Email Studio.',
+        reason: 'Unauthorized',
       };
     }
 
-    // Check Supabase custom app_metadata role
-    const appRole = user.app_metadata?.role;
-    if (appRole === 'admin' || appRole === 'superadmin') {
-      return { authorized: true, userEmail: user.email };
+    // Require account to match authorized administrator email
+    if (!isAuthorizedAdminEmail(user.email)) {
+      return {
+        authorized: false,
+        reason: 'Unauthorized',
+      };
     }
 
-    // Check email whitelist
-    if (isAuthorizedAdminEmail(user.email)) {
-      return { authorized: true, userEmail: user.email };
-    }
-
-    return {
-      authorized: false,
-      userEmail: user.email,
-      reason: `User (${user.email}) does not possess administrator privileges for Email Studio.`,
-    };
+    return { authorized: true, userEmail: user.email };
   } catch (err: unknown) {
-    if (process.env.NODE_ENV === 'development') {
-      return { authorized: true, userEmail: 'dev-admin@fithost.local' };
-    }
     return {
       authorized: false,
-      reason: err instanceof Error ? err.message : 'Authorization verification error',
+      reason: err instanceof Error ? err.message : 'Unauthorized',
     };
   }
 }

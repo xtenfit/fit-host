@@ -48,7 +48,8 @@ class StepPermissionService extends Notifier<StepPermissionState> {
       return state;
     } catch (e) {
       debugPrint('[StepPermissionService] Permission request notice: $e');
-      state = StepPermissionState.granted; // Fallback for test/desktop environments
+      state =
+          StepPermissionState.granted; // Fallback for test/desktop environments
       return state;
     }
   }
@@ -62,5 +63,5 @@ class StepPermissionService extends Notifier<StepPermissionState> {
 
 final stepPermissionProvider =
     NotifierProvider<StepPermissionService, StepPermissionState>(
-  StepPermissionService.new,
-);
+      StepPermissionService.new,
+    );

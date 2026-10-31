@@ -31,7 +31,10 @@ void main() {
       }
       ''';
 
-      final draft = service.parseGeminiResponse(rawJson, imagePath: '/path/test.jpg');
+      final draft = service.parseGeminiResponse(
+        rawJson,
+        imagePath: '/path/test.jpg',
+      );
       expect(draft.mealName, equals('Paneer Tikka with Mint Chutney'));
       expect(draft.confidence, closeTo(0.92, 0.01));
       expect(draft.estimatedIngredients.length, equals(2));
@@ -67,14 +70,17 @@ void main() {
     });
 
     test('Invalid JSON returns empty ingredients with 0.0 confidence', () {
-      const badJson = 'Sorry, I am an AI and cannot identify this image properly.';
+      const badJson =
+          'Sorry, I am an AI and cannot identify this image properly.';
       final draft = service.parseGeminiResponse(badJson);
       expect(draft.estimatedIngredients, isEmpty);
       expect(draft.confidence, equals(0.0));
     });
 
-    test('Task 13 Safety Check: Suspiciously high calories are clamped to max 900 kcal/100g', () {
-      const suspiciousJson = '''
+    test(
+      'Task 13 Safety Check: Suspiciously high calories are clamped to max 900 kcal/100g',
+      () {
+        const suspiciousJson = '''
       {
         "meal_name": "Magic Chicken",
         "confidence": 0.9,
@@ -91,10 +97,14 @@ void main() {
       }
       ''';
 
-      final draft = service.parseGeminiResponse(suspiciousJson);
-      expect(draft.estimatedIngredients.first.caloriesPer100g, lessThanOrEqualTo(900.0));
-      expect(draft.estimatedIngredients.first.caloriesPer100g, equals(900.0));
-    });
+        final draft = service.parseGeminiResponse(suspiciousJson);
+        expect(
+          draft.estimatedIngredients.first.caloriesPer100g,
+          lessThanOrEqualTo(900.0),
+        );
+        expect(draft.estimatedIngredients.first.caloriesPer100g, equals(900.0));
+      },
+    );
 
     test('Negative macros and non-positive grams are sanitized safely', () {
       const dirtyJson = '''

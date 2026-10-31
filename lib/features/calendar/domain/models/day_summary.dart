@@ -87,21 +87,21 @@ class DaySummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'date': date.toIso8601String(),
-        'steps': steps,
-        'distanceKm': distanceKm,
-        'workoutCount': workoutCount,
-        'workoutDurationMin': workoutDurationMin,
-        'caloriesBurned': caloriesBurned,
-        'caloriesIn': caloriesIn,
-        'proteinG': proteinG,
-        'carbsG': carbsG,
-        'fatsG': fatsG,
-        'waterMl': waterMl,
-        'hasReminder': hasReminder,
-        'completedReminders': completedReminders,
-        'missedReminders': missedReminders,
-      };
+    'date': date.toIso8601String(),
+    'steps': steps,
+    'distanceKm': distanceKm,
+    'workoutCount': workoutCount,
+    'workoutDurationMin': workoutDurationMin,
+    'caloriesBurned': caloriesBurned,
+    'caloriesIn': caloriesIn,
+    'proteinG': proteinG,
+    'carbsG': carbsG,
+    'fatsG': fatsG,
+    'waterMl': waterMl,
+    'hasReminder': hasReminder,
+    'completedReminders': completedReminders,
+    'missedReminders': missedReminders,
+  };
 
   factory DaySummary.fromJson(Map<String, dynamic> json) {
     return DaySummary(
@@ -171,29 +171,23 @@ class RangeAggregation {
   double get totalProteinG =>
       dailySummaries.fold(0.0, (sum, d) => sum + d.proteinG);
 
-  double get avgProteinG =>
-      dayCount > 0 ? (totalProteinG / dayCount) : 0.0;
+  double get avgProteinG => dayCount > 0 ? (totalProteinG / dayCount) : 0.0;
 
   double get totalCarbsG =>
       dailySummaries.fold(0.0, (sum, d) => sum + d.carbsG);
 
-  double get avgCarbsG =>
-      dayCount > 0 ? (totalCarbsG / dayCount) : 0.0;
+  double get avgCarbsG => dayCount > 0 ? (totalCarbsG / dayCount) : 0.0;
 
-  double get totalFatsG =>
-      dailySummaries.fold(0.0, (sum, d) => sum + d.fatsG);
+  double get totalFatsG => dailySummaries.fold(0.0, (sum, d) => sum + d.fatsG);
 
-  double get avgFatsG =>
-      dayCount > 0 ? (totalFatsG / dayCount) : 0.0;
+  double get avgFatsG => dayCount > 0 ? (totalFatsG / dayCount) : 0.0;
 
-  int get totalWaterMl =>
-      dailySummaries.fold(0, (sum, d) => sum + d.waterMl);
+  int get totalWaterMl => dailySummaries.fold(0, (sum, d) => sum + d.waterMl);
 
   int get totalWorkoutsCompleted =>
       dailySummaries.fold(0, (sum, d) => sum + d.workoutCount);
 
-  int get totalSteps =>
-      dailySummaries.fold(0, (sum, d) => sum + d.steps);
+  int get totalSteps => dailySummaries.fold(0, (sum, d) => sum + d.steps);
 
   double get totalDistanceKm =>
       dailySummaries.fold(0.0, (sum, d) => sum + d.distanceKm);

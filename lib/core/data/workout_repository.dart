@@ -10,8 +10,12 @@ import '../sync/sync_utils.dart';
 import '../../features/workouts/domain/models/workout_models.dart';
 import '../../features/workouts/domain/repositories/workout_repository.dart';
 import '../../features/workouts/data/repositories/workout_repository_impl.dart';
+import '../../features/workouts/domain/repositories/routine_repository.dart';
+import '../../features/workouts/data/repositories/routine_repository_impl.dart';
 
 export '../../features/workouts/domain/repositories/workout_repository.dart';
+export '../../features/workouts/domain/repositories/routine_repository.dart';
+export '../../features/workouts/data/repositories/routine_repository_impl.dart';
 
 /// Local implementation: Drift database only (Guest mode).
 /// No network calls made when in guest mode.
@@ -20,7 +24,7 @@ class LocalWorkoutRepository implements WorkoutRepository {
   final WorkoutRepositoryImpl _impl;
 
   LocalWorkoutRepository(this.db)
-      : _impl = WorkoutRepositoryImpl(db, userId: 'guest');
+    : _impl = WorkoutRepositoryImpl(db, userId: 'guest');
 
   @override
   Stream<List<WorkoutEntity>> watchWorkouts() => _impl.watchWorkouts();
@@ -38,13 +42,29 @@ class LocalWorkoutRepository implements WorkoutRepository {
   Future<void> deleteWorkout(String id) => _impl.deleteWorkout(id);
 
   @override
-  Future<List<ExerciseEntity>> getExercises(
-          {String? query, String? category, String? genderFilter}) =>
-      _impl.getExercises(
-          query: query, category: category, genderFilter: genderFilter);
+  Future<List<ExerciseEntity>> getExercises({
+    String? query,
+    String? category,
+    String? genderFilter,
+    String? bodyPart,
+    String? equipment,
+    bool includeArchived = false,
+    int? limit,
+    int offset = 0,
+  }) => _impl.getExercises(
+    query: query,
+    category: category,
+    genderFilter: genderFilter,
+    bodyPart: bodyPart,
+    equipment: equipment,
+    includeArchived: includeArchived,
+    limit: limit,
+    offset: offset,
+  );
 
   @override
-  Future<ExerciseEntity?> getExerciseById(String id) => _impl.getExerciseById(id);
+  Future<ExerciseEntity?> getExerciseById(String id) =>
+      _impl.getExerciseById(id);
 
   @override
   Future<void> seedDefaultExercises() => _impl.seedDefaultExercises();
@@ -79,7 +99,9 @@ class CloudWorkoutRepository implements WorkoutRepository {
         await _fetchRemoteAndSaveWorkouts().timeout(const Duration(seconds: 4));
         return await _localImpl.getWorkouts();
       } catch (e) {
-        debugPrint('[CloudWorkoutRepository] Remote fetch notice (using cache): $e');
+        debugPrint(
+          '[CloudWorkoutRepository] Remote fetch notice (using cache): $e',
+        );
       }
     }
     return await _localImpl.getWorkouts();
@@ -95,7 +117,8 @@ class CloudWorkoutRepository implements WorkoutRepository {
     // 1. Optimistic write-through to local Drift cache first
     await _localImpl.saveWorkout(workout);
 
-    final computedCalories = workout.caloriesBurned ??
+    final computedCalories =
+        workout.caloriesBurned ??
         WorkoutEntity.computeCalories(
           category: workout.category ?? workout.title,
           weightKg: 70.0,
@@ -134,6 +157,8 @@ class CloudWorkoutRepository implements WorkoutRepository {
             'exercise_id': ex.exerciseId,
             'order_index': ex.orderIndex,
             'notes': ex.notes,
+            'superset_id': ex.supersetId,
+            'is_skipped': ex.isSkipped,
             'updated_at': DateTime.now().toUtc().toIso8601String(),
           });
 
@@ -148,13 +173,26 @@ class CloudWorkoutRepository implements WorkoutRepository {
               'is_completed': s.isCompleted,
               'rest_seconds': s.restSeconds,
               'set_type': s.type,
+              'target_reps': s.targetReps,
+              'target_weight_kg': s.targetWeightKg,
+              'duration_seconds': s.durationSeconds,
+              'distance_meters': s.distanceMeters,
+              'tempo': s.tempo,
+              'rpe': s.rpe,
+              'is_skipped': s.isSkipped,
               'updated_at': DateTime.now().toUtc().toIso8601String(),
             });
           }
         }
+        // Direct cloud sync succeeded; clean up any queued item for this workout
+        await (db.delete(
+          db.syncQueue,
+        )..where((t) => t.entityId.equals(workout.id))).go();
         return;
       } catch (e) {
-        debugPrint('[CloudWorkoutRepository] Network write failed, enqueueing to outbox: $e');
+        debugPrint(
+          '[CloudWorkoutRepository] Network write failed, enqueueing to outbox: $e',
+        );
       }
     }
 
@@ -180,13 +218,23 @@ class CloudWorkoutRepository implements WorkoutRepository {
 
     if (supabase != null) {
       try {
-        await supabase!.from('workouts').update({
-          'deleted_at': DateTime.now().toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        }).match({'id': id, 'user_id': userId});
+        await supabase!
+            .from('workouts')
+            .update({
+              'is_deleted': true,
+              'deleted_at': DateTime.now().toUtc().toIso8601String(),
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .match({'id': id, 'user_id': userId});
+        // Direct cloud delete succeeded; clean up any queued delete or upsert mutation
+        await (db.delete(
+          db.syncQueue,
+        )..where((t) => t.entityId.equals(id))).go();
         return;
       } catch (e) {
-        debugPrint('[CloudWorkoutRepository] Cloud delete failed, queueing: $e');
+        debugPrint(
+          '[CloudWorkoutRepository] Cloud delete failed, queueing: $e',
+        );
       }
     }
 
@@ -204,13 +252,29 @@ class CloudWorkoutRepository implements WorkoutRepository {
   }
 
   @override
-  Future<List<ExerciseEntity>> getExercises(
-          {String? query, String? category, String? genderFilter}) =>
-      _localImpl.getExercises(
-          query: query, category: category, genderFilter: genderFilter);
+  Future<List<ExerciseEntity>> getExercises({
+    String? query,
+    String? category,
+    String? genderFilter,
+    String? bodyPart,
+    String? equipment,
+    bool includeArchived = false,
+    int? limit,
+    int offset = 0,
+  }) => _localImpl.getExercises(
+    query: query,
+    category: category,
+    genderFilter: genderFilter,
+    bodyPart: bodyPart,
+    equipment: equipment,
+    includeArchived: includeArchived,
+    limit: limit,
+    offset: offset,
+  );
 
   @override
-  Future<ExerciseEntity?> getExerciseById(String id) => _localImpl.getExerciseById(id);
+  Future<ExerciseEntity?> getExerciseById(String id) =>
+      _localImpl.getExerciseById(id);
 
   @override
   Future<void> seedDefaultExercises() => _localImpl.seedDefaultExercises();
@@ -239,7 +303,9 @@ class CloudWorkoutRepository implements WorkoutRepository {
         final durationSeconds = r['duration_seconds'] as int? ?? 0;
         final updatedAt = DateTime.parse(r['updated_at'] as String);
 
-        await db.into(db.workouts).insertOnConflictUpdate(
+        await db
+            .into(db.workouts)
+            .insertOnConflictUpdate(
               WorkoutsCompanion.insert(
                 id: id,
                 userId: drift.Value(userId),
@@ -249,7 +315,9 @@ class CloudWorkoutRepository implements WorkoutRepository {
                 completedAt: drift.Value(completedAt),
                 status: drift.Value(status),
                 durationSeconds: drift.Value(durationSeconds),
-                caloriesBurned: drift.Value((r['calories_burned'] as num?)?.toInt()),
+                caloriesBurned: drift.Value(
+                  (r['calories_burned'] as num?)?.toInt(),
+                ),
                 updatedAt: updatedAt,
                 syncStatus: const drift.Value('synced'),
               ),
@@ -281,4 +349,18 @@ final workoutRepositoryProvider = Provider<WorkoutRepository>((ref) {
   }
 
   return LocalWorkoutRepository(db);
+});
+
+final routineRepositoryProvider = Provider<RoutineRepository>((ref) {
+  final auth = ref.watch(authProvider);
+  final db = ref.watch(databaseProvider);
+  final userId = (auth.isAuthenticated && auth.user != null)
+      ? auth.user!.id
+      : 'guest';
+  return RoutineRepositoryImpl(db, userId: userId);
+});
+
+final routinesStreamProvider = StreamProvider<List<RoutineEntity>>((ref) {
+  final repo = ref.watch(routineRepositoryProvider);
+  return repo.watchRoutines();
 });

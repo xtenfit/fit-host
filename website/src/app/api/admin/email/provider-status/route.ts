@@ -5,7 +5,7 @@ import { DEFAULT_EMAIL_FROM, DEFAULT_EMAIL_REPLY_TO, SENDING_DOMAIN } from '@/li
 export async function GET(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const hasApiKey = Boolean(
@@ -56,14 +56,14 @@ export async function GET(request: Request) {
     ],
     supabaseSmtpConfig: {
       enabled: true,
-      senderEmail: 'noreply@noreply.amitrana.tech',
+      senderEmail: 'noreply@amitrana.tech',
       senderName: 'Fit Host',
       host: 'smtp.resend.com',
-      port: 465,
-      encryption: 'SSL / TLS',
+      port: 587,
+      encryption: 'STARTTLS (Port 587 prevents GoTrue timeouts)',
       user: 'resend',
       pass: '[RESEND_API_KEY]',
-      notice: 'In Supabase Dashboard > Authentication > Email Settings, enable Custom SMTP and save these exact values.',
+      notice: 'In Supabase Dashboard > Authentication > Emails > SMTP Settings, use Port 587 (STARTTLS). Port 465 times out with Supabase GoTrue.',
     },
   };
 

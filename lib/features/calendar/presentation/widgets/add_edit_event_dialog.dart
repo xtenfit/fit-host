@@ -53,19 +53,27 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
     super.initState();
     final event = widget.initialEvent;
     _titleController = TextEditingController(text: event?.title ?? '');
-    _descriptionController = TextEditingController(text: event?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: event?.description ?? '',
+    );
     _eventType = event?.eventType ?? CalendarEventType.workout;
     _recurrenceRule = event?.recurrenceRule ?? RecurrenceRule.none;
     _scheduledDate = event?.scheduledDate ?? widget.selectedDate;
 
     if (event?.startTime != null) {
-      _startTime = TimeOfDay(hour: event!.startTime!.hour, minute: event.startTime!.minute);
+      _startTime = TimeOfDay(
+        hour: event!.startTime!.hour,
+        minute: event.startTime!.minute,
+      );
     } else {
       _startTime = const TimeOfDay(hour: 17, minute: 30);
     }
 
     if (event?.endTime != null) {
-      _endTime = TimeOfDay(hour: event!.endTime!.hour, minute: event.endTime!.minute);
+      _endTime = TimeOfDay(
+        hour: event!.endTime!.hour,
+        minute: event.endTime!.minute,
+      );
     } else {
       _endTime = const TimeOfDay(hour: 18, minute: 30);
     }
@@ -189,9 +197,12 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
               controller: _titleController,
               decoration: InputDecoration(
                 labelText: 'Activity Title *',
-                hintText: 'e.g. Chest & Triceps, Post-Workout Protein, 3L Water',
+                hintText:
+                    'e.g. Chest & Triceps, Post-Workout Protein, 3L Water',
                 filled: true,
-                fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                fillColor: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -206,9 +217,12 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
               maxLines: 2,
               decoration: InputDecoration(
                 labelText: 'Description / Notes',
-                hintText: 'Add workout targets, nutrition macros, or hydration goals',
+                hintText:
+                    'Add workout targets, nutrition macros, or hydration goals',
                 filled: true,
-                fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                fillColor: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -235,9 +249,14 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                        color: isDark
+                            ? AppColors.darkSurfaceElevated
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -246,7 +265,10 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                           const SizedBox(width: 8),
                           Text(
                             DateFormat('EEE, MMM d').format(_scheduledDate),
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -269,9 +291,14 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                     },
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                        color: isDark
+                            ? AppColors.darkSurfaceElevated
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Row(
@@ -279,8 +306,13 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                           const Icon(Icons.access_time_rounded, size: 18),
                           const SizedBox(width: 8),
                           Text(
-                            _startTime != null ? _startTime!.format(context) : 'Set Time',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            _startTime != null
+                                ? _startTime!.format(context)
+                                : 'Set Time',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -305,7 +337,9 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                     decoration: InputDecoration(
                       isDense: true,
                       filled: true,
-                      fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                      fillColor: isDark
+                          ? AppColors.darkSurfaceElevated
+                          : Colors.grey[100],
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: BorderSide.none,
@@ -314,7 +348,10 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                     items: RecurrenceRule.values.map((r) {
                       return DropdownMenuItem(
                         value: r,
-                        child: Text(r.label, style: const TextStyle(fontSize: 13)),
+                        child: Text(
+                          r.label,
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -331,10 +368,13 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
               controller: _metricController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: 'Target Metric (e.g. Calories, Minutes, Milliliters, Kg)',
+                labelText:
+                    'Target Metric (e.g. Calories, Minutes, Milliliters, Kg)',
                 hintText: 'e.g. 500',
                 filled: true,
-                fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey[100],
+                fillColor: isDark
+                    ? AppColors.darkSurfaceElevated
+                    : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -352,7 +392,9 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                   final title = _titleController.text.trim();
                   if (title.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please enter an activity title')),
+                      const SnackBar(
+                        content: Text('Please enter an activity title'),
+                      ),
                     );
                     return;
                   }
@@ -416,7 +458,10 @@ class _AddEditEventDialogState extends State<AddEditEventDialog> {
                 ),
                 child: Text(
                   isEditing ? 'Save Changes' : 'Schedule Activity',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),

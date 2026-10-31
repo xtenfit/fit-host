@@ -10,12 +10,7 @@ import '../connectivity/connectivity_state_machine.dart';
 import '../services/supabase_service.dart';
 import 'sync_utils.dart';
 
-enum SyncDrainResult {
-  completed,
-  skipped,
-  partialError,
-  offline,
-}
+enum SyncDrainResult { completed, skipped, partialError, offline }
 
 class SyncCoordinator {
   final AppDatabase db;
@@ -27,11 +22,7 @@ class SyncCoordinator {
   static const int maxAttempts = 8;
   static const double maxBackoffSeconds = 300.0;
 
-  SyncCoordinator({
-    required this.db,
-    required this.supabase,
-    this.ref,
-  });
+  SyncCoordinator({required this.db, required this.supabase, this.ref});
 
   /// Exponential backoff formula:
   /// delay = min(300s, 2^attempts × 1.5s) ± 20% jitter
@@ -52,9 +43,11 @@ class SyncCoordinator {
     required AuthStatus authStatus,
     required ConnectivityStatus connectivityStatus,
   }) {
-    final authOk = (authStatus == AuthStatus.authenticated ||
+    final authOk =
+        (authStatus == AuthStatus.authenticated ||
         authStatus == AuthStatus.offlineGrace);
-    final netOk = (connectivityStatus == ConnectivityStatus.online ||
+    final netOk =
+        (connectivityStatus == ConnectivityStatus.online ||
         connectivityStatus == ConnectivityStatus.metered);
     return authOk && netOk;
   }
@@ -63,37 +56,45 @@ class SyncCoordinator {
   Future<int> drain({
     AuthStatus? overrideAuth,
     ConnectivityStatus? overrideConnectivity,
+    bool forceRetry = false,
   }) async {
     if (_isDraining) return 0;
     _isDraining = true;
 
     try {
       final auth = overrideAuth ?? _getEffectiveAuth();
-      final connectivity =
-          overrideConnectivity ?? _getEffectiveConnectivity();
+      final connectivity = overrideConnectivity ?? _getEffectiveConnectivity();
 
       if (!canSync(authStatus: auth, connectivityStatus: connectivity)) {
         debugPrint(
-            '[SyncCoordinator] Skipping sync: auth=$auth, connectivity=$connectivity');
+          '[SyncCoordinator] Skipping sync: auth=$auth, connectivity=$connectivity',
+        );
         return 0;
       }
 
       final now = DateTime.now().toUtc();
+      final statusList = forceRetry
+          ? ['queued', 'failed', 'pending', 'dead_letter']
+          : ['queued', 'failed', 'pending'];
+
       // Select queued items eligible for processing (skip guest mutations until claimed)
-      final items = await (db.select(db.syncQueue)
-            ..where((t) =>
-                t.status.isIn(['queued', 'failed', 'pending']) &
-                t.userId.isNotValue('guest'))
-            ..orderBy([(t) => OrderingTerm(expression: t.clientTimestamp)]))
-          .get();
+      final items =
+          await (db.select(db.syncQueue)
+                ..where(
+                  (t) =>
+                      t.status.isIn(statusList) & t.userId.isNotValue('guest'),
+                )
+                ..orderBy([(t) => OrderingTerm(expression: t.clientTimestamp)]))
+              .get();
 
       int processed = 0;
 
       for (final item in items) {
-        // Check if exceeded max attempts -> move to dead_letter
-        if (item.attempts >= maxAttempts) {
-          await (db.update(db.syncQueue)..where((t) => t.id.equals(item.id)))
-              .write(
+        // Check if exceeded max attempts -> move to dead_letter (unless forceRetry)
+        if (!forceRetry && item.attempts >= maxAttempts) {
+          await (db.update(
+            db.syncQueue,
+          )..where((t) => t.id.equals(item.id))).write(
             SyncQueueCompanion(
               status: const Value('dead_letter'),
               errorLog: Value('Exceeded max $maxAttempts retry attempts.'),
@@ -103,8 +104,8 @@ class SyncCoordinator {
           continue;
         }
 
-        // Apply backoff check for failed attempts
-        if (item.attempts > 0 && item.lastAttemptAt != null) {
+        // Apply backoff check for failed attempts (unless forceRetry)
+        if (!forceRetry && item.attempts > 0 && item.lastAttemptAt != null) {
           final requiredDelay = calculateBackoff(item.attempts);
           if (now.difference(item.lastAttemptAt!) < requiredDelay) {
             continue; // Not yet ready
@@ -112,8 +113,9 @@ class SyncCoordinator {
         }
 
         // Mark in-flight
-        await (db.update(db.syncQueue)..where((t) => t.id.equals(item.id)))
-            .write(
+        await (db.update(
+          db.syncQueue,
+        )..where((t) => t.id.equals(item.id))).write(
           SyncQueueCompanion(
             status: const Value('in_flight'),
             lastAttemptAt: Value(now),
@@ -124,20 +126,26 @@ class SyncCoordinator {
           await _processQueueItem(item);
 
           // Mark completed / delete from sync_queue
-          await (db.delete(db.syncQueue)..where((t) => t.id.equals(item.id)))
-              .go();
+          await (db.delete(
+            db.syncQueue,
+          )..where((t) => t.id.equals(item.id))).go();
           processed++;
         } catch (e) {
-          final nextAttempts = item.attempts + 1;
-          final isDeadLetter = nextAttempts >= maxAttempts;
-          await (db.update(db.syncQueue)..where((t) => t.id.equals(item.id)))
-              .write(
+          final classified = classifySyncError(e);
+          final isPermanent = classified.isPermanent;
+          final nextAttempts = isPermanent ? maxAttempts : item.attempts + 1;
+          final isDeadLetter = nextAttempts >= maxAttempts || isPermanent;
+          await (db.update(
+            db.syncQueue,
+          )..where((t) => t.id.equals(item.id))).write(
             SyncQueueCompanion(
               attempts: Value(nextAttempts),
               attemptCount: Value(nextAttempts),
               status: Value(isDeadLetter ? 'dead_letter' : 'failed'),
-              lastError: Value(e.toString()),
-              errorLog: Value(e.toString()),
+              lastError: Value(classified.userFriendlyMessage),
+              errorLog: Value(
+                '${classified.category}: ${classified.userFriendlyMessage}',
+              ),
               lastAttemptAt: Value(DateTime.now().toUtc()),
             ),
           );
@@ -157,76 +165,74 @@ class SyncCoordinator {
 
     // Never sync non-UUID / guest items to Supabase
     if (!isValidUuid(item.userId)) {
-      debugPrint('[SyncCoordinator] Skipping remote sync for non-UUID / guest item: ${item.id}');
+      debugPrint(
+        '[SyncCoordinator] Skipping remote sync for non-UUID / guest item: ${item.id}',
+      );
       return;
     }
 
-    final Map<String, dynamic> payload =
+    final Map<String, dynamic> rawPayload =
         jsonDecode(item.payload) as Map<String, dynamic>;
 
-    // Confirm user_id is sent explicitly by client on every insert
-    payload['user_id'] = item.userId;
-
-    if (payload['id'] != null && (payload['id'] as String).contains('guest')) {
-      payload['id'] = (payload['id'] as String).replaceAll('guest', item.userId);
-    }
-
-    final table = _mapTable(item.entityType);
+    final table = resolveSupabaseTable(item.entityType);
+    final sanitizedPayload = sanitizeOutboxPayload(
+      table,
+      rawPayload,
+      item.userId,
+    );
+    final conflictTarget = resolveConflictTarget(table) ?? 'id';
 
     if (item.operation.toUpperCase() == 'DELETE') {
       if (item.entityId.contains('guest')) {
         return;
       }
-      await supabase!.from(table).update({
-        'is_deleted': true,
-        'deleted_at': DateTime.now().toUtc().toIso8601String(),
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      }).match({
-        'id': item.entityId,
-        'user_id': item.userId,
-      });
+      final matchMap = <String, Object>{conflictTarget: item.entityId};
+      if (conflictTarget == 'id' && table != 'profiles') {
+        matchMap['user_id'] = item.userId;
+      }
+      try {
+        await supabase!
+            .from(table)
+            .update({
+              'is_deleted': true,
+              'deleted_at': DateTime.now().toUtc().toIso8601String(),
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .match(matchMap);
+      } catch (_) {
+        await supabase!.from(table).delete().match(matchMap);
+      }
       return;
     }
 
-    // Idempotent upsert via Supabase with onConflict: 'id'
-    await supabase!.from(table).upsert(payload, onConflict: 'id');
-  }
-
-  String _mapTable(String entityType) {
-    switch (entityType.toLowerCase()) {
-      case 'workout':
-      case 'workouts':
-        return 'workouts';
-      case 'workout_exercise':
-      case 'workoutexercises':
-        return 'workout_exercises';
-      case 'workout_set':
-      case 'workoutsets':
-        return 'workout_sets';
-      case 'nutrition':
-      case 'nutrition_log':
-      case 'nutrition_logs':
-        return 'nutrition_logs';
-      case 'hydration':
-      case 'hydration_log':
-      case 'hydration_logs':
-        return 'hydration_logs';
-      case 'step_daily':
-      case 'steps':
-        return 'step_daily';
-      case 'event':
-      case 'calendar_event':
-      case 'calendar_events':
-      case 'events':
-        return 'calendar_events';
-      case 'reminder':
-      case 'reminders':
-        return 'reminders';
-      case 'profile':
-      case 'profiles':
-        return 'profiles';
-      default:
-        return entityType.toLowerCase();
+    // Idempotent upsert via Supabase with verified onConflict target and resilient composite key resolution
+    try {
+      await supabase!
+          .from(table)
+          .upsert(sanitizedPayload, onConflict: conflictTarget);
+    } on PostgrestException catch (e) {
+      if ((e.code == '23505' ||
+              e.message.contains('unique constraint') ||
+              e.message.contains('duplicate key')) &&
+          (table == 'nutrition_logs' || table == 'step_daily_logs')) {
+        final uniqueDateCol = table == 'nutrition_logs'
+            ? 'log_date'
+            : 'step_date';
+        final dateVal = sanitizedPayload[uniqueDateCol];
+        if (dateVal != null) {
+          debugPrint(
+            '[SyncCoordinator] Recovering from 23505 conflict on $table. Updating row ($uniqueDateCol: $dateVal)...',
+          );
+          final updatePayload = Map<String, dynamic>.from(sanitizedPayload);
+          updatePayload.remove('id');
+          await supabase!.from(table).update(updatePayload).match({
+            'user_id': item.userId,
+            uniqueDateCol: dateVal,
+          });
+          return;
+        }
+      }
+      rethrow;
     }
   }
 
@@ -256,11 +262,7 @@ final syncCoordinatorProvider = Provider<SyncCoordinator>((ref) {
     client = Supabase.instance.client;
   } catch (_) {}
 
-  final coordinator = SyncCoordinator(
-    db: db,
-    supabase: client,
-    ref: ref,
-  );
+  final coordinator = SyncCoordinator(db: db, supabase: client, ref: ref);
 
   // Auto-listen to connectivity and auth changes to trigger drain
   ref.listen(connectivityProvider, (prev, next) {

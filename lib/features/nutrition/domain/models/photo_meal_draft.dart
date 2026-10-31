@@ -27,36 +27,32 @@ class IngredientEstimate {
     double? carbsPer100g,
     double? fatsPer100g,
     double? caloriesPer100g,
-  }) =>
-      IngredientEstimate(
-        name: name ?? this.name,
-        estimatedGrams: estimatedGrams ?? this.estimatedGrams,
-        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
-        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
-        fatsPer100g: fatsPer100g ?? this.fatsPer100g,
-        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
-      );
+  }) => IngredientEstimate(
+    name: name ?? this.name,
+    estimatedGrams: estimatedGrams ?? this.estimatedGrams,
+    proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+    carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+    fatsPer100g: fatsPer100g ?? this.fatsPer100g,
+    caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'estimated_grams': estimatedGrams,
-        'protein_per_100g': proteinPer100g,
-        'carbs_per_100g': carbsPer100g,
-        'fats_per_100g': fatsPer100g,
-        'calories_per_100g': caloriesPer100g,
-      };
+    'name': name,
+    'estimated_grams': estimatedGrams,
+    'protein_per_100g': proteinPer100g,
+    'carbs_per_100g': carbsPer100g,
+    'fats_per_100g': fatsPer100g,
+    'calories_per_100g': caloriesPer100g,
+  };
 
   factory IngredientEstimate.fromJson(Map<String, dynamic> json) =>
       IngredientEstimate(
         name: json['name'] as String? ?? 'Ingredient',
-        estimatedGrams:
-            (json['estimated_grams'] as num?)?.toDouble() ?? 50.0,
-        proteinPer100g:
-            (json['protein_per_100g'] as num?)?.toDouble() ?? 0.0,
+        estimatedGrams: (json['estimated_grams'] as num?)?.toDouble() ?? 50.0,
+        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0.0,
         carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0.0,
         fatsPer100g: (json['fats_per_100g'] as num?)?.toDouble() ?? 0.0,
-        caloriesPer100g:
-            (json['calories_per_100g'] as num?)?.toDouble() ?? 0.0,
+        caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble() ?? 0.0,
       );
 }
 
@@ -96,28 +92,27 @@ class PhotoMealDraft {
     List<IngredientEstimate>? estimatedIngredients,
     double? confidence,
     bool? userEdited,
-  }) =>
-      PhotoMealDraft(
-        mealName: mealName ?? this.mealName,
-        imagePath: imagePath ?? this.imagePath,
-        estimatedIngredients:
-            estimatedIngredients ?? this.estimatedIngredients,
-        confidence: confidence ?? this.confidence,
-        userEdited: userEdited ?? this.userEdited,
-      );
+  }) => PhotoMealDraft(
+    mealName: mealName ?? this.mealName,
+    imagePath: imagePath ?? this.imagePath,
+    estimatedIngredients: estimatedIngredients ?? this.estimatedIngredients,
+    confidence: confidence ?? this.confidence,
+    userEdited: userEdited ?? this.userEdited,
+  );
 
   Map<String, dynamic> toJson() => {
-        'meal_name': mealName,
-        'image_path': imagePath,
-        'confidence': confidence,
-        'user_edited': userEdited,
-        'estimated_ingredients':
-            estimatedIngredients.map((i) => i.toJson()).toList(),
-        'total_protein': totalProtein,
-        'total_carbs': totalCarbs,
-        'total_fats': totalFats,
-        'total_calories': totalCalories,
-      };
+    'meal_name': mealName,
+    'image_path': imagePath,
+    'confidence': confidence,
+    'user_edited': userEdited,
+    'estimated_ingredients': estimatedIngredients
+        .map((i) => i.toJson())
+        .toList(),
+    'total_protein': totalProtein,
+    'total_carbs': totalCarbs,
+    'total_fats': totalFats,
+    'total_calories': totalCalories,
+  };
 
   factory PhotoMealDraft.fromJson(Map<String, dynamic> json) {
     List<IngredientEstimate> ingredients = [];

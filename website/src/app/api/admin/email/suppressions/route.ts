@@ -6,7 +6,7 @@ import { isValidEmail } from '@/lib/email/resend';
 export async function GET(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const suppressions = await emailStore.getSuppressions();
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   try {
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   try {

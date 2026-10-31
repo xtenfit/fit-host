@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/supabase_service.dart';
+import '../../../../core/services/startup_gate_service.dart';
 import '../../../../core/data/guest_account_claim_service.dart';
 
 class SupabaseAuthDialog extends ConsumerStatefulWidget {
@@ -58,8 +60,17 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
     );
 
     if (shouldUpload == true) {
-      await ref.read(guestAccountClaimServiceProvider).claimGuestDataToAccount(newUid);
+      await ref
+          .read(guestAccountClaimServiceProvider)
+          .claimGuestDataToAccount(newUid);
     }
+
+    try {
+      final gateService = ref.read(startupGateServiceProvider);
+      await gateService.setFirstLaunchCompleted(true);
+      await gateService.setAuthDecisionMade(true);
+      await gateService.setAccountOnboardingCompleted(newUid, true);
+    } catch (_) {}
   }
 
   @override
@@ -76,7 +87,9 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         border: Border.all(
-          color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+          color: isDark
+              ? AppColors.darkSurfaceBorder
+              : AppColors.lightSurfaceBorder,
         ),
       ),
       child: SingleChildScrollView(
@@ -115,11 +128,13 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                     const SizedBox(height: 4),
                     Text(
                       authState.otpSent
-                          ? 'We sent a 6-digit OTP code to ${authState.email}'
+                          ? 'We sent a verification code to ${authState.email}'
                           : 'Backup workouts & sync across all your devices',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -139,7 +154,10 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
             if (authState.errorMessage != null)
               Container(
                 margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
@@ -147,7 +165,11 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline_rounded, color: Colors.red, size: 18),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: Colors.red,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -169,30 +191,60 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                       ? null
                       : () async {
                           final ok = await authNotifier.signInWithGoogle();
-                          if (ok && context.mounted) {
-                            final uid = ref.read(authProvider).user?.id ?? 'account_${DateTime.now().millisecondsSinceEpoch}';
-                            Navigator.of(context).pop();
-                            await _promptGuestDataClaim(uid);
-                            if (context.mounted) {
+                          if (!context.mounted) return;
+                          if (ok) {
+                            final user = ref.read(authProvider).user;
+                            if (user != null) {
+                              Navigator.of(context).pop();
+                              await _promptGuestDataClaim(user.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      '🎉 Signed in with Google! Cloud Sync active.',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            } else {
+                              Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('🎉 Signed in with Google! Cloud Sync active.'),
+                                  content: Text(
+                                    'Opening Google Sign-In in browser... Please complete sign-in.',
+                                  ),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
                             }
+                          } else {
+                            final err =
+                                ref.read(authProvider).errorMessage ??
+                                'Google Sign-In failed.';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(err),
+                                backgroundColor: AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           }
                         },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: isDark ? Colors.white : Colors.black87,
                     side: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                       width: 1.5,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    backgroundColor: isDark ? AppColors.darkSurfaceElevated : Colors.white,
+                    backgroundColor: isDark
+                        ? AppColors.darkSurfaceElevated
+                        : Colors.white,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -208,7 +260,9 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
-                              color: isDark ? AppColors.limeGreen : Colors.blueAccent,
+                              color: isDark
+                                  ? AppColors.limeGreen
+                                  : Colors.blueAccent,
                             ),
                           ),
                         ),
@@ -236,7 +290,9 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                 children: [
                   Expanded(
                     child: Divider(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                   Padding(
@@ -246,13 +302,17 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
                       ),
                     ),
                   ),
                   Expanded(
                     child: Divider(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                 ],
@@ -268,11 +328,15 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                   hintText: 'athlete@example.com',
                   prefixIcon: const Icon(Icons.mail_outline_rounded, size: 20),
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey.shade50,
+                  fillColor: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                 ),
@@ -287,7 +351,9 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                   onPressed: authState.isLoading
                       ? null
                       : () async {
-                          await authNotifier.sendEmailOtp(_emailController.text);
+                          await authNotifier.sendEmailOtp(
+                            _emailController.text,
+                          );
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.limeGreen,
@@ -300,12 +366,20 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
                         )
                       : const Icon(Icons.send_rounded, size: 18),
                   label: Text(
-                    authState.isLoading ? 'Sending code...' : 'Send Login OTP Code',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                    authState.isLoading
+                        ? 'Sending code...'
+                        : 'Send Login OTP Code',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -314,23 +388,28 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
               TextField(
                 controller: _otpController,
                 keyboardType: TextInputType.number,
-                maxLength: 6,
+                maxLength: 8,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 6,
+                  letterSpacing: 5,
                 ),
                 decoration: InputDecoration(
-                  labelText: '6-Digit OTP Code',
-                  hintText: '123456',
+                  counterText: '',
+                  labelText: 'OTP Code',
+                  hintText: 'Enter code',
                   prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
                   filled: true,
-                  fillColor: isDark ? AppColors.darkSurfaceElevated : Colors.grey.shade50,
+                  fillColor: isDark
+                      ? AppColors.darkSurfaceElevated
+                      : Colors.grey.shade50,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                      color: isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder,
                     ),
                   ),
                 ),
@@ -345,18 +424,27 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                   onPressed: authState.isLoading
                       ? null
                       : () async {
-                          final ok = await authNotifier.verifyOtp(_otpController.text);
-                          if (ok && context.mounted) {
-                            final uid = ref.read(authProvider).user?.id ?? 'account_${DateTime.now().millisecondsSinceEpoch}';
-                            Navigator.of(context).pop();
-                            await _promptGuestDataClaim(uid);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('🎉 Verified! Welcome ${authState.email}'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                          final ok = await authNotifier.verifyOtp(
+                            _otpController.text,
+                            email: _emailController.text.trim(),
+                            type: OtpType.magiclink,
+                          );
+                          if (!context.mounted) return;
+                          if (ok) {
+                            final user = ref.read(authProvider).user;
+                            if (user != null) {
+                              Navigator.of(context).pop();
+                              await _promptGuestDataClaim(user.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      '🎉 Verified! Welcome ${authState.email}',
+                                    ),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
                             }
                           }
                         },
@@ -371,12 +459,20 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
                         )
                       : const Icon(Icons.check_circle_rounded, size: 18),
                   label: Text(
-                    authState.isLoading ? 'Verifying...' : 'Verify OTP & Sign In',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                    authState.isLoading
+                        ? 'Verifying...'
+                        : 'Verify OTP & Sign In',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ),
@@ -391,7 +487,8 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
                     child: const Text('Change Email'),
                   ),
                   TextButton(
-                    onPressed: () => authNotifier.sendEmailOtp(_emailController.text),
+                    onPressed: () =>
+                        authNotifier.sendEmailOtp(_emailController.text),
                     child: const Text('Resend Code'),
                   ),
                 ],
@@ -403,7 +500,9 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1B231D) : const Color(0xFFF0FDF4),
+                color: isDark
+                    ? const Color(0xFF1B231D)
+                    : const Color(0xFFF0FDF4),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: AppColors.limeGreen.withValues(alpha: 0.3),
@@ -411,14 +510,20 @@ class _SupabaseAuthDialogState extends ConsumerState<SupabaseAuthDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.cloud_done_rounded, color: AppColors.limeGreen, size: 20),
+                  const Icon(
+                    Icons.cloud_done_rounded,
+                    color: AppColors.limeGreen,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Cloud Sync: Backup and restore your workouts, nutrition logs, and target stats across devices securely anytime.',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         height: 1.3,
                       ),
                     ),

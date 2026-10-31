@@ -25,7 +25,8 @@ class FcmCrossDeviceService {
       return;
     }
 
-    final token = customToken ??
+    final token =
+        customToken ??
         'fit-host-device-${DateTime.now().millisecondsSinceEpoch}';
     _cachedDeviceToken = token;
     _fcmRegistered = true;

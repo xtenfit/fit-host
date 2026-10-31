@@ -4,35 +4,38 @@ import 'package:fit_host/features/onboarding/data/repositories/onboarding_reposi
 
 void main() {
   group('OnboardingState Domain & Calculation Tests', () {
-    test('Calculates BMR and caloric targets safely within realistic bounds', () {
-      const stateMale = OnboardingState(
-        gender: 'male',
-        age: 28,
-        heightCm: 180,
-        weightKg: 80,
-        activityLevel: 'moderately_active',
-        goals: ['build_muscle'],
-      );
+    test(
+      'Calculates BMR and caloric targets safely within realistic bounds',
+      () {
+        const stateMale = OnboardingState(
+          gender: 'male',
+          age: 28,
+          heightCm: 180,
+          weightKg: 80,
+          activityLevel: 'moderately_active',
+          goals: ['build_muscle'],
+        );
 
-      // Estimated daily calories should be positive and bounded
-      expect(stateMale.estimatedDailyCalories, greaterThanOrEqualTo(2000));
-      expect(stateMale.estimatedDailyCalories, lessThanOrEqualTo(3800));
-      expect(stateMale.recommendedProteinGrams, equals(160)); // 80 * 2.0
-      expect(stateMale.recommendedCarbsGrams, greaterThan(150));
-      expect(stateMale.recommendedFatsGrams, greaterThan(40));
+        // Estimated daily calories should be positive and bounded
+        expect(stateMale.estimatedDailyCalories, greaterThanOrEqualTo(2000));
+        expect(stateMale.estimatedDailyCalories, lessThanOrEqualTo(3800));
+        expect(stateMale.recommendedProteinGrams, equals(160)); // 80 * 2.0
+        expect(stateMale.recommendedCarbsGrams, greaterThan(150));
+        expect(stateMale.recommendedFatsGrams, greaterThan(40));
 
-      const stateFemale = OnboardingState(
-        gender: 'female',
-        age: 25,
-        heightCm: 165,
-        weightKg: 60,
-        activityLevel: 'lightly_active',
-        goals: ['lose_weight'],
-      );
+        const stateFemale = OnboardingState(
+          gender: 'female',
+          age: 25,
+          heightCm: 165,
+          weightKg: 60,
+          activityLevel: 'lightly_active',
+          goals: ['lose_weight'],
+        );
 
-      expect(stateFemale.estimatedDailyCalories, greaterThanOrEqualTo(1400));
-      expect(stateFemale.recommendedProteinGrams, equals(120)); // 60 * 2.0
-    });
+        expect(stateFemale.estimatedDailyCalories, greaterThanOrEqualTo(1400));
+        expect(stateFemale.recommendedProteinGrams, equals(120)); // 60 * 2.0
+      },
+    );
 
     test('Unit conversions between Metric and Imperial are accurate', () {
       const state = OnboardingState(

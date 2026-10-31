@@ -1,0 +1,41 @@
+project_id = "eedubttdylyqrhyeikwb"
+
+[auth]
+additional_redirect_urls = ["io.supabase.fithost://login-callback", "https://fithost.amitrana.tech", "https://fithost.amitrana.tech/auth/callback", "https://fithost.amitrana.tech/auth/recovery", "https://fithost.amitrana.tech/**", "http://localhost:3000/auth/callback", "http://localhost:3000/auth/recovery", "https://fithost-amitrana.vercel.app/", "https://fithost-amitrana.vercel.app/**", "https://fithost-*-amitrana.vercel.app", "https://fithost-*-amitrana.vercel.app/**"]
+site_url = "https://fithost.amitrana.tech"
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[auth.oauth_server]
+enabled = true
+
+[auth.external.google]
+client_id = "744580314397-93gjs0lr8654pag5vc70uerb84ds5i2p.apps.googleusercontent.com"
+enabled = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email.notification.identity_linked]
+enabled = true
+
+[auth.email.notification.password_changed]
+enabled = true
+
+[auth.email.notification.phone_changed]
+enabled = true
+
+[db.pooler]
+default_pool_size = 15
+max_client_conn = 200
+
+[storage.analytics]
+enabled = true
+max_namespaces = 10
+
+[storage.image_transformation]
+enabled = true

@@ -61,9 +61,13 @@ final dailySummaryProvider = Provider<DailySummary>((ref) {
   }).toList();
 
   final totalMinutes = todayWorkouts.fold(
-      0, (sum, w) => sum + (w.durationSeconds ~/ 60));
+    0,
+    (sum, w) => sum + (w.durationSeconds ~/ 60),
+  );
   final totalVolume = todayWorkouts.fold(
-      0.0, (sum, w) => sum + w.totalVolumeKg);
+    0.0,
+    (sum, w) => sum + w.totalVolumeKg,
+  );
 
   return DailySummary(
     date: DateTime(today.year, today.month, today.day),

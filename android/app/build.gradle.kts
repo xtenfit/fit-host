@@ -1,7 +1,13 @@
+import com.posthog.android.PostHogCliExecTask
+import java.util.Properties
+
 plugins {
     id("com.android.application")
+    id("com.posthog.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -20,7 +26,7 @@ android {
         applicationId = "com.fithost.fit_host"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -28,11 +34,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -52,6 +61,24 @@ flutter {
     source = "../.."
 }
 
+val postHogEnv = Properties().apply {
+    val envFile = rootProject.file("../.env")
+    if (envFile.exists()) envFile.inputStream().use { load(it) }
+}
+
+tasks.withType<PostHogCliExecTask>().configureEach {
+    isIgnoreExitValue = true
+    (System.getenv("POSTHOG_CLI_API_KEY") ?: postHogEnv.getProperty("POSTHOG_CLI_API_KEY"))?.let { postHogApiKey.set(it) }
+    (System.getenv("POSTHOG_CLI_PROJECT_ID") ?: postHogEnv.getProperty("POSTHOG_CLI_PROJECT_ID"))?.let { postHogProjectId.set(it) }
+    (System.getenv("POSTHOG_CLI_HOST") ?: postHogEnv.getProperty("POSTHOG_CLI_HOST"))?.let { postHogHost.set(it) }
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Import the Firebase BoM
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Firebase Analytics
+    implementation("com.google.firebase:firebase-analytics")
 }

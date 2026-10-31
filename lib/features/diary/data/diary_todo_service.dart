@@ -35,20 +35,20 @@ class DiaryTodoItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'isCompleted': isCompleted,
-        'dateKey': dateKey,
-        'isCustom': isCustom,
-      };
+    'id': id,
+    'title': title,
+    'isCompleted': isCompleted,
+    'dateKey': dateKey,
+    'isCustom': isCustom,
+  };
 
   factory DiaryTodoItem.fromJson(Map<String, dynamic> json) => DiaryTodoItem(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        isCompleted: json['isCompleted'] as bool? ?? false,
-        dateKey: json['dateKey'] as String,
-        isCustom: json['isCustom'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    title: json['title'] as String,
+    isCompleted: json['isCompleted'] as bool? ?? false,
+    dateKey: json['dateKey'] as String,
+    isCustom: json['isCustom'] as bool? ?? false,
+  );
 }
 
 class DiaryTodoService {
@@ -177,8 +177,8 @@ class DiaryTodosNotifier extends Notifier<List<DiaryTodoItem>> {
 
 final diaryTodosProvider =
     NotifierProvider<DiaryTodosNotifier, List<DiaryTodoItem>>(
-  DiaryTodosNotifier.new,
-);
+      DiaryTodosNotifier.new,
+    );
 
 final todayDiaryDateKeyProvider = Provider<String>((ref) {
   return DateFormat('yyyy-MM-dd').format(DateTime.now());

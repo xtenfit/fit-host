@@ -6,6 +6,7 @@ import '../../../../core/theme/app_motion.dart';
 import '../../../../core/services/supabase_service.dart';
 import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import '../../../profile/presentation/widgets/avatar_picker_sheet.dart';
+import '../../../notifications/presentation/controllers/notification_controller.dart';
 
 class HomeHeader extends ConsumerWidget {
   final bool isDark;
@@ -23,6 +24,8 @@ class HomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final profile = ref.watch(userProfileProvider);
+    final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+    final unreadCount = unreadCountAsync.value ?? 0;
 
     final displayName = authState.isAuthenticated
         ? (authState.displayName ?? profile.name)
@@ -40,7 +43,9 @@ class HomeHeader extends ConsumerWidget {
               color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
               boxShadow: [
                 BoxShadow(
@@ -74,7 +79,9 @@ class HomeHeader extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -82,7 +89,10 @@ class HomeHeader extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: authState.isAuthenticated
                           ? AppColors.electricCyan.withValues(alpha: 0.15)
@@ -118,9 +128,9 @@ class HomeHeader extends ConsumerWidget {
           ),
         ),
 
-        // Notification Bell with Unread Dot and Bouncy Spring Tap
+        // Notification Bell with Real-time Unread Badge and Bouncy Spring Tap
         BouncyTap(
-          onTap: () => context.push('/reminders'),
+          onTap: () => context.push('/notifications'),
           child: Container(
             width: 44,
             height: 44,
@@ -128,7 +138,9 @@ class HomeHeader extends ConsumerWidget {
               color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+                color: isDark
+                    ? AppColors.darkSurfaceBorder
+                    : AppColors.lightSurfaceBorder,
               ),
               boxShadow: [
                 BoxShadow(
@@ -140,24 +152,33 @@ class HomeHeader extends ConsumerWidget {
             ),
             child: Stack(
               alignment: Alignment.center,
+              clipBehavior: Clip.none,
               children: [
                 Icon(
                   Icons.notifications_none_rounded,
                   size: 22,
                   color: isDark ? Colors.white : AppColors.lightTextPrimary,
                 ),
-                Positioned(
-                  top: 11,
-                  right: 12,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: AppColors.limeGreen,
-                      shape: BoxShape.circle,
+                if (unreadCount > 0)
+                  Positioned(
+                    top: 10,
+                    right: 11,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: AppColors.limeGreen,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.limeGreen.withValues(alpha: 0.7),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -169,7 +190,9 @@ class HomeHeader extends ConsumerWidget {
           onTap: () => context.push('/profile'),
           child: AppAvatar(
             avatarId: profile.avatarId,
-            avatarUrl: authState.avatarUrl,
+            avatarUrl: profile.avatarId.startsWith('http')
+                ? profile.avatarId
+                : authState.avatarUrl,
             name: displayName,
             radius: 22,
             borderColor: authState.isAuthenticated

@@ -46,89 +46,100 @@ void main() {
       service.dispose();
     });
 
-    test('Simulate midnight rollover (mock clock) -> yesterday row sealed, new row starts at 0', () async {
-      DateTime mockTime = DateTime(2026, 10, 16, 23, 50, 0); // 11:50 PM Day 1
-      final service = StepService(
-        repository: repo,
-        clock: () => mockTime,
-        strideLengthCm: 70.0,
-      );
-      await service.init();
+    test(
+      'Simulate midnight rollover (mock clock) -> yesterday row sealed, new row starts at 0',
+      () async {
+        DateTime mockTime = DateTime(2026, 10, 16, 23, 50, 0); // 11:50 PM Day 1
+        final service = StepService(
+          repository: repo,
+          clock: () => mockTime,
+          strideLengthCm: 70.0,
+        );
+        await service.init();
 
-      // Day 1: accumulate 4,500 steps
-      await service.onSensorReading(5000);
-      await service.onSensorReading(9500); // +4500 steps
-      expect(service.todaySteps, equals(4500));
+        // Day 1: accumulate 4,500 steps
+        await service.onSensorReading(5000);
+        await service.onSensorReading(9500); // +4500 steps
+        expect(service.todaySteps, equals(4500));
 
-      // Advance mock clock past midnight to Day 2 (00:05 AM)
-      mockTime = DateTime(2026, 10, 17, 0, 5, 0);
+        // Advance mock clock past midnight to Day 2 (00:05 AM)
+        mockTime = DateTime(2026, 10, 17, 0, 5, 0);
 
-      // Sensor reading continues at 9500 (or slight increase to 9510)
-      await service.onSensorReading(9510);
+        // Sensor reading continues at 9500 (or slight increase to 9510)
+        await service.onSensorReading(9510);
 
-      // New day starts at 0 (or +10 steps taken after midnight)
-      expect(service.todaySteps, equals(10));
-      expect(service.currentDate.day, equals(17));
+        // New day starts at 0 (or +10 steps taken after midnight)
+        expect(service.todaySteps, equals(10));
+        expect(service.currentDate.day, equals(17));
 
-      // Verify yesterday's row (Oct 16) is sealed at 4500 steps in SQLite
-      final yesterdayRecord =
-          await repo.getDailyStepRecord(DateTime(2026, 10, 16));
-      expect(yesterdayRecord, isNotNull);
-      expect(yesterdayRecord!.steps, equals(4500));
+        // Verify yesterday's row (Oct 16) is sealed at 4500 steps in SQLite
+        final yesterdayRecord = await repo.getDailyStepRecord(
+          DateTime(2026, 10, 16),
+        );
+        expect(yesterdayRecord, isNotNull);
+        expect(yesterdayRecord!.steps, equals(4500));
 
-      // Verify today's row (Oct 17) starts fresh
-      final todayRecord =
-          await repo.getDailyStepRecord(DateTime(2026, 10, 17));
-      expect(todayRecord, isNotNull);
-      expect(todayRecord!.steps, equals(10));
+        // Verify today's row (Oct 17) starts fresh
+        final todayRecord = await repo.getDailyStepRecord(
+          DateTime(2026, 10, 17),
+        );
+        expect(todayRecord, isNotNull);
+        expect(todayRecord!.steps, equals(10));
 
-      service.dispose();
-    });
+        service.dispose();
+      },
+    );
 
-    test('Device reboot handling -> sensor counter resets below base without losing accumulated steps', () async {
-      DateTime mockTime = DateTime(2026, 10, 16, 14, 0, 0);
-      final service = StepService(
-        repository: repo,
-        clock: () => mockTime,
-        strideLengthCm: 70.0,
-      );
-      await service.init();
+    test(
+      'Device reboot handling -> sensor counter resets below base without losing accumulated steps',
+      () async {
+        DateTime mockTime = DateTime(2026, 10, 16, 14, 0, 0);
+        final service = StepService(
+          repository: repo,
+          clock: () => mockTime,
+          strideLengthCm: 70.0,
+        );
+        await service.init();
 
-      // Pre-reboot: sensor is at 10,000, athlete walks 2,000 steps
-      await service.onSensorReading(10000);
-      await service.onSensorReading(12000);
-      expect(service.todaySteps, equals(2000));
+        // Pre-reboot: sensor is at 10,000, athlete walks 2,000 steps
+        await service.onSensorReading(10000);
+        await service.onSensorReading(12000);
+        expect(service.todaySteps, equals(2000));
 
-      // Phone reboots! Android SensorManager step counter drops to 15 steps
-      await service.onSensorReading(15);
-      // Steps should NOT drop or become negative; accumulated 2000 steps are preserved!
-      expect(service.todaySteps, equals(2000));
+        // Phone reboots! Android SensorManager step counter drops to 15 steps
+        await service.onSensorReading(15);
+        // Steps should NOT drop or become negative; accumulated 2000 steps are preserved!
+        expect(service.todaySteps, equals(2000));
 
-      // Athlete takes another 35 steps after reboot (sensor now at 50)
-      await service.onSensorReading(50);
-      expect(service.todaySteps, equals(2035));
+        // Athlete takes another 35 steps after reboot (sensor now at 50)
+        await service.onSensorReading(50);
+        expect(service.todaySteps, equals(2035));
 
-      service.dispose();
-    });
+        service.dispose();
+      },
+    );
 
-    test('Offline / Airplane mode -> sensor counting is local and persists without network', () async {
-      // In offline mode (airplane mode), pedometer sensor continues counting locally into Drift SQLite
-      DateTime mockTime = DateTime(2026, 10, 16, 16, 0, 0);
-      final service = StepService(
-        repository: repo,
-        clock: () => mockTime,
-        strideLengthCm: 70.0,
-      );
-      await service.init();
+    test(
+      'Offline / Airplane mode -> sensor counting is local and persists without network',
+      () async {
+        // In offline mode (airplane mode), pedometer sensor continues counting locally into Drift SQLite
+        DateTime mockTime = DateTime(2026, 10, 16, 16, 0, 0);
+        final service = StepService(
+          repository: repo,
+          clock: () => mockTime,
+          strideLengthCm: 70.0,
+        );
+        await service.init();
 
-      await service.addSteps(300);
-      expect(service.todaySteps, equals(300));
+        await service.addSteps(300);
+        expect(service.todaySteps, equals(300));
 
-      final persisted = await repo.getDailySteps(mockTime);
-      expect(persisted, equals(300));
+        final persisted = await repo.getDailySteps(mockTime);
+        expect(persisted, equals(300));
 
-      service.dispose();
-    });
+        service.dispose();
+      },
+    );
 
     test('Guest vs Signed-in user 7-day history gating', () async {
       final guestRepo = LocalStepsRepository(memoryDb, userId: 'guest');

@@ -55,26 +55,28 @@ void main() {
       );
     });
 
-    test('getAvatarAssetPath resolves correct asset png path or null for initial',
-        () {
-      expect(
-        getAvatarAssetPath('avatar_male_1'),
-        equals('assets/images/avatars/avatar_male_1.png'),
-      );
-      expect(
-        getAvatarAssetPath('male_1'),
-        equals('assets/images/avatars/avatar_male_1.png'),
-      );
-      expect(
-        getAvatarAssetPath('avatar_female_2'),
-        equals('assets/images/avatars/avatar_female_2.png'),
-      );
-      expect(
-        getAvatarAssetPath('avatar_neutral'),
-        equals('assets/images/avatars/avatar_neutral.png'),
-      );
-      expect(getAvatarAssetPath('initial'), isNull);
-      expect(getAvatarAssetPath(null), isNull);
-    });
+    test(
+      'getAvatarAssetPath resolves correct asset png path or null for initial',
+      () {
+        expect(
+          getAvatarAssetPath('avatar_male_1'),
+          equals('assets/images/avatars/avatar_male_1.png'),
+        );
+        expect(
+          getAvatarAssetPath('male_1'),
+          equals('assets/images/avatars/avatar_male_1.png'),
+        );
+        expect(
+          getAvatarAssetPath('avatar_female_2'),
+          equals('assets/images/avatars/avatar_female_2.png'),
+        );
+        expect(
+          getAvatarAssetPath('avatar_neutral'),
+          equals('assets/images/avatars/avatar_neutral.png'),
+        );
+        expect(getAvatarAssetPath('initial'), isNull);
+        expect(getAvatarAssetPath(null), isNull);
+      },
+    );
   });
 }

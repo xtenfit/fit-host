@@ -5,8 +5,9 @@ import 'package:fit_host/features/home/presentation/widgets/home_streak_date_str
 import 'package:fit_host/features/home/presentation/controllers/home_dashboard_controller.dart';
 
 void main() {
-  testWidgets('HomeStreakDateStrip shows past 3 days, today, and 1 next day',
-      (WidgetTester tester) async {
+  testWidgets('HomeStreakDateStrip shows past 3 days, today, and 1 next day', (
+    WidgetTester tester,
+  ) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final expectedDays = List.generate(
@@ -17,9 +18,7 @@ void main() {
     await tester.pumpWidget(
       const ProviderScope(
         child: MaterialApp(
-          home: Scaffold(
-            body: HomeStreakDateStrip(isDark: true),
-          ),
+          home: Scaffold(body: HomeStreakDateStrip(isDark: true)),
         ),
       ),
     );

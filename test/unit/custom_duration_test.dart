@@ -37,9 +37,7 @@ void main() {
     setUp(() {
       fakeRepo = _FakeOnboardingRepo();
       container = ProviderContainer(
-        overrides: [
-          onboardingRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [onboardingRepositoryProvider.overrideWithValue(fakeRepo)],
       );
     });
 
@@ -51,26 +49,47 @@ void main() {
       final notifier = container.read(onboardingProvider.notifier);
 
       notifier.setSessionDuration(45);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(45));
+      expect(
+        container.read(onboardingProvider).sessionDurationMinutes,
+        equals(45),
+      );
 
       notifier.setSessionDuration(60);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(60));
+      expect(
+        container.read(onboardingProvider).sessionDurationMinutes,
+        equals(60),
+      );
     });
 
-    test('Sets custom minute value accurately within allowed range (5 to 180 min)', () {
-      final notifier = container.read(onboardingProvider.notifier);
+    test(
+      'Sets custom minute value accurately within allowed range (5 to 180 min)',
+      () {
+        final notifier = container.read(onboardingProvider.notifier);
 
-      notifier.setSessionDuration(75);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(75));
+        notifier.setSessionDuration(75);
+        expect(
+          container.read(onboardingProvider).sessionDurationMinutes,
+          equals(75),
+        );
 
-      notifier.setSessionDuration(105);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(105));
+        notifier.setSessionDuration(105);
+        expect(
+          container.read(onboardingProvider).sessionDurationMinutes,
+          equals(105),
+        );
 
-      notifier.setSessionDuration(5);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(5));
+        notifier.setSessionDuration(5);
+        expect(
+          container.read(onboardingProvider).sessionDurationMinutes,
+          equals(5),
+        );
 
-      notifier.setSessionDuration(180);
-      expect(container.read(onboardingProvider).sessionDurationMinutes, equals(180));
-    });
+        notifier.setSessionDuration(180);
+        expect(
+          container.read(onboardingProvider).sessionDurationMinutes,
+          equals(180),
+        );
+      },
+    );
   });
 }

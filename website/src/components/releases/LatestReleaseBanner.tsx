@@ -62,6 +62,7 @@ export default function LatestReleaseBanner({ release, className = "" }: LatestR
           {hasAndroidApk ? (
             <a
               href={release.android.downloadUrl!}
+              download
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-black bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-lg shadow-brand-green/20 hover:shadow-brand-green/35 transition-all hover:scale-[1.02]"

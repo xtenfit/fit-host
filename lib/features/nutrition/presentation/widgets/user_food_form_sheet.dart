@@ -9,11 +9,7 @@ class UserFoodFormSheet extends ConsumerStatefulWidget {
   final String? initialBarcode;
   final String? initialName;
 
-  const UserFoodFormSheet({
-    super.key,
-    this.initialBarcode,
-    this.initialName,
-  });
+  const UserFoodFormSheet({super.key, this.initialBarcode, this.initialName});
 
   static Future<FoodItem?> show(
     BuildContext context, {
@@ -58,7 +54,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName ?? '');
     _brandController = TextEditingController();
-    _barcodeController = TextEditingController(text: widget.initialBarcode ?? '');
+    _barcodeController = TextEditingController(
+      text: widget.initialBarcode ?? '',
+    );
     _proteinController = TextEditingController(text: '0');
     _carbsController = TextEditingController(text: '0');
     _fatsController = TextEditingController(text: '0');
@@ -123,9 +121,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save food: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save food: $e')));
       }
     }
   }
@@ -143,12 +141,16 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
           children: [
             TextField(
               controller: labelCtrl,
-              decoration: const InputDecoration(labelText: 'Label (e.g. 1 scoop, 1 cup)'),
+              decoration: const InputDecoration(
+                labelText: 'Label (e.g. 1 scoop, 1 cup)',
+              ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: gramsCtrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(labelText: 'Grams equivalent'),
             ),
           ],
@@ -163,7 +165,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
               final g = double.tryParse(gramsCtrl.text) ?? 0.0;
               if (labelCtrl.text.isNotEmpty && g > 0) {
                 setState(() {
-                  _presets.add(ServingPreset(label: labelCtrl.text.trim(), grams: g));
+                  _presets.add(
+                    ServingPreset(label: labelCtrl.text.trim(), grams: g),
+                  );
                 });
               }
               Navigator.of(ctx).pop();
@@ -207,7 +211,10 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 12, 12),
                 child: Row(
                   children: [
-                    const Icon(Icons.restaurant_rounded, color: AppColors.limeGreen),
+                    const Icon(
+                      Icons.restaurant_rounded,
+                      color: AppColors.limeGreen,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -233,7 +240,10 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
               // Form fields
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   children: [
                     TextFormField(
                       controller: _nameController,
@@ -242,8 +252,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         hintText: 'e.g. Masala Oats with Nuts',
                         prefixIcon: Icon(Icons.fastfood_rounded),
                       ),
-                      validator: (val) =>
-                          val == null || val.trim().isEmpty ? 'Name is required' : null,
+                      validator: (val) => val == null || val.trim().isEmpty
+                          ? 'Name is required'
+                          : null,
                     ),
                     const SizedBox(height: 14),
 
@@ -255,7 +266,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                             decoration: const InputDecoration(
                               labelText: 'Brand (Optional)',
                               hintText: 'e.g. Quaker / Homemade',
-                              prefixIcon: Icon(Icons.branding_watermark_rounded),
+                              prefixIcon: Icon(
+                                Icons.branding_watermark_rounded,
+                              ),
                             ),
                           ),
                         ),
@@ -290,7 +303,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         Expanded(
                           child: TextFormField(
                             controller: _proteinController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Protein (g)',
                               suffixText: 'g',
@@ -302,7 +317,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         Expanded(
                           child: TextFormField(
                             controller: _carbsController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Carbs (g)',
                               suffixText: 'g',
@@ -314,7 +331,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         Expanded(
                           child: TextFormField(
                             controller: _fatsController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Fats (g)',
                               suffixText: 'g',
@@ -326,7 +345,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         Expanded(
                           child: TextFormField(
                             controller: _caloriesController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Calories',
                               suffixText: 'kcal',
@@ -353,8 +374,15 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                         ),
                         TextButton.icon(
                           onPressed: _addPresetDialog,
-                          icon: const Icon(Icons.add_rounded, size: 16, color: AppColors.limeGreen),
-                          label: const Text('Add Preset', style: TextStyle(color: AppColors.limeGreen)),
+                          icon: const Icon(
+                            Icons.add_rounded,
+                            size: 16,
+                            color: AppColors.limeGreen,
+                          ),
+                          label: const Text(
+                            'Add Preset',
+                            style: TextStyle(color: AppColors.limeGreen),
+                          ),
                         ),
                       ],
                     ),
@@ -363,7 +391,9 @@ class _UserFoodFormSheetState extends ConsumerState<UserFoodFormSheet> {
                       runSpacing: 8,
                       children: _presets.map((preset) {
                         return Chip(
-                          label: Text('${preset.label} (${preset.grams.toInt()}g)'),
+                          label: Text(
+                            '${preset.label} (${preset.grams.toInt()}g)',
+                          ),
                           deleteIcon: const Icon(Icons.close_rounded, size: 16),
                           onDeleted: _presets.length > 1
                               ? () => setState(() => _presets.remove(preset))

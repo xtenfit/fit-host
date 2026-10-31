@@ -38,7 +38,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.61,
           'anchorY': 0.26,
-          'btnCenterY': topPadding + 1 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              1 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'chest',
@@ -46,7 +49,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.71,
           'anchorY': 0.28,
-          'btnCenterY': topPadding + 2 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              2 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'back',
@@ -54,7 +60,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.66,
           'anchorY': 0.32,
-          'btnCenterY': topPadding + 3 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              3 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'abs',
@@ -62,7 +71,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.73,
           'anchorY': 0.38,
-          'btnCenterY': topPadding + 4 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              4 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'waist',
@@ -70,7 +82,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.68,
           'anchorY': 0.42,
-          'btnCenterY': topPadding + 5 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              5 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'hips',
@@ -78,7 +93,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.71,
           'anchorY': 0.47,
-          'btnCenterY': topPadding + 6 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              6 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'glutes',
@@ -86,7 +104,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.76,
           'anchorY': 0.52,
-          'btnCenterY': topPadding + 7 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              7 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'hamstrings',
@@ -94,7 +115,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.72,
           'anchorY': 0.61,
-          'btnCenterY': topPadding + 8 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              8 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'thighs',
@@ -102,7 +126,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.67,
           'anchorY': 0.65,
-          'btnCenterY': topPadding + 9 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              9 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'calves',
@@ -110,7 +137,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.68,
           'anchorY': 0.81,
-          'btnCenterY': topPadding + 10 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              10 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
       ];
     } else {
@@ -127,7 +157,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.62,
           'anchorY': 0.21,
-          'btnCenterY': topPadding + 1 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              1 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'chest',
@@ -135,7 +168,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.71,
           'anchorY': 0.28,
-          'btnCenterY': topPadding + 2 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              2 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'arms',
@@ -143,7 +179,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.59,
           'anchorY': 0.32,
-          'btnCenterY': topPadding + 3 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              3 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'back',
@@ -151,7 +190,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.65,
           'anchorY': 0.34,
-          'btnCenterY': topPadding + 4 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              4 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'abs',
@@ -159,7 +201,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.73,
           'anchorY': 0.37,
-          'btnCenterY': topPadding + 5 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              5 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'obliques',
@@ -167,7 +212,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.68,
           'anchorY': 0.41,
-          'btnCenterY': topPadding + 6 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              6 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'triceps',
@@ -175,7 +223,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.58,
           'anchorY': 0.43,
-          'btnCenterY': topPadding + 7 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              7 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'glutes',
@@ -183,7 +234,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.75,
           'anchorY': 0.52,
-          'btnCenterY': topPadding + 8 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              8 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'quads',
@@ -191,7 +245,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.69,
           'anchorY': 0.64,
-          'btnCenterY': topPadding + 9 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              9 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
         {
           'id': 'calves',
@@ -199,7 +256,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
           'hasLine': true,
           'anchorX': 0.68,
           'anchorY': 0.80,
-          'btnCenterY': topPadding + 10 * (buttonHeight + verticalSpacing) + (buttonHeight / 2),
+          'btnCenterY':
+              topPadding +
+              10 * (buttonHeight + verticalSpacing) +
+              (buttonHeight / 2),
         },
       ];
     }
@@ -207,7 +267,8 @@ class AnatomyPointerDiagram extends StatelessWidget {
 
   bool _isItemActive(String id, List<Map<String, dynamic>> options) {
     final lowerId = id.toLowerCase();
-    final hasFullBody = selectedAreas.contains('full_body') ||
+    final hasFullBody =
+        selectedAreas.contains('full_body') ||
         selectedAreas.contains('full body');
 
     if (lowerId == 'full_body') {
@@ -294,7 +355,8 @@ class AnatomyPointerDiagram extends StatelessWidget {
             final id = opt['id'] as String;
             final title = opt['title'] as String;
             final isSelected = _isItemActive(id, options);
-            final btnTop = topPadding + index * (buttonHeight + verticalSpacing);
+            final btnTop =
+                topPadding + index * (buttonHeight + verticalSpacing);
 
             return Positioned(
               left: 0,
@@ -307,7 +369,10 @@ class AnatomyPointerDiagram extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? const Color(0xFF00E676)
@@ -316,13 +381,17 @@ class AnatomyPointerDiagram extends StatelessWidget {
                     border: Border.all(
                       color: isSelected
                           ? const Color(0xFF00E676)
-                          : (isDark ? const Color(0xFF1F2D26) : const Color(0xFFE5E7EB)),
+                          : (isDark
+                                ? const Color(0xFF1F2D26)
+                                : const Color(0xFFE5E7EB)),
                       width: isSelected ? 2.0 : 1.2,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: const Color(0xFF00E676).withValues(alpha: 0.35),
+                              color: const Color(
+                                0xFF00E676,
+                              ).withValues(alpha: 0.35),
                               blurRadius: 12,
                               offset: const Offset(0, 3),
                             ),
@@ -341,7 +410,9 @@ class AnatomyPointerDiagram extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                             color: isSelected
                                 ? const Color(0xFF0A0F0D)
-                                : (isDark ? Colors.white : const Color(0xFF111827)),
+                                : (isDark
+                                      ? Colors.white
+                                      : const Color(0xFF111827)),
                           ),
                         ),
                       ),
@@ -384,7 +455,8 @@ class _AnatomyPointerLinesPainter extends CustomPainter {
 
   bool _isItemActive(String id) {
     final lowerId = id.toLowerCase();
-    final hasFullBody = selectedAreas.contains('full_body') ||
+    final hasFullBody =
+        selectedAreas.contains('full_body') ||
         selectedAreas.contains('full body');
 
     if (lowerId == 'full_body') {
@@ -467,13 +539,21 @@ class _AnatomyPointerLinesPainter extends CustomPainter {
         ..color = lineColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = isSelected ? 2.4 : 1.4;
-      canvas.drawCircle(Offset(anchorX, anchorY), isSelected ? 6.5 : 4.5, outerRingPaint);
+      canvas.drawCircle(
+        Offset(anchorX, anchorY),
+        isSelected ? 6.5 : 4.5,
+        outerRingPaint,
+      );
 
       // Inner Center Dot
       final innerDotPaint = Paint()
         ..color = isSelected ? const Color(0xFF00E676) : Colors.white
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(anchorX, anchorY), isSelected ? 3.0 : 1.8, innerDotPaint);
+      canvas.drawCircle(
+        Offset(anchorX, anchorY),
+        isSelected ? 3.0 : 1.8,
+        innerDotPaint,
+      );
     }
   }
 

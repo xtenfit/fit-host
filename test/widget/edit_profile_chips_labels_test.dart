@@ -41,38 +41,39 @@ class _FakeProfileRepository implements UserProfileRepository {
 }
 
 void main() {
-  testWidgets('EditProfileScreen renders all chip labels from shared kFocusAreas and kFitnessGoals', (tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'EditProfileScreen renders all chip labels from shared kFocusAreas and kFitnessGoals',
+    (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-    final inMemoryDb = AppDatabase(NativeDatabase.memory());
-    final fakeRepo = _FakeProfileRepository();
+      final inMemoryDb = AppDatabase(NativeDatabase.memory());
+      final fakeRepo = _FakeProfileRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(inMemoryDb),
-          userProfileRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
-        child: const MaterialApp(
-          home: EditProfileScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(inMemoryDb),
+            userProfileRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: const MaterialApp(home: EditProfileScreen()),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Verify all fitness goals from kFitnessGoals are rendered in ChoiceChips
-    for (final goal in kFitnessGoals) {
-      expect(find.widgetWithText(ChoiceChip, goal), findsOneWidget);
-    }
+      // Verify all fitness goals from kFitnessGoals are rendered in ChoiceChips
+      for (final goal in kFitnessGoals) {
+        expect(find.widgetWithText(ChoiceChip, goal), findsOneWidget);
+      }
 
-    // Verify all focus area chips from kFocusAreas are rendered in FilterChips
-    for (final area in kFocusAreas) {
-      expect(find.widgetWithText(FilterChip, area), findsOneWidget);
-    }
+      // Verify all focus area chips from kFocusAreas are rendered in FilterChips
+      for (final area in kFocusAreas) {
+        expect(find.widgetWithText(FilterChip, area), findsOneWidget);
+      }
 
-    await inMemoryDb.close();
-  });
+      await inMemoryDb.close();
+    },
+  );
 }

@@ -114,10 +114,7 @@ class WelcomeStep extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          PrimaryButton(
-            text: 'Start Personalization →',
-            onPressed: onStart,
-          ),
+          PrimaryButton(text: 'Start Personalization →', onPressed: onStart),
           const SizedBox(height: 16),
           TextButton(
             onPressed: onContinueAsGuest,
@@ -161,11 +158,7 @@ class WelcomeStep extends StatelessWidget {
               color: const Color(0xFF00E676).withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: const Color(0xFF00E676),
-            ),
+            child: Icon(icon, size: 22, color: const Color(0xFF00E676)),
           ),
           const SizedBox(width: 14),
           Expanded(

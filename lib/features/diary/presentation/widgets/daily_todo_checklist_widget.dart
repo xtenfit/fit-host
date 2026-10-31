@@ -6,10 +6,7 @@ import '../../data/diary_todo_service.dart';
 class DailyTodoChecklistWidget extends ConsumerWidget {
   final String dateKey;
 
-  const DailyTodoChecklistWidget({
-    super.key,
-    required this.dateKey,
-  });
+  const DailyTodoChecklistWidget({super.key, required this.dateKey});
 
   void _showAddTodoDialog(BuildContext context, WidgetRef ref) {
     final controller = TextEditingController();
@@ -36,7 +33,10 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'e.g. 10 Min Meditation, Post-workout protein',
-              hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              hintStyle: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 13,
+              ),
               filled: true,
               fillColor: const Color(0xFF0D111A),
               border: OutlineInputBorder(
@@ -97,9 +97,7 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
         color: isDark ? const Color(0xFF131722) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark
-              ? const Color(0xFF1F293D)
-              : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF1F293D) : const Color(0xFFE2E8F0),
         ),
         boxShadow: [
           BoxShadow(
@@ -133,16 +131,17 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
                   const SizedBox(width: 10),
                   const Text(
                     'Daily Focus & Habits',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                   ),
                 ],
               ),
               TextButton.icon(
                 onPressed: () => _showAddTodoDialog(context, ref),
-                icon: const Icon(Icons.add, size: 16, color: AppColors.limeGreen),
+                icon: const Icon(
+                  Icons.add,
+                  size: 16,
+                  color: AppColors.limeGreen,
+                ),
                 label: const Text(
                   'Add',
                   style: TextStyle(
@@ -152,7 +151,10 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   visualDensity: VisualDensity.compact,
                 ),
               ),
@@ -192,8 +194,9 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
               backgroundColor: isDark
                   ? const Color(0xFF0F172A)
                   : const Color(0xFFF1F5F9),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppColors.limeGreen),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.limeGreen,
+              ),
               minHeight: 6,
             ),
           ),
@@ -225,9 +228,7 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
                 final item = todos[index];
                 return InkWell(
                   onTap: () {
-                    ref
-                        .read(diaryTodosProvider.notifier)
-                        .toggleItem(item.id);
+                    ref.read(diaryTodosProvider.notifier).toggleItem(item.id);
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -238,18 +239,18 @@ class DailyTodoChecklistWidget extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: item.isCompleted
                           ? (isDark
-                              ? const Color(0xFF0F172A).withValues(alpha: 0.5)
-                              : const Color(0xFFF8FAFC))
+                                ? const Color(0xFF0F172A).withValues(alpha: 0.5)
+                                : const Color(0xFFF8FAFC))
                           : (isDark
-                              ? const Color(0xFF0B0F19)
-                              : const Color(0xFFF1F5F9)),
+                                ? const Color(0xFF0B0F19)
+                                : const Color(0xFFF1F5F9)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: item.isCompleted
                             ? AppColors.limeGreen.withValues(alpha: 0.3)
                             : (isDark
-                                ? const Color(0xFF1E293B)
-                                : const Color(0xFFE2E8F0)),
+                                  ? const Color(0xFF1E293B)
+                                  : const Color(0xFFE2E8F0)),
                       ),
                     ),
                     child: Row(

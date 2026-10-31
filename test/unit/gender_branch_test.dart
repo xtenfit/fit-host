@@ -37,9 +37,7 @@ void main() {
     setUp(() {
       fakeRepo = _FakeOnboardingRepo();
       container = ProviderContainer(
-        overrides: [
-          onboardingRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [onboardingRepositoryProvider.overrideWithValue(fakeRepo)],
       );
     });
 
@@ -47,56 +45,62 @@ void main() {
       container.dispose();
     });
 
-    test('Male user branches into step 8b (isGenderBranch: true) then to step 9', () {
-      final notifier = container.read(onboardingProvider.notifier);
-      
-      notifier.setGender('male');
-      notifier.jumpToStep(8);
+    test(
+      'Male user branches into step 8b (isGenderBranch: true) then to step 9',
+      () {
+        final notifier = container.read(onboardingProvider.notifier);
 
-      expect(container.read(onboardingProvider).currentStep, equals(8));
-      expect(container.read(onboardingProvider).isGenderBranch, isFalse);
+        notifier.setGender('male');
+        notifier.jumpToStep(8);
 
-      // Advance from Step 8 -> Step 8b
-      notifier.nextStep();
-      expect(container.read(onboardingProvider).currentStep, equals(8));
-      expect(container.read(onboardingProvider).isGenderBranch, isTrue);
+        expect(container.read(onboardingProvider).currentStep, equals(8));
+        expect(container.read(onboardingProvider).isGenderBranch, isFalse);
 
-      // Advance from Step 8b -> Step 9
-      notifier.nextStep();
-      expect(container.read(onboardingProvider).currentStep, equals(9));
-      expect(container.read(onboardingProvider).isGenderBranch, isFalse);
+        // Advance from Step 8 -> Step 8b
+        notifier.nextStep();
+        expect(container.read(onboardingProvider).currentStep, equals(8));
+        expect(container.read(onboardingProvider).isGenderBranch, isTrue);
 
-      // Back from Step 9 -> Step 8b
-      notifier.previousStep();
-      expect(container.read(onboardingProvider).currentStep, equals(8));
-      expect(container.read(onboardingProvider).isGenderBranch, isTrue);
+        // Advance from Step 8b -> Step 9
+        notifier.nextStep();
+        expect(container.read(onboardingProvider).currentStep, equals(9));
+        expect(container.read(onboardingProvider).isGenderBranch, isFalse);
 
-      // Back from Step 8b -> Step 8
-      notifier.previousStep();
-      expect(container.read(onboardingProvider).currentStep, equals(8));
-      expect(container.read(onboardingProvider).isGenderBranch, isFalse);
-    });
+        // Back from Step 9 -> Step 8b
+        notifier.previousStep();
+        expect(container.read(onboardingProvider).currentStep, equals(8));
+        expect(container.read(onboardingProvider).isGenderBranch, isTrue);
 
-    test('Female user branches into step 8b (isGenderBranch: true) then to step 9', () {
-      final notifier = container.read(onboardingProvider.notifier);
-      
-      notifier.setGender('female');
-      notifier.jumpToStep(8);
+        // Back from Step 8b -> Step 8
+        notifier.previousStep();
+        expect(container.read(onboardingProvider).currentStep, equals(8));
+        expect(container.read(onboardingProvider).isGenderBranch, isFalse);
+      },
+    );
 
-      // Advance to 8b
-      notifier.nextStep();
-      expect(container.read(onboardingProvider).currentStep, equals(8));
-      expect(container.read(onboardingProvider).isGenderBranch, isTrue);
+    test(
+      'Female user branches into step 8b (isGenderBranch: true) then to step 9',
+      () {
+        final notifier = container.read(onboardingProvider.notifier);
 
-      // Advance to 9
-      notifier.nextStep();
-      expect(container.read(onboardingProvider).currentStep, equals(9));
-      expect(container.read(onboardingProvider).isGenderBranch, isFalse);
-    });
+        notifier.setGender('female');
+        notifier.jumpToStep(8);
+
+        // Advance to 8b
+        notifier.nextStep();
+        expect(container.read(onboardingProvider).currentStep, equals(8));
+        expect(container.read(onboardingProvider).isGenderBranch, isTrue);
+
+        // Advance to 9
+        notifier.nextStep();
+        expect(container.read(onboardingProvider).currentStep, equals(9));
+        expect(container.read(onboardingProvider).isGenderBranch, isFalse);
+      },
+    );
 
     test('Unspecified or other gender skips branch directly to step 9', () {
       final notifier = container.read(onboardingProvider.notifier);
-      
+
       notifier.setGender('other');
       notifier.jumpToStep(8);
 

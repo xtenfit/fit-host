@@ -105,26 +105,27 @@ class MealEntry {
     double? carbsPer100g,
     double? fatsPer100g,
     double? caloriesPer100g,
-  }) =>
-      MealEntry(
-        id: id ?? this.id,
-        foodId: foodId ?? this.foodId,
-        foodName: foodName ?? this.foodName,
-        brand: brand ?? this.brand,
-        quantityGrams: quantityGrams ?? this.quantityGrams,
-        mealType: mealType ?? this.mealType,
-        customMealLabel: customMealLabel ?? this.customMealLabel,
-        consumedAt: consumedAt ?? this.consumedAt,
-        proteinPer100g: proteinPer100g ?? this.proteinPer100g,
-        carbsPer100g: carbsPer100g ?? this.carbsPer100g,
-        fatsPer100g: fatsPer100g ?? this.fatsPer100g,
-        caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
-      );
+  }) => MealEntry(
+    id: id ?? this.id,
+    foodId: foodId ?? this.foodId,
+    foodName: foodName ?? this.foodName,
+    brand: brand ?? this.brand,
+    quantityGrams: quantityGrams ?? this.quantityGrams,
+    mealType: mealType ?? this.mealType,
+    customMealLabel: customMealLabel ?? this.customMealLabel,
+    consumedAt: consumedAt ?? this.consumedAt,
+    proteinPer100g: proteinPer100g ?? this.proteinPer100g,
+    carbsPer100g: carbsPer100g ?? this.carbsPer100g,
+    fatsPer100g: fatsPer100g ?? this.fatsPer100g,
+    caloriesPer100g: caloriesPer100g ?? this.caloriesPer100g,
+  );
 
   MealItem toMealItem() {
     return MealItem(
       id: id,
-      name: brand != null && brand!.isNotEmpty ? '$foodName ($brand)' : foodName,
+      name: brand != null && brand!.isNotEmpty
+          ? '$foodName ($brand)'
+          : foodName,
       mealType: mealType == MealType.custom
           ? (customMealLabel?.isNotEmpty == true ? customMealLabel! : 'custom')
           : mealType.name,
@@ -140,38 +141,38 @@ class MealEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'food_id': foodId,
-        'food_name': foodName,
-        'brand': brand,
-        'quantity_grams': quantityGrams,
-        'meal_type': mealType.name,
-        'custom_meal_label': customMealLabel,
-        'consumed_at': consumedAt.toIso8601String(),
-        'protein_per_100g': proteinPer100g,
-        'carbs_per_100g': carbsPer100g,
-        'fats_per_100g': fatsPer100g,
-        'calories_per_100g': caloriesPer100g,
-        'calories': caloriesInt,
-        'protein': protein,
-        'carbs': carbs,
-        'fats': fats,
-      };
+    'id': id,
+    'food_id': foodId,
+    'food_name': foodName,
+    'brand': brand,
+    'quantity_grams': quantityGrams,
+    'meal_type': mealType.name,
+    'custom_meal_label': customMealLabel,
+    'consumed_at': consumedAt.toIso8601String(),
+    'protein_per_100g': proteinPer100g,
+    'carbs_per_100g': carbsPer100g,
+    'fats_per_100g': fatsPer100g,
+    'calories_per_100g': caloriesPer100g,
+    'calories': caloriesInt,
+    'protein': protein,
+    'carbs': carbs,
+    'fats': fats,
+  };
 
   factory MealEntry.fromJson(Map<String, dynamic> json) => MealEntry(
-        id: json['id'] as String,
-        foodId: json['food_id'] as String?,
-        foodName: json['food_name'] as String? ?? 'Meal',
-        brand: json['brand'] as String?,
-        quantityGrams: (json['quantity_grams'] as num?)?.toDouble() ?? 100.0,
-        mealType: MealType.fromString(json['meal_type'] as String?),
-        customMealLabel: json['custom_meal_label'] as String?,
-        consumedAt: json['consumed_at'] != null
-            ? DateTime.tryParse(json['consumed_at'] as String) ?? DateTime.now()
-            : DateTime.now(),
-        proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0.0,
-        carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0.0,
-        fatsPer100g: (json['fats_per_100g'] as num?)?.toDouble() ?? 0.0,
-        caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble() ?? 0.0,
-      );
+    id: json['id'] as String,
+    foodId: json['food_id'] as String?,
+    foodName: json['food_name'] as String? ?? 'Meal',
+    brand: json['brand'] as String?,
+    quantityGrams: (json['quantity_grams'] as num?)?.toDouble() ?? 100.0,
+    mealType: MealType.fromString(json['meal_type'] as String?),
+    customMealLabel: json['custom_meal_label'] as String?,
+    consumedAt: json['consumed_at'] != null
+        ? DateTime.tryParse(json['consumed_at'] as String) ?? DateTime.now()
+        : DateTime.now(),
+    proteinPer100g: (json['protein_per_100g'] as num?)?.toDouble() ?? 0.0,
+    carbsPer100g: (json['carbs_per_100g'] as num?)?.toDouble() ?? 0.0,
+    fatsPer100g: (json['fats_per_100g'] as num?)?.toDouble() ?? 0.0,
+    caloriesPer100g: (json['calories_per_100g'] as num?)?.toDouble() ?? 0.0,
+  );
 }

@@ -1,18 +1,22 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Download,
   Smartphone,
   Apple,
   ShieldCheck,
-  AlertCircle,
   ExternalLink,
   Info,
-  CheckCircle2,
   Clock,
+  Check,
+  Copy,
+  Cpu,
 } from "lucide-react";
 import type { PlatformReleaseInfo } from "@/lib/github/releases";
 import { releasesConfig } from "@/lib/config/releases";
+import { splitReleasePackages } from "@/lib/config/downloads";
 import ReleaseStatusBadge from "./ReleaseStatus";
 
 interface PlatformDownloadCardProps {
@@ -29,9 +33,28 @@ export default function PlatformDownloadCard({
   className = "",
 }: PlatformDownloadCardProps) {
   const isAndroid = platform === "android";
+  const [selectedAbi, setSelectedAbi] = useState<string>("arm64-v8a");
+  const [copiedSha, setCopiedSha] = useState(false);
+
+  const activeSplitPkg =
+    splitReleasePackages.find((p) => p.abi === selectedAbi) ||
+    splitReleasePackages[0];
+
+  const handleCopySha = (sha: string) => {
+    navigator.clipboard.writeText(sha);
+    setCopiedSha(true);
+    setTimeout(() => setCopiedSha(false), 2000);
+  };
 
   if (isAndroid) {
-    const hasApk = Boolean(info.downloadUrl && info.distributionStatus === "available");
+    const hasApk = Boolean(
+      (info.downloadUrl && info.distributionStatus === "available") ||
+        activeSplitPkg.downloadUrl
+    );
+
+    const downloadHref = activeSplitPkg.downloadUrl || info.downloadUrl || "#";
+    const displayedSize = activeSplitPkg.sizeFormatted || info.assetSize || "44.5 MB";
+    const displayedSha = activeSplitPkg.sha256 || info.sha256Checksum;
 
     return (
       <div
@@ -46,7 +69,7 @@ export default function PlatformDownloadCard({
               </div>
               <div>
                 <h3 className="text-xl font-black text-white">Android</h3>
-                <p className="text-xs text-zinc-400">Direct Sideloadable Release APK</p>
+                <p className="text-xs text-zinc-400">Direct Sideloadable Split APKs</p>
               </div>
             </div>
             <ReleaseStatusBadge status={info.distributionStatus} platform="android" />
@@ -59,11 +82,57 @@ export default function PlatformDownloadCard({
               <span className="font-mono font-bold text-white text-sm">{info.version}</span>
             </div>
             <div className="rounded-xl border border-brand-border/60 bg-brand-surface/80 p-3">
-              <span className="text-zinc-500 block uppercase font-bold text-[10px]">Asset Size</span>
+              <span className="text-zinc-500 block uppercase font-bold text-[10px]">Package Size</span>
               <span className="font-mono font-bold text-brand-green text-sm">
-                {info.assetSize || "Release Soon"}
+                {displayedSize}
               </span>
             </div>
+          </div>
+
+          {/* Architecture Split Selector */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Cpu className="h-3.5 w-3.5 text-brand-green" />
+                Select Device Architecture
+              </span>
+              <span className="text-[10px] text-brand-green font-semibold">
+                Split Release
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              {splitReleasePackages.map((pkg) => {
+                const isSelected = selectedAbi === pkg.abi;
+                return (
+                  <button
+                    key={pkg.abi}
+                    type="button"
+                    onClick={() => setSelectedAbi(pkg.abi)}
+                    className={`p-2 rounded-xl text-left border transition-all text-xs ${
+                      isSelected
+                        ? "bg-brand-green/15 border-brand-green text-white font-bold"
+                        : "bg-brand-surface border-brand-border text-zinc-400 hover:text-zinc-200 hover:border-brand-border/80"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono">{pkg.name}</span>
+                      {pkg.recommended && (
+                        <span className="text-[8px] bg-brand-green text-black font-black px-1 rounded">
+                          REC
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-zinc-500 block mt-0.5">
+                      {pkg.sizeFormatted}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-zinc-400 pt-0.5">
+              {activeSplitPkg.description}
+            </p>
           </div>
 
           <div className="text-xs text-zinc-300 leading-relaxed">
@@ -76,22 +145,41 @@ export default function PlatformDownloadCard({
           </div>
 
           {/* Android Installation Sideload Guidance */}
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 text-xs text-amber-200/90 flex items-start gap-2.5">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200/90 flex items-start gap-2.5">
             <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              When installing directly, Android may prompt:{" "}
-              <em>&ldquo;Install unknown apps&rdquo;</em>. Tap Settings and allow your browser or file manager to complete installation.
+            <p className="leading-relaxed text-[11px]">
+              When downloading directly, Android may prompt:{" "}
+              <em>&ldquo;Install unknown apps&rdquo;</em>. Allow your browser or file manager in settings to proceed.
             </p>
           </div>
 
-          {/* Verified Checksum if available */}
-          {info.sha256Checksum && (
-            <div className="rounded-xl border border-brand-border bg-black/40 p-3 text-xs space-y-1">
-              <span className="text-[10px] uppercase font-bold text-brand-muted block">
-                Verified SHA-256 Checksum
-              </span>
-              <code className="text-[11px] font-mono text-zinc-300 break-all select-all block">
-                {info.sha256Checksum}
+          {/* Verified Checksum */}
+          {displayedSha && (
+            <div className="rounded-xl border border-brand-border bg-black/40 p-3 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-brand-muted">
+                  SHA-256 ({activeSplitPkg.name})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleCopySha(displayedSha)}
+                  className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white"
+                >
+                  {copiedSha ? (
+                    <>
+                      <Check className="h-2.5 w-2.5 text-brand-green" />
+                      <span className="text-brand-green">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-2.5 w-2.5" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <code className="text-[10px] font-mono text-zinc-300 break-all select-all block">
+                {displayedSha}
               </code>
             </div>
           )}
@@ -101,18 +189,15 @@ export default function PlatformDownloadCard({
         <div className="pt-6 space-y-3">
           {hasApk ? (
             <a
-              href={info.downloadUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={downloadHref}
+              download={activeSplitPkg.filename}
               className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-4 text-base font-bold text-black bg-brand-green hover:bg-brand-green-hover rounded-xl shadow-lg shadow-brand-green/20 hover:shadow-brand-green/35 transition-all hover:scale-[1.01]"
             >
               <Download className="h-5 w-5" />
-              <span>Download Android APK</span>
-              {info.assetSize && (
-                <span className="text-xs font-mono bg-black/20 px-2 py-0.5 rounded">
-                  {info.assetSize}
-                </span>
-              )}
+              <span>Download {activeSplitPkg.name} APK</span>
+              <span className="text-xs font-mono bg-black/20 px-2 py-0.5 rounded">
+                {displayedSize}
+              </span>
             </a>
           ) : (
             <div className="w-full p-5 rounded-2xl border border-brand-green/30 bg-zinc-950/80 text-center space-y-2">

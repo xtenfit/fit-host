@@ -4,7 +4,8 @@ class YourBodyStep extends StatefulWidget {
   final double heightCm;
   final double weightKg;
   final bool useMetricUnits;
-  final Function({double? heightCm, double? weightKg, bool? useMetricUnits}) onChanged;
+  final Function({double? heightCm, double? weightKg, bool? useMetricUnits})
+  onChanged;
 
   const YourBodyStep({
     super.key,
@@ -69,9 +70,7 @@ class _YourBodyStepState extends State<YourBodyStep> {
             decoration: BoxDecoration(
               color: const Color(0xFF121A16),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,8 +156,20 @@ class _YourBodyStepState extends State<YourBodyStep> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('120 cm', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                      Text('220 cm', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                      Text(
+                        '120 cm',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '220 cm',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -174,9 +185,7 @@ class _YourBodyStepState extends State<YourBodyStep> {
             decoration: BoxDecoration(
               color: const Color(0xFF121A16),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,8 +269,20 @@ class _YourBodyStepState extends State<YourBodyStep> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('30 kg', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                      Text('200 kg', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                      Text(
+                        '30 kg',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '200 kg',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -302,7 +323,9 @@ class _YourBodyStepState extends State<YourBodyStep> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isSel ? const Color(0xFF0A0F0D) : const Color(0xFF8FA396),
+                  color: isSel
+                      ? const Color(0xFF0A0F0D)
+                      : const Color(0xFF8FA396),
                 ),
               ),
             ),

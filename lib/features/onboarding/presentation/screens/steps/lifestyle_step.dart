@@ -10,7 +10,8 @@ class LifestyleStep extends StatelessWidget {
     double? sleepHours,
     int? workHours,
     String? stressLevel,
-  }) onChanged;
+  })
+  onChanged;
 
   const LifestyleStep({
     super.key,
@@ -140,7 +141,9 @@ class LifestyleStep extends StatelessWidget {
                     max: 10.0,
                     divisions: 12,
                     onChanged: (val) {
-                      onChanged(sleepHours: double.parse(val.toStringAsFixed(1)));
+                      onChanged(
+                        sleepHours: double.parse(val.toStringAsFixed(1)),
+                      );
                     },
                   ),
                 ),
@@ -149,8 +152,20 @@ class LifestyleStep extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('4 hrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                      Text('10 hrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                      Text(
+                        '4 hrs',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '10 hrs',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -216,8 +231,20 @@ class LifestyleStep extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('0 hrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
-                      Text('14 hrs', style: TextStyle(color: Color(0xFF8FA396), fontSize: 11)),
+                      Text(
+                        '0 hrs',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        '14 hrs',
+                        style: TextStyle(
+                          color: Color(0xFF8FA396),
+                          fontSize: 11,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -287,9 +314,7 @@ class LifestyleStep extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF00E676)
-              : const Color(0xFF121A16),
+          color: isSelected ? const Color(0xFF00E676) : const Color(0xFF121A16),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected

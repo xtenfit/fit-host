@@ -31,7 +31,9 @@ class WeekViewStrip extends StatelessWidget {
     final today = DateTime(now.year, now.month, now.day);
 
     // Monday as start of the week: weekday 1 = Monday ... 7 = Sunday
-    final monday = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+    final monday = selectedDate.subtract(
+      Duration(days: selectedDate.weekday - 1),
+    );
     final weekDays = List.generate(7, (i) => monday.add(Duration(days: i)));
 
     // Group events by YYYY-MM-DD
@@ -57,7 +59,9 @@ class WeekViewStrip extends StatelessWidget {
           color: isDark ? AppColors.darkSurfaceElevated : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder,
+            color: isDark
+                ? AppColors.darkSurfaceBorder
+                : AppColors.lightSurfaceBorder,
           ),
           boxShadow: [
             BoxShadow(
@@ -70,20 +74,25 @@ class WeekViewStrip extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: weekDays.map((day) {
-            final isSelected = day.year == selectedDate.year &&
+            final isSelected =
+                day.year == selectedDate.year &&
                 day.month == selectedDate.month &&
                 day.day == selectedDate.day;
-            final isToday = day.year == today.year &&
+            final isToday =
+                day.year == today.year &&
                 day.month == today.month &&
                 day.day == today.day;
             final dateKey = DateFormat('yyyy-MM-dd').format(day);
             final dayEvents = eventsByDate[dateKey] ?? [];
             final summary = daySummaries?[dateKey];
 
-            final bool stepGoalMet = summary != null && summary.isStepsGoalMet();
-            final bool hasWorkout = (summary?.hasWorkout ?? false) ||
+            final bool stepGoalMet =
+                summary != null && summary.isStepsGoalMet();
+            final bool hasWorkout =
+                (summary?.hasWorkout ?? false) ||
                 dayEvents.any((e) => e.eventType == CalendarEventType.workout);
-            final bool hasMeal = (summary?.hasMealLogged ?? false) ||
+            final bool hasMeal =
+                (summary?.hasMealLogged ?? false) ||
                 dayEvents.any((e) => e.eventType == CalendarEventType.meal);
             final bool hasWater = summary?.hasWaterLogged ?? false;
 
@@ -103,17 +112,23 @@ class WeekViewStrip extends StatelessWidget {
                     color: isSelected
                         ? AppColors.electricBlue
                         : (isToday
-                            ? (isDark
-                                ? AppColors.electricBlue.withValues(alpha: 0.2)
-                                : AppColors.electricBlue.withValues(alpha: 0.1))
-                            : Colors.transparent),
+                              ? (isDark
+                                    ? AppColors.electricBlue.withValues(
+                                        alpha: 0.2,
+                                      )
+                                    : AppColors.electricBlue.withValues(
+                                        alpha: 0.1,
+                                      ))
+                              : Colors.transparent),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: stepGoalMet
-                          ? const Color(0xFF10B981) // Green ring for step goal met
+                          ? const Color(
+                              0xFF10B981,
+                            ) // Green ring for step goal met
                           : (isToday && !isSelected
-                              ? AppColors.electricBlue
-                              : Colors.transparent),
+                                ? AppColors.electricBlue
+                                : Colors.transparent),
                       width: stepGoalMet ? 2.0 : 1.5,
                     ),
                   ),
@@ -127,7 +142,9 @@ class WeekViewStrip extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           color: isSelected
                               ? Colors.white.withValues(alpha: 0.9)
-                              : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                              : (isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -139,8 +156,10 @@ class WeekViewStrip extends StatelessWidget {
                           color: isSelected
                               ? Colors.white
                               : (isToday
-                                  ? AppColors.electricBlue
-                                  : (isDark ? Colors.white : AppColors.lightTextPrimary)),
+                                    ? AppColors.electricBlue
+                                    : (isDark
+                                          ? Colors.white
+                                          : AppColors.lightTextPrimary)),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -156,7 +175,9 @@ class WeekViewStrip extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? Colors.white : AppColors.electricBlue,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.electricBlue,
                               ),
                             ),
                           if (hasMeal)
@@ -166,7 +187,9 @@ class WeekViewStrip extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? Colors.white : const Color(0xFF22C55E),
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF22C55E),
                               ),
                             ),
                           if (hasWater)
@@ -176,7 +199,9 @@ class WeekViewStrip extends StatelessWidget {
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? Colors.white : const Color(0xFF06B6D4),
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF06B6D4),
                               ),
                             ),
                           if (!hasWorkout && !hasMeal && !hasWater)

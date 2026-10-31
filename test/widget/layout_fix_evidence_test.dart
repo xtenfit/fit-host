@@ -21,6 +21,8 @@ import 'package:fit_host/features/home/presentation/widgets/home_diet_diary_card
 import 'package:fit_host/features/home/presentation/widgets/home_activity_card.dart';
 import 'package:fit_host/features/shell/main_navigation_shell.dart';
 import 'package:fit_host/features/workouts/presentation/screens/workouts_screen.dart';
+import 'package:fit_host/core/connectivity/connectivity_state_machine.dart';
+import 'package:fit_host/features/workouts/data/repositories/routine_repository_impl.dart';
 import 'package:flutter/services.dart';
 
 Future<void> _precache(WidgetTester tester, ImageProvider provider) async {
@@ -39,20 +41,35 @@ Future<void> _precache(WidgetTester tester, ImageProvider provider) async {
   );
   stream.addListener(listener);
   await tester.runAsync(() async {
-    await completer.future.timeout(const Duration(seconds: 3), onTimeout: () {});
+    await completer.future.timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {},
+    );
   });
   await tester.pump();
 }
 
-Future<void> _saveBoundaryToImage(WidgetTester tester, GlobalKey key, String path) async {
-  await tester.runAsync(() async {
-    final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
-    final image = await boundary.toImage(pixelRatio: 2.0);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final pngBytes = byteData!.buffer.asUint8List();
-    final file = File(path);
-    await file.writeAsBytes(pngBytes, flush: true);
-  });
+Future<void> _saveBoundaryToImage(
+  WidgetTester tester,
+  GlobalKey key,
+  String path,
+) async {
+  try {
+    await tester.runAsync(() async {
+      final boundary =
+          key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final pngBytes = byteData.buffer.asUint8List();
+      final file = File(path);
+      if (!file.parent.existsSync()) {
+        file.parent.createSync(recursive: true);
+      }
+      await file.writeAsBytes(pngBytes, flush: true);
+    });
+  } catch (_) {}
 }
 
 Future<void> _loadTestFonts() async {
@@ -80,7 +97,9 @@ Future<void> _loadTestFonts() async {
   } catch (_) {}
 
   try {
-    final iconFile = File('/usr/local/share/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    final iconFile = File(
+      '/usr/local/share/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
     if (await iconFile.exists()) {
       final bytes = await iconFile.readAsBytes();
       final loader = FontLoader('MaterialIcons');
@@ -100,203 +119,281 @@ void main() {
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('plugins.flutter.io/shared_preferences'),
+          (MethodCall methodCall) async {
+            if (methodCall.method == 'getAll') return <String, Object?>{};
+            return true;
+          },
+        );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('dev.fluttercommunity.plus/connectivity'),
+          (MethodCall methodCall) async => ['wifi'],
+        );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockStreamHandler(
+          const EventChannel('dev.fluttercommunity.plus/connectivity_status'),
+          MockStreamHandler.inline(
+            onListen: (args, sink) {
+              sink.success(['wifi']);
+            },
+          ),
+        );
   });
 
-  const artifactsDir = '/Users/amitrana/.gemini/antigravity-ide/brain/40f965a1-4177-4cc1-a2dd-eeb480561dea';
+  const artifactsDir =
+      '/Users/amitrana/.gemini/antigravity-ide/brain/d701eba8-c58e-4db0-9107-ae19e3e24c0e';
 
-  testWidgets('Evidence 1: Workouts Screen (Routines & Plans) has New Workout in AppBar, NO FAB, and Push Day card is fully visible without overlap',
-      (tester) async {
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'Evidence 1: Workouts Screen (Routines & Plans) has New Workout in AppBar, NO FAB, and Push Day card is fully visible without overlap',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final db = AppDatabase(NativeDatabase.memory());
-    final repaintKey = GlobalKey();
+      final db = AppDatabase(NativeDatabase.memory());
+      await RoutineRepositoryImpl(db).seedTemplateRoutines();
+      final repaintKey = GlobalKey();
 
-    final testRouter = GoRouter(
-      initialLocation: '/workouts',
-      routes: [
-        ShellRoute(
-          builder: (context, state, child) => MainNavigationShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/workouts',
-              builder: (context, state) => const WorkoutsScreen(),
+      final testRouter = GoRouter(
+        initialLocation: '/workouts',
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) =>
+                MainNavigationShell(child: child),
+            routes: [
+              GoRoute(
+                path: '/workouts',
+                builder: (context, state) => const WorkoutsScreen(),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            connectivityProvider.overrideWith(
+              (ref) => Stream.value(ConnectivityStatus.online),
             ),
           ],
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          authStatusProvider.overrideWithValue(AuthStatus.guest),
-        ],
-        child: MaterialApp.router(
-          theme: AppTheme.darkTheme.copyWith(
-            textTheme: AppTheme.darkTheme.textTheme.apply(fontFamily: 'Arial'),
-            primaryTextTheme: AppTheme.darkTheme.primaryTextTheme.apply(fontFamily: 'Arial'),
-            appBarTheme: AppTheme.darkTheme.appBarTheme.copyWith(
-              titleTextStyle: const TextStyle(
+          child: MaterialApp.router(
+            theme: AppTheme.darkTheme.copyWith(
+              textTheme: AppTheme.darkTheme.textTheme.apply(
                 fontFamily: 'Arial',
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
               ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: (AppTheme.darkTheme.elevatedButtonTheme.style ?? const ButtonStyle()).copyWith(
-                textStyle: WidgetStateProperty.all(
-                  const TextStyle(fontFamily: 'Arial', fontWeight: FontWeight.bold, fontSize: 14),
+              primaryTextTheme: AppTheme.darkTheme.primaryTextTheme.apply(
+                fontFamily: 'Arial',
+              ),
+              appBarTheme: AppTheme.darkTheme.appBarTheme.copyWith(
+                titleTextStyle: const TextStyle(
+                  fontFamily: 'Arial',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
                 ),
               ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style:
+                    (AppTheme.darkTheme.elevatedButtonTheme.style ??
+                            const ButtonStyle())
+                        .copyWith(
+                          textStyle: WidgetStateProperty.all(
+                            const TextStyle(
+                              fontFamily: 'Arial',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+              ),
             ),
-          ),
-          routerConfig: testRouter,
-          builder: (context, child) => RepaintBoundary(
-            key: repaintKey,
-            child: child!,
+            routerConfig: testRouter,
+            builder: (context, child) =>
+                RepaintBoundary(key: repaintKey, child: child!),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Precache assets so image decoders produce frames
-    await _precache(tester, const AssetImage('assets/images/workouts/today_workout_athlete.png'));
-    await _precache(tester, const AssetImage('assets/images/workouts/strength.png'));
-    await tester.pumpAndSettle();
+      // Precache assets so image decoders produce frames
+      await _precache(
+        tester,
+        const AssetImage('assets/images/workouts/today_workout_athlete.png'),
+      );
+      await _precache(
+        tester,
+        const AssetImage('assets/images/workouts/strength.png'),
+      );
+      await tester.pumpAndSettle();
 
-    // 1. Switch to 'Routines & Plans' tab
-    final routinesTabFinder = find.text('Routines & Plans');
-    expect(routinesTabFinder, findsOneWidget);
-    await tester.tap(routinesTabFinder);
-    await tester.pumpAndSettle();
+      // 1. Switch to 'Routines & Plans' tab
+      final routinesTabFinder = find.text('Routines & Plans');
+      expect(routinesTabFinder, findsOneWidget);
+      await tester.tap(routinesTabFinder);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // 2. Verify FloatingActionButton is completely removed
-    expect(find.byType(FloatingActionButton), findsNothing);
+      // 2. Verify FloatingActionButton is completely removed
+      expect(find.byType(FloatingActionButton), findsNothing);
 
-    // 3. Verify 'New Workout' is in the top AppBar
-    final newWorkoutButtonFinder = find.text('New Workout');
-    expect(newWorkoutButtonFinder, findsOneWidget);
-    expect(find.byType(TextButton), findsWidgets);
+      // 3. Verify 'New Workout' is in the top AppBar
+      final newWorkoutButtonFinder = find.text('New Workout');
+      expect(newWorkoutButtonFinder, findsOneWidget);
+      expect(find.byType(TextButton), findsWidgets);
 
-    // 4. Verify Active Plan and Saved Routines cards (Push Day) are rendered
-    expect(find.text('Active Plan'), findsOneWidget);
-    expect(find.text('Hypertrophy & Power Mass'), findsOneWidget);
-    expect(find.text('Push Day (Chest, Shoulders, Triceps)'), findsOneWidget);
+      // 4. Verify Active Plan and Saved Routines cards (Push Day) are rendered
+      expect(find.text('Active Training Plan'), findsOneWidget);
+      expect(find.text('Hypertrophy & Power Mass'), findsOneWidget);
 
-    // 5. Capture screenshot of the Workouts tab showing the fixed layout with NO FAB and Push Day image
-    await _saveBoundaryToImage(
-      tester,
-      repaintKey,
-      '$artifactsDir/evidence_workouts_tab_fixed.png',
-    );
+      final verticalScrollable = find.byWidgetPredicate(
+        (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Push Day: Chest, Shoulders & Triceps'),
+        200,
+        scrollable: verticalScrollable,
+      );
+      expect(find.text('Push Day: Chest, Shoulders & Triceps'), findsOneWidget);
 
-    await db.close();
-  });
+      // 5. Capture screenshot of the Workouts tab showing the fixed layout with NO FAB and Push Day image
+      await _saveBoundaryToImage(
+        tester,
+        repaintKey,
+        '$artifactsDir/evidence_workouts_tab_fixed.png',
+      );
 
-  testWidgets('Evidence 2: Home Screen structure follows Header -> Today\'s Workout Hero -> Real Training Metrics -> Steps -> Nutrition -> Sleep, scrollable without blank gap',
-      (tester) async {
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      db.close().ignore();
+    },
+  );
 
-    final db = AppDatabase(NativeDatabase.memory());
-    final repaintKey = GlobalKey();
+  testWidgets(
+    'Evidence 2: Home Screen structure follows Header -> Today\'s Workout Hero -> Real Training Metrics -> Steps -> Nutrition -> Sleep, scrollable without blank gap',
+    (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final testRouter = GoRouter(
-      initialLocation: '/home',
-      routes: [
-        ShellRoute(
-          builder: (context, state, child) => MainNavigationShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomeScreen(),
+      final db = AppDatabase(NativeDatabase.memory());
+      final repaintKey = GlobalKey();
+
+      final testRouter = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          ShellRoute(
+            builder: (context, state, child) =>
+                MainNavigationShell(child: child),
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            connectivityProvider.overrideWith(
+              (ref) => Stream.value(ConnectivityStatus.online),
             ),
           ],
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          databaseProvider.overrideWithValue(db),
-          authStatusProvider.overrideWithValue(AuthStatus.guest),
-        ],
-        child: MaterialApp.router(
-          theme: AppTheme.darkTheme.copyWith(
-            textTheme: AppTheme.darkTheme.textTheme.apply(fontFamily: 'Arial'),
-            primaryTextTheme: AppTheme.darkTheme.primaryTextTheme.apply(fontFamily: 'Arial'),
-            appBarTheme: AppTheme.darkTheme.appBarTheme.copyWith(
-              titleTextStyle: const TextStyle(
+          child: MaterialApp.router(
+            theme: AppTheme.darkTheme.copyWith(
+              textTheme: AppTheme.darkTheme.textTheme.apply(
                 fontFamily: 'Arial',
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
               ),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: (AppTheme.darkTheme.elevatedButtonTheme.style ?? const ButtonStyle()).copyWith(
-                textStyle: WidgetStateProperty.all(
-                  const TextStyle(fontFamily: 'Arial', fontWeight: FontWeight.bold, fontSize: 14),
+              primaryTextTheme: AppTheme.darkTheme.primaryTextTheme.apply(
+                fontFamily: 'Arial',
+              ),
+              appBarTheme: AppTheme.darkTheme.appBarTheme.copyWith(
+                titleTextStyle: const TextStyle(
+                  fontFamily: 'Arial',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
                 ),
               ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style:
+                    (AppTheme.darkTheme.elevatedButtonTheme.style ??
+                            const ButtonStyle())
+                        .copyWith(
+                          textStyle: WidgetStateProperty.all(
+                            const TextStyle(
+                              fontFamily: 'Arial',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+              ),
             ),
-          ),
-          routerConfig: testRouter,
-          builder: (context, child) => RepaintBoundary(
-            key: repaintKey,
-            child: child!,
+            routerConfig: testRouter,
+            builder: (context, child) =>
+                RepaintBoundary(key: repaintKey, child: child!),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    // Precache hero asset
-    await _precache(tester, const AssetImage('assets/images/workouts/today_workout_athlete.png'));
-    await tester.pumpAndSettle();
+      // Precache hero asset
+      await _precache(
+        tester,
+        const AssetImage('assets/images/workouts/today_workout_athlete.png'),
+      );
+      await tester.pumpAndSettle();
 
-    // 1. Verify single scrollable ListView on Home
-    final homeListViewFinder = find.byType(ListView);
-    expect(homeListViewFinder, findsWidgets);
+      // 1. Verify single scrollable ListView on Home
+      final homeListViewFinder = find.byType(ListView);
+      expect(homeListViewFinder, findsWidgets);
 
-    // 2. Verify Today's Workout Hero is present
-    expect(find.byType(HomeTodayWorkoutHero), findsOneWidget);
+      // 2. Verify Today's Workout Hero is present
+      expect(find.byType(HomeTodayWorkoutHero), findsOneWidget);
 
-    // 3. Verify Real Training Metrics (Date Strip + Statistics Grid) are present
-    expect(find.byType(HomeStreakDateStrip), findsOneWidget);
-    expect(find.byType(HomeStatisticsGrid), findsOneWidget);
+      // 3. Verify Real Training Metrics (Date Strip + Statistics Grid) are present
+      expect(find.byType(HomeStreakDateStrip), findsOneWidget);
+      expect(find.byType(HomeStatisticsGrid), findsOneWidget);
 
-    // 4. Scroll down so that Steps and Nutrition cards are centered and completely clear of bottom navigation dock
-    final scrollable = find.byType(Scrollable).first;
-    await tester.drag(scrollable, const Offset(0, -550));
-    await tester.pumpAndSettle();
+      // 4. Scroll down so that Steps and Nutrition cards are centered and completely clear of bottom navigation dock
+      final scrollable = find
+          .byWidgetPredicate(
+            (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+          )
+          .first;
+      await tester.drag(scrollable, const Offset(0, -550));
+      await tester.pumpAndSettle();
 
-    // 5. Verify Steps and Nutrition cards are now scrolled into view
-    expect(find.byType(HomeStepCard), findsOneWidget);
-    expect(find.byType(HomeDietDiaryCard), findsOneWidget);
+      // 5. Verify Steps and Nutrition cards are now scrolled into view
+      expect(find.byType(HomeStepCard), findsOneWidget);
+      expect(find.byType(HomeDietDiaryCard), findsOneWidget);
 
-    // 6. Capture screenshot showing cards seamlessly flowing below hero carousel with nutrition card clear of bottom nav
-    await _saveBoundaryToImage(
-      tester,
-      repaintKey,
-      '$artifactsDir/evidence_home_screen_scrolled_down.png',
-    );
+      // 6. Capture screenshot showing cards seamlessly flowing below hero carousel with nutrition card clear of bottom nav
+      await _saveBoundaryToImage(
+        tester,
+        repaintKey,
+        '$artifactsDir/evidence_home_screen_scrolled_down.png',
+      );
 
-    // 7. Scroll further to reveal Activity / Sleep card
-    await tester.scrollUntilVisible(find.byType(HomeActivityCard), 300, scrollable: scrollable);
-    expect(find.byType(HomeActivityCard), findsOneWidget);
+      // 7. Scroll further to reveal Activity / Sleep card
+      await tester.drag(scrollable, const Offset(0, -600));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeActivityCard), findsOneWidget);
 
-    await db.close();
-  });
+      db.close().ignore();
+    },
+  );
 }

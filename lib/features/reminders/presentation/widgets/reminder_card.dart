@@ -28,19 +28,23 @@ class ReminderCard extends StatelessWidget {
     final now = DateTime.now();
     final next = reminder.nextOccurrence(now);
     final timeStr = DateFormat('h:mm a').format(next);
-    final isTomorrow = next.difference(now).inDays == 1 || (next.day == now.day + 1);
+    final isTomorrow =
+        next.difference(now).inDays == 1 || (next.day == now.day + 1);
 
     if (reminder.isCompletedToday) {
       final compTime = reminder.lastCompletedAt != null
           ? DateFormat('h:mm a').format(reminder.lastCompletedAt!)
           : '';
-      final nextPrefix = isTomorrow ? 'Tomorrow at $timeStr' : '${DateFormat('EEE, MMM d').format(next)} at $timeStr';
+      final nextPrefix = isTomorrow
+          ? 'Tomorrow at $timeStr'
+          : '${DateFormat('EEE, MMM d').format(next)} at $timeStr';
       return compTime.isNotEmpty
           ? 'Completed for today ($compTime) • Next: $nextPrefix'
           : 'Completed for today • Next: $nextPrefix';
     }
 
-    final isToday = next.day == now.day && next.month == now.month && next.year == now.year;
+    final isToday =
+        next.day == now.day && next.month == now.month && next.year == now.year;
     if (isToday) return 'Today at $timeStr';
     if (isTomorrow) return 'Tomorrow at $timeStr';
     return '${DateFormat('EEE, MMM d').format(next)} at $timeStr';
@@ -64,8 +68,10 @@ class ReminderCard extends StatelessWidget {
           color: isDoneToday
               ? AppColors.limeGreen.withValues(alpha: isDark ? 0.45 : 0.35)
               : (reminder.isEnabled
-                  ? (isDark ? AppColors.darkSurfaceBorder : AppColors.lightSurfaceBorder)
-                  : Colors.transparent),
+                    ? (isDark
+                          ? AppColors.darkSurfaceBorder
+                          : AppColors.lightSurfaceBorder)
+                    : Colors.transparent),
           width: isDoneToday ? 1.5 : 1.0,
         ),
         boxShadow: [
@@ -84,77 +90,100 @@ class ReminderCard extends StatelessWidget {
             // Top Row: Category Chip & Switch Toggle
             Row(
               children: [
-                // Category Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: catColor.withValues(alpha: isDark ? 0.2 : 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(reminder.category.icon, size: 13, color: catColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        reminder.category.label,
-                        style: TextStyle(
-                          color: catColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                      // Category Chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: catColor.withValues(
+                            alpha: isDark ? 0.2 : 0.12,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              reminder.category.icon,
+                              size: 13,
+                              color: catColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              reminder.category.label,
+                              style: TextStyle(
+                                color: catColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      // Completed for today badge
+                      if (isDoneToday)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.limeGreen.withValues(
+                              alpha: isDark ? 0.22 : 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.limeGreen.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 12,
+                                color: AppColors.limeGreen,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Completed for today',
+                                style: TextStyle(
+                                  color: AppColors.limeGreen,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (reminder.soundEnabled)
+                        Icon(
+                          Icons.volume_up_rounded,
+                          size: 14,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
+                      if (reminder.vibrationEnabled)
+                        Icon(
+                          Icons.vibration_rounded,
+                          size: 14,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.lightTextSecondary,
+                        ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-
-                // Completed for today badge
-                if (isDoneToday) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.limeGreen.withValues(alpha: isDark ? 0.22 : 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.limeGreen.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_rounded, size: 12, color: AppColors.limeGreen),
-                        SizedBox(width: 4),
-                        Text(
-                          'Completed for today',
-                          style: TextStyle(
-                            color: AppColors.limeGreen,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-
-                // Sound / Vibration indicator icons
-                if (reminder.soundEnabled)
-                  Icon(
-                    Icons.volume_up_rounded,
-                    size: 14,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                const SizedBox(width: 4),
-                if (reminder.vibrationEnabled)
-                  Icon(
-                    Icons.vibration_rounded,
-                    size: 14,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-
-                const Spacer(),
 
                 // Enable/Disable Switch
                 Switch.adaptive(
@@ -179,7 +208,9 @@ class ReminderCard extends StatelessWidget {
                     letterSpacing: -0.5,
                     color: reminder.isEnabled
                         ? (isDark ? Colors.white : AppColors.lightTextPrimary)
-                        : (isDark ? AppColors.darkTextSecondary : Colors.grey[400]),
+                        : (isDark
+                              ? AppColors.darkTextSecondary
+                              : Colors.grey[400]),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -191,7 +222,9 @@ class ReminderCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: reminder.isEnabled
                           ? (isDark ? Colors.white : AppColors.lightTextPrimary)
-                          : (isDark ? AppColors.darkTextSecondary : Colors.grey[400]),
+                          : (isDark
+                                ? AppColors.darkTextSecondary
+                                : Colors.grey[400]),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -207,18 +240,26 @@ class ReminderCard extends StatelessWidget {
                 Icon(
                   Icons.repeat_rounded,
                   size: 14,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  reminder.repeatSummary,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                Flexible(
+                  child: Text(
+                    reminder.repeatSummary,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '• ${_formatNextAlarm()}',
@@ -226,8 +267,12 @@ class ReminderCard extends StatelessWidget {
                       fontSize: 12,
                       color: isDoneToday
                           ? AppColors.limeGreen
-                          : (reminder.isEnabled ? AppColors.electricBlue : Colors.grey[500]),
-                      fontWeight: isDoneToday ? FontWeight.w700 : FontWeight.w600,
+                          : (reminder.isEnabled
+                                ? AppColors.electricBlue
+                                : Colors.grey[500]),
+                      fontWeight: isDoneToday
+                          ? FontWeight.w700
+                          : FontWeight.w600,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -238,8 +283,10 @@ class ReminderCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Bottom Action Strip
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 // Snooze Action Button (only if not completed today)
                 if (reminder.isEnabled && !isDoneToday) ...[
@@ -248,14 +295,19 @@ class ReminderCard extends StatelessWidget {
                     icon: const Icon(Icons.snooze_rounded, size: 14),
                     label: Text('+${reminder.snoozeDurationMinutes}m'),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
                 ],
 
                 // Mark Done / Completed
@@ -263,21 +315,37 @@ class ReminderCard extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: onComplete,
                     icon: Icon(
-                      isDoneToday ? Icons.check_circle_rounded : Icons.check_rounded,
+                      isDoneToday
+                          ? Icons.check_circle_rounded
+                          : Icons.check_rounded,
                       size: 14,
                       color: isDoneToday ? AppColors.limeGreen : Colors.black,
                     ),
-                    label: Text(isDoneToday ? 'Completed for today ✓' : 'Complete'),
+                    label: Text(
+                      isDoneToday ? 'Completed for today ✓' : 'Complete',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isDoneToday
-                          ? (isDark ? const Color(0xFF132A1E) : const Color(0xFFE8F8F0))
+                          ? (isDark
+                                ? const Color(0xFF132A1E)
+                                : const Color(0xFFE8F8F0))
                           : AppColors.limeGreen,
-                      foregroundColor: isDoneToday ? AppColors.limeGreen : Colors.black,
+                      foregroundColor: isDoneToday
+                          ? AppColors.limeGreen
+                          : Colors.black,
                       side: isDoneToday
-                          ? BorderSide(color: AppColors.limeGreen.withValues(alpha: 0.6))
+                          ? BorderSide(
+                              color: AppColors.limeGreen.withValues(alpha: 0.6),
+                            )
                           : BorderSide.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -289,7 +357,9 @@ class ReminderCard extends StatelessWidget {
                   icon: Icon(
                     Icons.more_horiz_rounded,
                     size: 20,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                   onSelected: (val) {
                     if (val == 'edit') {
@@ -325,7 +395,11 @@ class ReminderCard extends StatelessWidget {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline_rounded, size: 16, color: Colors.red),
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 16,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 8),
                           Text('Delete', style: TextStyle(color: Colors.red)),
                         ],

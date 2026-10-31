@@ -37,7 +37,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes: /dashboard
+  // Protected routes: /dashboard (redirect to login)
+  // Note: /admin is stealthily protected by AdminLayout calling notFound() for unauthorized users
   if (!user && pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';

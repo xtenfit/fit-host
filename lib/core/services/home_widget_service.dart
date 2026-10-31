@@ -14,21 +14,31 @@ class HomeWidgetService {
 
   /// Syncs real telemetry data to the native Android AppWidget and iOS WidgetKit
   Future<bool> syncData({
-    required int steps,
-    required int stepGoal,
-    required int calories,
-    required int waterGlasses,
-    required int targetWater,
-    int streak = 1,
+    int? steps,
+    int? stepGoal,
+    int? calories,
+    int? waterGlasses,
+    int? targetWater,
+    int? streak,
   }) async {
     if (kIsWeb) return true;
     try {
-      await HomeWidget.saveWidgetData<int>('steps', steps);
-      await HomeWidget.saveWidgetData<int>('stepGoal', stepGoal);
-      await HomeWidget.saveWidgetData<int>('calories', calories);
-      await HomeWidget.saveWidgetData<int>('waterGlasses', waterGlasses);
-      await HomeWidget.saveWidgetData<int>('waterTarget', targetWater);
-      await HomeWidget.saveWidgetData<int>('streak', streak);
+      if (steps != null) await HomeWidget.saveWidgetData<int>('steps', steps);
+      if (stepGoal != null) {
+        await HomeWidget.saveWidgetData<int>('stepGoal', stepGoal);
+      }
+      if (calories != null) {
+        await HomeWidget.saveWidgetData<int>('calories', calories);
+      }
+      if (waterGlasses != null) {
+        await HomeWidget.saveWidgetData<int>('waterGlasses', waterGlasses);
+      }
+      if (targetWater != null) {
+        await HomeWidget.saveWidgetData<int>('waterTarget', targetWater);
+      }
+      if (streak != null) {
+        await HomeWidget.saveWidgetData<int>('streak', streak);
+      }
       await HomeWidget.saveWidgetData<String>(
         'lastUpdated',
         DateFormat('hh:mm a').format(DateTime.now()),
@@ -40,7 +50,7 @@ class HomeWidgetService {
       );
 
       debugPrint(
-        '📲 [HomeWidgetService] Synced telemetry to OS: $steps steps, $calories kcal, $waterGlasses water, streak: $streak',
+        '📲 [HomeWidgetService] Synced telemetry to OS: steps=$steps, cal=$calories, water=$waterGlasses, streak=$streak',
       );
       return true;
     } catch (e) {

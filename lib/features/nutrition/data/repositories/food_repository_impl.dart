@@ -9,20 +9,24 @@ import '../../../../core/services/supabase_service.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/repositories/food_repository.dart';
 import '../services/openfoodfacts_service.dart';
+import '../services/usda_nutrition_service.dart';
 export '../services/gemini_nutrition_service.dart';
 
 class FoodRepositoryImpl implements FoodRepository {
   final AppDatabase db;
   final OpenFoodFactsService offService;
+  final UsdaNutritionService usdaService;
   final String userId;
   final SupabaseClient? supabaseClient;
 
   FoodRepositoryImpl({
     required this.db,
     OpenFoodFactsService? offService,
+    UsdaNutritionService? usdaService,
     this.userId = 'guest',
     this.supabaseClient,
-  }) : offService = offService ?? OpenFoodFactsService();
+  }) : offService = offService ?? OpenFoodFactsService(),
+       usdaService = usdaService ?? UsdaNutritionService();
 
   FoodItem _mapRowToFoodItem(FoodItemData row) {
     List<ServingPreset> presets = [];
@@ -63,7 +67,8 @@ class FoodRepositoryImpl implements FoodRepository {
       fatsPer100g: drift.Value(food.fatsPer100g),
       caloriesPer100g: drift.Value(food.caloriesPer100g),
       servingPresetsJson: drift.Value(
-          jsonEncode(food.servingPresets.map((p) => p.toJson()).toList())),
+        jsonEncode(food.servingPresets.map((p) => p.toJson()).toList()),
+      ),
       source: drift.Value(food.source.name),
       imageUrl: drift.Value(food.imageUrl),
       createdAt: drift.Value(food.createdAt),
@@ -77,31 +82,66 @@ class FoodRepositoryImpl implements FoodRepository {
     final cleanQuery = query.trim().toLowerCase();
 
     // 1. Search local Drift database
-    final localRows = await (db.select(db.foodItems)
-          ..where((t) {
-            final notDeleted = t.isDeleted.equals(0);
-            if (cleanQuery.isEmpty) return notDeleted;
-            return notDeleted &
-                (t.name.lower().like('%$cleanQuery%') |
-                    t.brand.lower().like('%$cleanQuery%') |
-                    t.barcode.equals(cleanQuery));
-          })
-          ..limit(limit))
-        .get();
+    final localRows =
+        await (db.select(db.foodItems)
+              ..where((t) {
+                final notDeleted = t.isDeleted.equals(0);
+                if (cleanQuery.isEmpty) return notDeleted;
+                return notDeleted &
+                    (t.name.lower().like('%$cleanQuery%') |
+                        t.brand.lower().like('%$cleanQuery%') |
+                        t.barcode.equals(cleanQuery));
+              })
+              ..limit(limit))
+            .get();
 
     final results = localRows.map(_mapRowToFoodItem).toList();
 
-    // 2. If fewer than 5 results and query has at least 3 characters, query OpenFoodFacts
+    // 2. If fewer than 5 results and query has at least 3 characters, query USDA provider
     if (results.length < 5 && cleanQuery.length >= 3) {
       try {
-        final offResults = await offService.searchProducts(cleanQuery, limit: 15);
+        final usdaResults = await usdaService.searchFoods(
+          cleanQuery,
+          limit: 15,
+        );
+        for (final item in usdaResults) {
+          if (!results.any(
+            (r) =>
+                r.id == item.id ||
+                r.name.toLowerCase() == item.name.toLowerCase(),
+          )) {
+            // Cache locally in Drift SQLite
+            try {
+              await db
+                  .into(db.foodItems)
+                  .insertOnConflictUpdate(_mapFoodItemToCompanion(item));
+            } catch (_) {}
+            results.add(item);
+          }
+        }
+      } catch (e) {
+        debugPrint('[FoodRepository] USDA search error: $e');
+      }
+    }
+
+    // 3. If still fewer than 5 results, query OpenFoodFacts as secondary fallback
+    if (results.length < 5 && cleanQuery.length >= 3) {
+      try {
+        final offResults = await offService.searchProducts(
+          cleanQuery,
+          limit: 15,
+        );
         for (final offItem in offResults) {
-          if (!results.any((r) => r.id == offItem.id || (r.barcode != null && r.barcode == offItem.barcode))) {
+          if (!results.any(
+            (r) =>
+                r.id == offItem.id ||
+                (r.barcode != null && r.barcode == offItem.barcode),
+          )) {
             // Cache locally in Drift
             try {
-              await db.into(db.foodItems).insertOnConflictUpdate(
-                    _mapFoodItemToCompanion(offItem),
-                  );
+              await db
+                  .into(db.foodItems)
+                  .insertOnConflictUpdate(_mapFoodItemToCompanion(offItem));
             } catch (_) {}
             results.add(offItem);
           }
@@ -120,10 +160,11 @@ class FoodRepositoryImpl implements FoodRepository {
     if (clean.isEmpty) return null;
 
     // 1. Check local Drift cache first
-    final localRow = await (db.select(db.foodItems)
-          ..where((t) => t.barcode.equals(clean) & t.isDeleted.equals(0))
-          ..limit(1))
-        .getSingleOrNull();
+    final localRow =
+        await (db.select(db.foodItems)
+              ..where((t) => t.barcode.equals(clean) & t.isDeleted.equals(0))
+              ..limit(1))
+            .getSingleOrNull();
 
     if (localRow != null) {
       return _mapRowToFoodItem(localRow);
@@ -134,9 +175,9 @@ class FoodRepositoryImpl implements FoodRepository {
     if (offProduct != null) {
       // Cache in local Drift database for future fast offline access
       try {
-        await db.into(db.foodItems).insertOnConflictUpdate(
-              _mapFoodItemToCompanion(offProduct),
-            );
+        await db
+            .into(db.foodItems)
+            .insertOnConflictUpdate(_mapFoodItemToCompanion(offProduct));
       } catch (e) {
         debugPrint('[FoodRepository] Cache insertion error: $e');
       }
@@ -148,14 +189,15 @@ class FoodRepositoryImpl implements FoodRepository {
 
   @override
   Future<void> saveFood(FoodItem food) async {
-    await db.into(db.foodItems).insertOnConflictUpdate(
-          _mapFoodItemToCompanion(food),
-        );
+    await db
+        .into(db.foodItems)
+        .insertOnConflictUpdate(_mapFoodItemToCompanion(food));
 
     // If authenticated user and food is user_custom or gemini, push to Supabase & outbox
     if (userId != 'guest' &&
         supabaseClient != null &&
-        (food.source == FoodSource.user_custom || food.source == FoodSource.gemini)) {
+        (food.source == FoodSource.user_custom ||
+            food.source == FoodSource.gemini)) {
       try {
         await supabaseClient!.from('food_items').upsert({
           'id': food.id,
@@ -166,8 +208,9 @@ class FoodRepositoryImpl implements FoodRepository {
           'carbs_per_100g': food.carbsPer100g,
           'fats_per_100g': food.fatsPer100g,
           'calories_per_100g': food.caloriesPer100g,
-          'serving_presets_json':
-              jsonEncode(food.servingPresets.map((p) => p.toJson()).toList()),
+          'serving_presets_json': jsonEncode(
+            food.servingPresets.map((p) => p.toJson()).toList(),
+          ),
           'source': food.source.name,
           'image_url': food.imageUrl,
           'user_id': userId,
@@ -177,7 +220,9 @@ class FoodRepositoryImpl implements FoodRepository {
         debugPrint('[FoodRepository] Cloud upsert error: $e');
         // Enqueue into SyncQueue for retry
         try {
-          await db.into(db.syncQueue).insert(
+          await db
+              .into(db.syncQueue)
+              .insert(
                 SyncQueueCompanion.insert(
                   id: const Uuid().v4(),
                   userId: drift.Value(userId),
@@ -201,14 +246,17 @@ class FoodRepositoryImpl implements FoodRepository {
       final now = DateTime.now();
       final fourteenDaysAgo = now.subtract(const Duration(days: 14));
 
-      final logs = await (db.select(db.nutritionLogs)
-            ..where((t) =>
-                t.userId.equals(userId) &
-                t.deletedAt.isNull() &
-                t.logDate.isBiggerOrEqualValue(fourteenDaysAgo))
-            ..orderBy([(t) => drift.OrderingTerm.desc(t.logDate)])
-            ..limit(14))
-          .get();
+      final logs =
+          await (db.select(db.nutritionLogs)
+                ..where(
+                  (t) =>
+                      t.userId.equals(userId) &
+                      t.deletedAt.isNull() &
+                      t.logDate.isBiggerOrEqualValue(fourteenDaysAgo),
+                )
+                ..orderBy([(t) => drift.OrderingTerm.desc(t.logDate)])
+                ..limit(14))
+              .get();
 
       final recentNames = <String>{};
       final recentList = <FoodItem>[];
@@ -223,10 +271,11 @@ class FoodRepositoryImpl implements FoodRepository {
                 recentNames.add(name);
 
                 // Try to find matching food in Drift
-                final match = await (db.select(db.foodItems)
-                      ..where((t) => t.name.equals(name))
-                      ..limit(1))
-                    .getSingleOrNull();
+                final match =
+                    await (db.select(db.foodItems)
+                          ..where((t) => t.name.equals(name))
+                          ..limit(1))
+                        .getSingleOrNull();
 
                 if (match != null) {
                   recentList.add(_mapRowToFoodItem(match));
@@ -241,7 +290,8 @@ class FoodRepositoryImpl implements FoodRepository {
                       carbsPer100g:
                           (m['carbs_grams'] as num?)?.toDouble() ?? 20.0,
                       fatsPer100g: (m['fat_grams'] as num?)?.toDouble() ?? 5.0,
-                      caloriesPer100g: (m['calories'] as num?)?.toDouble() ?? 150.0,
+                      caloriesPer100g:
+                          (m['calories'] as num?)?.toDouble() ?? 150.0,
                       source: FoodSource.user_custom,
                       createdAt: DateTime.now(),
                       servingPresets: const [
@@ -261,10 +311,11 @@ class FoodRepositoryImpl implements FoodRepository {
 
       // If fewer than limit, pad with top seeded items
       if (recentList.length < limit) {
-        final seeded = await (db.select(db.foodItems)
-              ..where((t) => t.source.equals('seeded'))
-              ..limit(limit - recentList.length))
-            .get();
+        final seeded =
+            await (db.select(db.foodItems)
+                  ..where((t) => t.source.equals('seeded'))
+                  ..limit(limit - recentList.length))
+                .get();
         for (final row in seeded) {
           final item = _mapRowToFoodItem(row);
           if (!recentNames.contains(item.name)) {
@@ -286,9 +337,14 @@ final openFoodFactsServiceProvider = Provider<OpenFoodFactsService>((ref) {
   return OpenFoodFactsService();
 });
 
+final usdaNutritionServiceProvider = Provider<UsdaNutritionService>((ref) {
+  return UsdaNutritionService();
+});
+
 final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   final db = ref.watch(databaseProvider);
   final offService = ref.watch(openFoodFactsServiceProvider);
+  final usdaService = ref.watch(usdaNutritionServiceProvider);
   final authStatus = ref.watch(authStatusProvider);
   final user = ref.watch(currentUserProvider);
   final userId = authStatus == AuthStatus.authenticated && user != null
@@ -302,6 +358,7 @@ final foodRepositoryProvider = Provider<FoodRepository>((ref) {
   return FoodRepositoryImpl(
     db: db,
     offService: offService,
+    usdaService: usdaService,
     userId: userId,
     supabaseClient: supabase,
   );

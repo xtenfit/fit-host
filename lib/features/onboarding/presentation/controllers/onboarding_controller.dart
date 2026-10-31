@@ -4,6 +4,7 @@ import '../../domain/repositories/onboarding_repository.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
 import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import 'package:fit_host/core/services/startup_gate_service.dart';
+import 'package:fit_host/core/services/analytics_service.dart';
 
 final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
   return OnboardingRepositoryImpl();
@@ -106,10 +107,7 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   void jumpToGenderBranch() {
-    state = state.copyWith(
-      currentStep: 8,
-      isGenderBranch: true,
-    );
+    state = state.copyWith(currentStep: 8, isGenderBranch: true);
     _autoSave();
   }
 
@@ -317,18 +315,30 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   }
 
   void updateBodyComposition({
+    double? weightKg,
     double? bodyFatPercentage,
     double? waistCm,
     double? hipCm,
     double? chestCm,
+    double? armsCm,
+    double? thighsCm,
+    double? calvesCm,
     double? neckCm,
+    double? shouldersCm,
+    String? notes,
   }) {
     state = state.copyWith(
+      weightKg: weightKg ?? state.weightKg,
       bodyFatPercentage: bodyFatPercentage ?? state.bodyFatPercentage,
       waistCm: waistCm ?? state.waistCm,
       hipCm: hipCm ?? state.hipCm,
       chestCm: chestCm ?? state.chestCm,
+      armsCm: armsCm ?? state.armsCm,
+      thighsCm: thighsCm ?? state.thighsCm,
+      calvesCm: calvesCm ?? state.calvesCm,
       neckCm: neckCm ?? state.neckCm,
+      shouldersCm: shouldersCm ?? state.shouldersCm,
+      measurementNotes: notes ?? state.measurementNotes,
     );
     _autoSave();
   }
@@ -463,7 +473,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     }
 
     try {
-      await ref.read(userProfileProvider.notifier).saveSuggestedPlan(
+      await ref
+          .read(userProfileProvider.notifier)
+          .saveSuggestedPlan(
             name: isGuest ? 'Guest Athlete' : 'Athlete',
             age: state.age,
             gender: state.gender ?? 'male',
@@ -475,6 +487,23 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
             weeklyWorkoutDays: state.workoutDaysPerWeek,
             dailyWorkoutMinutes: state.sessionDurationMinutes,
           );
+
+      final userProf = ref.read(userProfileProvider);
+      final updatedProfile = userProf.copyWith(
+        bodyFatPercentage:
+            state.bodyFatPercentage ?? userProf.bodyFatPercentage,
+        waistCm: state.waistCm ?? userProf.waistCm,
+        hipCm: state.hipCm ?? userProf.hipCm,
+        chestCm: state.chestCm ?? userProf.chestCm,
+        neckCm: state.neckCm ?? userProf.neckCm,
+        armsCm: state.armsCm ?? userProf.armsCm,
+        thighsCm: state.thighsCm ?? userProf.thighsCm,
+        calvesCm: state.calvesCm ?? userProf.calvesCm,
+        shouldersCm: state.shouldersCm ?? userProf.shouldersCm,
+      );
+      await ref
+          .read(userProfileProvider.notifier)
+          .updateProfile(updatedProfile);
     } catch (_) {}
 
     // Persist startup gate flags in FlutterSecureStorage
@@ -485,6 +514,13 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
         await gate.setAuthDecisionMade(true);
       }
     } catch (_) {}
+
+    AnalyticsService.instance
+        .track(
+          AnalyticsEvents.onboardingCompleted,
+          properties: {'is_guest': isGuest},
+        )
+        .ignore();
   }
 
   Future<void> reset() async {
@@ -495,5 +531,5 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
 
 final onboardingProvider =
     NotifierProvider<OnboardingNotifier, OnboardingState>(
-  OnboardingNotifier.new,
-);
+      OnboardingNotifier.new,
+    );

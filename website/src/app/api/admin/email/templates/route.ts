@@ -6,7 +6,7 @@ import { EmailTemplate } from '@/lib/email/types';
 export async function GET(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await verifyAdminAuthorization(request);
   if (!auth.authorized) {
-    return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 403 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   try {
