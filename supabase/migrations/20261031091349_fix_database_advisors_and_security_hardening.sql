@@ -142,3 +142,4 @@ DROP INDEX IF EXISTS public.idx_routines_is_template;
 DROP INDEX IF EXISTS public.idx_food_items_source;
 DROP INDEX IF EXISTS public.idx_exercises_category;
 DROP INDEX IF EXISTS public.idx_exercise_submissions_status;
+

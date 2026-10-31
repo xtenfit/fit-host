@@ -104,6 +104,11 @@ class ConnectivityStateMachine with WidgetsBindingObserver {
       final uri = Uri.parse('$_supabaseUrl/auth/v1/health');
       client.connectionTimeout = const Duration(seconds: 4);
       final request = await client.getUrl(uri);
+      final apiKey = getSupabasePublishableKey();
+      if (apiKey.isNotEmpty) {
+        request.headers.set('apikey', apiKey);
+        request.headers.set('Authorization', 'Bearer $apiKey');
+      }
       final response = await request.close();
       return response.statusCode >= 200 && response.statusCode < 400;
     } catch (error, stackTrace) {
