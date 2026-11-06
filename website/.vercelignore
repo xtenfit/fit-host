@@ -1,0 +1,8 @@
+.next
+.git
+.turbo
+.vercel
+node_modules
+*.tsbuildinfo
+test
+.DS_Store
