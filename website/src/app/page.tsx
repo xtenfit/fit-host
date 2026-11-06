@@ -34,76 +34,76 @@ const workoutCategories = [
 const coreBenefits = [
   {
     icon: PlaySquare,
-    title: "1,324+ Looping Exercise Form GIFs",
+    title: "1,324+ Looping Form Guides",
     description:
-      "Master proper execution with real-time looping animated GIF form guides, 180x180 thumbnails, and anatomical muscle target diagrams from wger directly in the exercise library.",
+      "Check lifting technique mid-workout with looping animation guides, sharp 180x180 thumbnails, and anatomical muscle target diagrams directly in the exercise catalog.",
     badge: "Exercise Visuals",
   },
   {
     icon: Sparkles,
-    title: "20-Step Animated Setup Wizard",
+    title: "Guided Athlete Setup",
     description:
-      "A motion-designed setup wizard featuring interactive athlete models, circumference tracking, workout scheduling, and an AI-calibrated plan reveal with coach badge.",
+      "Personalize your daily routine with interactive 3D athlete models, circumference tracking, workout scheduling, and calculated calorie and macro targets.",
     badge: "Personalized Plan",
   },
   {
     icon: Database,
-    title: "Fast Access with Local Caching",
+    title: "Local Drift SQLite Database",
     description:
-      "Log full workouts anywhere, even with zero connectivity. An embedded Drift SQLite engine ensures instant interactions directly on your device.",
+      "Log full workouts anywhere, even with zero bars of cell reception. The embedded SQLite database writes in under 5ms directly on your device.",
     badge: "Local Data Storage",
   },
   {
     icon: Cloud,
-    title: "Secure Cloud Synchronization",
+    title: "Private Supabase Cloud Sync",
     description:
-      "When connection returns, pending records sync automatically to PostgreSQL with Row Level Security (RLS) guaranteeing strict personal isolation.",
-    badge: "Dual-Layer Cache",
+      "When your phone reconnects to Wi-Fi, pending records sync automatically to PostgreSQL with Row Level Security (RLS) guaranteeing strict data isolation.",
+    badge: "Encrypted Cloud Sync",
   },
   {
     icon: Zap,
-    title: "No-Barrier Guest Mode",
+    title: "Immediate Guest Mode",
     description:
-      "Download and begin tracking immediately without entering personal info. When ready, upgrade seamlessly to cloud backup without losing a single logged set.",
+      "Download and start tracking right away without entering an email or password. Upgrade to cloud backup whenever you want without losing previous workouts.",
     badge: "Instant Onboarding",
   },
   {
     icon: Droplets,
-    title: "Integrated Macro & Water Tracking",
+    title: "1-Tap Water & Macro Logging",
     description:
-      "A complete daily wellness suite. Balance hydration with 1-tap volume presets and log protein, carbohydrates, and fats alongside training volume.",
-    badge: "Holistic Health",
+      "Log daily hydration with 1-tap volume presets (+250ml, +500ml, +750ml) and track protein, carbs, and fats without cluttered food menus.",
+    badge: "Nutrition & Water",
   },
 ];
 
 const faqs = [
   {
     q: "Does Fit Host include animated exercise guides and form visualizers?",
-    a: "Yes. Fit Host includes a unified library of 1,324+ exercises equipped with looping animated GIFs, 180x180 thumbnails, and anatomical muscle target diagrams from wger. You can loop movements, toggle anatomy targeting, and use pinch-to-zoom directly during workout logging.",
+    a: "Yes. Fit Host includes a unified library of 1,324+ exercises equipped with looping animated GIFs, 180x180 thumbnails, and anatomical muscle target diagrams from wger. You can loop movements, review muscle engagement, and use pinch-to-zoom during workout logging.",
   },
   {
     q: "How does the personalized 20-step onboarding wizard work?",
-    a: "Fit Host guides you through an animated 20-step wizard: select your gender with interactive athlete models, enter your age, height, weight, timeline pace, and optional body circumferences (chest, waist, hips, arms, etc.). The wizard generates a customized plan reveal card with tailored daily workout duration, experience level, and macro targets.",
+    a: "Fit Host guides you through an interactive setup: select your profile with 3D athlete models, enter your age, height, weight, timeline pace, and optional body circumferences (chest, waist, hips, arms). It then builds a customized routine card with daily duration and macro targets.",
   },
   {
     q: "Is Fit Host a web application or a native mobile app?",
-    a: "Fit Host is a native mobile application engineered with Flutter for Android and iOS. This website is the official product launch and update portal where you can find download links, version releases, setup guides, and support.",
+    a: "Fit Host is a native mobile application engineered in Flutter for Android and iOS. This website is the official product launch and update portal where you can find direct APK downloads, release notes, setup guides, and account recovery.",
   },
   {
     q: "Can I use Fit Host offline without an active internet connection?",
-    a: "Yes. Fit Host stores all workouts, hydration logs, and settings in an embedded Drift SQLite database directly on your device. You can track workouts seamlessly without a cellular connection, and your account data synchronizes securely to cloud storage whenever network connectivity is available.",
+    a: "Yes. Fit Host stores all workouts, hydration logs, and settings in an embedded Drift SQLite database directly on your device. You can track full sessions with zero cell service, and data syncs securely to the cloud whenever you reconnect.",
   },
   {
     q: "Do I have to create an account to test or use Fit Host?",
-    a: "No. Fit Host offers a complete Guest Mode with local data storage. You can log exercises, track water, and explore all workout categories immediately without creating an account or providing an email address. When you sign in or create an account, your saved guest records automatically migrate to your cloud account.",
+    a: "No. Fit Host offers a complete Guest Mode with local data storage. You can log exercises, track water, and explore all 10 workout disciplines immediately without creating an account. When you choose to sign in, your saved guest records migrate to your cloud account.",
   },
   {
     q: "How does cloud sync protect my personal health data?",
-    a: "Cloud data is stored in PostgreSQL and governed by Supabase Row Level Security (RLS) policies. Only your verified authentication token can read or modify your data. Service-role privileges are never exposed to clients, and your workout data is never monetized or shared.",
+    a: "Cloud records are stored in PostgreSQL protected by Supabase Row Level Security (RLS) policies. Only your verified auth token can read or modify your data. Service-role credentials are never exposed to clients, and your workout data is never sold or shared.",
   },
   {
     q: "Where can I download Fit Host today?",
-    a: "Official Android and iOS releases are launching soon. Verified Android APK builds will be available for direct download on this website as soon as published to our GitHub repository.",
+    a: "Verified Android APK builds are available for direct download on this website with full checksum verification. iOS builds will be available through TestFlight and App Store distribution.",
   },
 ];
 
@@ -124,17 +124,16 @@ export default async function HomePage() {
           <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-brand-green/30 bg-brand-green/10 text-brand-green text-xs font-semibold tracking-wide">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>THE MOBILE FITNESS ENGINE • {latestRelease.version}</span>
+              <span>OFFLINE-FIRST MOBILE FITNESS • {latestRelease.version}</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08]">
-              Train Harder. <br />
-              Log Faster. <br />
-              <span className="text-gradient-green">Command Your Progress.</span>
+              Built for the gym floor. <br />
+              <span className="text-gradient-green">Instant logging. Zero bloat.</span>
             </h1>
 
             <p className="text-base sm:text-xl text-zinc-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-              Fit Host is the high-velocity mobile fitness app for Android and iOS. Log heavy sets, monitor daily hydration, track macro nutrition, and synchronize seamlessly across devices—all with fast access, local data storage, and seamless cloud synchronization.
+              Fit Host saves every set to SQLite on your phone in under 5 milliseconds. No spinning wheels in concrete basements, no mandatory paywalls, and no ads between sets. When you are back on Wi-Fi, everything syncs securely to Postgres.
             </p>
 
             {/* CTAs */}
@@ -157,10 +156,10 @@ export default async function HomePage() {
             {/* Trust Badges */}
             <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-5 text-xs text-zinc-400">
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-brand-green" /> Local Data Storage
+                <CheckCircle2 className="h-4 w-4 text-brand-green" /> Local SQLite Storage
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-brand-green" /> Drift SQLite Engine
+                <CheckCircle2 className="h-4 w-4 text-brand-green" /> 1,324+ Looping Guides
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-brand-green" /> No Account Required
@@ -186,12 +185,12 @@ export default async function HomePage() {
       <section className="relative py-16 md:py-24 border-y border-brand-border/60 bg-brand-surface/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
-            <div className="text-xs font-bold uppercase tracking-wider text-brand-green">Engineered for Performance</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-brand-green">Engineering & Design</div>
             <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              Why Serious Athletes Choose Fit Host
+              Why Trainees Rely on Fit Host
             </h2>
             <p className="text-sm sm:text-base text-zinc-400">
-              Traditional fitness apps freeze without internet and lock basic logs behind paywalls. Fit Host gives you pure, uninterrupted speed.
+              Most workout apps hang on network requests and lock simple set logs behind subscriptions. Fit Host writes directly to local SQLite for instant response.
             </p>
           </div>
 
@@ -232,7 +231,7 @@ export default async function HomePage() {
             See Fit Host in Action
           </h2>
           <p className="text-sm sm:text-base text-zinc-400">
-            Real Flutter mobile interfaces captured directly from device execution. Zero mockups, zero distortion.
+            Captured live from production builds running natively on Android and iOS.
           </p>
         </div>
 
@@ -286,13 +285,13 @@ export default async function HomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-28">
           <div className="lg:col-span-7 space-y-6">
             <span className="text-xs font-mono font-bold text-brand-blue uppercase tracking-wider bg-brand-blue/20 text-brand-cyan px-3 py-1 rounded-full border border-brand-blue/40">
-              Feature 02 • Daily Recovery
+              Feature 02 • Daily Nutrition
             </span>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-white">
-              Master Your Macro Balance & Water Intake
+              Log Daily Water and Macro Targets in Seconds
             </h3>
             <p className="text-base text-zinc-300 leading-relaxed">
-              Exercise is only half the battle. Fit Host equips you with high-contrast macro breakdown bars for protein, carbohydrates, and fats, plus quick 1-tap hydration buttons so you stay properly fueled and hydrated.
+              Hit your target protein and keep your hydration steady without typing through multi-page food catalogs. Fit Host gives you clean macro progress bars and instant +250ml, +500ml, and +750ml quick-add water buttons.
             </p>
             <ul className="space-y-3 pt-2 text-sm text-zinc-300">
               <li className="flex items-start gap-2.5">
@@ -343,10 +342,10 @@ export default async function HomePage() {
               Feature 03 • Analytics
             </span>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-white">
-              Inspect Trends. Celebrate Personal Bests.
+              Review Training Trends and Real Personal Bests
             </h3>
             <p className="text-base text-zinc-300 leading-relaxed">
-              Review your training journey with chronological workout timelines and weekly volume distributions. Every set logged in the app feeds into accurate performance curves so you can break plateaus.
+              Keep track of weekly tonnage, training frequency, and muscle group volume. Every completed set automatically feeds your timeline so you can spot plateaus before they stall your lifts.
             </p>
             <ul className="space-y-3 pt-2 text-sm text-zinc-300">
               <li className="flex items-start gap-2.5">
@@ -421,10 +420,10 @@ export default async function HomePage() {
         <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
           <div className="text-xs font-bold uppercase tracking-wider text-brand-green">Quick Start</div>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            How to Get Started in 4 Easy Steps
+            Getting Started with Fit Host
           </h2>
           <p className="text-sm sm:text-base text-zinc-400">
-            From installation to logging your first workout, here is the exact mobile workflow.
+            From installation to logging your first set in under two minutes.
           </p>
         </div>
 

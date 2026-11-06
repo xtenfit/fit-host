@@ -38,9 +38,9 @@ export const siteConfig: SiteConfig = {
   name: "Fit Host",
   domain: "fithost.amitrana.tech",
   url: "https://fithost.amitrana.tech",
-  tagline: "The High-Performance Mobile Fitness & Wellness Engine",
+  tagline: "Fast, local-first fitness and workout tracking for iOS & Android",
   description:
-    "Fit Host is a fast, offline-capable fitness and wellness mobile app for iOS and Android. Log workouts, track hydration, manage macro nutrition, and synchronize your progress seamlessly across devices.",
+    "Fit Host writes your sets to on-device SQLite in under 5ms. No ads, no paywalls, 1,324+ animated exercise form guides, and cloud backup when you want it.",
   version: "v1.3.0",
   releaseDate: "October 2026",
   storeLinks: {

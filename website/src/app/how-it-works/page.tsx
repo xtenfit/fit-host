@@ -98,7 +98,7 @@ const tutorialSteps = [
     title: "Local Data Storage & Cloud Sync",
     category: "Data Architecture",
     summary:
-      "Fit Host uses a dual-layer data architecture: local Drift SQLite executes all operations without waiting for network; Supabase synchronizes changes in the background.",
+      "Fit Host writes all workout data to SQLite on your phone first, then syncs changes to Supabase in the background whenever you are connected.",
     points: [
       "Your data stays available on your device even without cellular signal",
       "Background sync queue pushes pending changes once network returns",

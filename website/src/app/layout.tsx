@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AnnouncementBanner from "@/components/marketing/AnnouncementBanner";
+import MobileAppBanner from "@/components/marketing/MobileAppBanner";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 
 export const viewport: Viewport = {
@@ -119,6 +120,8 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="preconnect" href="https://eedubttdylyqrhyeikwb.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://github.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -130,6 +133,7 @@ export default function RootLayout({
           <Navbar />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
+          <MobileAppBanner />
         </PostHogProvider>
       </body>
     </html>

@@ -18,23 +18,23 @@ export const metadata: Metadata = {
 
 const principles = [
   {
-    title: "Fast Access with Local Caching",
-    desc: "Gym basements and outdoor tracks shouldn't break your workout log. Fit Host stores data locally on your device for immediate responsiveness, syncing to the cloud asynchronously.",
+    title: "Local SQLite Storage",
+    desc: "Gym basements and concrete weight rooms shouldn't break your workout log. Fit Host stores data locally on your phone for instant response, syncing to the cloud when you connect.",
     icon: Database,
   },
   {
-    title: "Zero Exploitative Monetization",
-    desc: "We don't sell your biometric health logs or clutter your training flow with intrusive banner ads and paywalled timers.",
+    title: "Zero Ads or Paywalls",
+    desc: "We don't sell your health data or clutter your training flow with full-screen ads, video popups, or paywalled timers.",
     icon: ShieldCheck,
   },
   {
-    title: "Instant Performance & 60fps UX",
-    desc: "Engineered with Flutter for native mobile fluidity and Next.js for server-rendered web speed. Every interaction feels instantaneous.",
+    title: "Instant 60 FPS Response",
+    desc: "Engineered in Flutter for native mobile fluidity. Taps register immediately without waiting on network handshakes.",
     icon: Zap,
   },
   {
-    title: "Data Sovereignty",
-    desc: "Your data belongs to you. We leverage Supabase PostgreSQL with strict Row Level Security (RLS) policies, ensuring only you can access your personal metrics.",
+    title: "Strict Data Privacy",
+    desc: "Your records belong strictly to you. Powered by Supabase PostgreSQL with Row Level Security (RLS) policies, ensuring only your verified token accesses your metrics.",
     icon: Code2,
   },
 ];

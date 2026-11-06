@@ -74,11 +74,11 @@ export default function DownloadCTA({
         </div>
 
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-          Ready to Train Without Limits?
+          Start Tracking with Zero Friction
         </h2>
 
         <p className="text-base sm:text-lg text-zinc-300 max-w-2xl mx-auto leading-relaxed">
-          Fit Host is a dedicated mobile application for iOS and Android. Experience sub-millisecond offline workout logging, accurate macro tracking, and two-way cloud sync.
+          Fit Host is built for iOS and Android. Log workouts offline in milliseconds, track water and nutrition, and sync to private cloud storage when you choose.
         </p>
 
         {/* Action Buttons */}

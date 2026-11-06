@@ -34,11 +34,11 @@ export default function FeaturesPage() {
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white">
-            Engineered for Pure Performance.
+            Features Built for Real Training
           </h1>
 
           <p className="text-base sm:text-xl text-zinc-300 leading-relaxed">
-            Fit Host is built for speed, offline autonomy, and privacy. Every feature listed here is verified against our Flutter codebase and classified with complete transparency.
+            Fit Host is built for the gym floor. Every feature listed here runs on our native Flutter engine and writes directly to local storage.
           </p>
 
           {/* Status Legend Pills */}

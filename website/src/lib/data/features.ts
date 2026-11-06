@@ -19,7 +19,7 @@ export const featuresData: FeatureItem[] = [
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Master every lift and movement with real-time looping animated form guides, high-resolution 180x180 thumbnails, and anatomical muscle map overlays powered by wger and open exercise datasets.",
+      "Review technique mid-workout with looping animation form guides, high-resolution 180x180 thumbnails, and anatomical muscle map overlays powered by wger and open exercise datasets.",
     highlights: [
       "1,324+ exercises cataloged with full looping animated GIF execution guides",
       "Interactive multi-mode visualizer: list thumbnails, 220px loop player, and pinch-to-zoom modal",
@@ -30,12 +30,12 @@ export const featuresData: FeatureItem[] = [
   },
   {
     id: "animated-onboarding-wizard",
-    name: "20-Step Animated Setup Wizard & Personalized Plan Reveal",
+    name: "Guided Setup Wizard & Personalized Plan Reveal",
     category: "Personalization",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "A motion-designed 20-step onboarding experience. Select your gender with animated athlete models, configure body composition, schedule workouts, and reveal your personalized fitness plan.",
+      "An interactive setup flow to personalize your routine. Select your profile with 3D athlete models, configure measurements, schedule workouts, and reveal your personalized fitness plan.",
     highlights: [
       "Interactive 3D athlete carousel (Male and Female models) with ambient glow and peek-in transitions",
       "Personalized plan reveal card with 2x2 stat matrix (Daily Time, Level, Target Area, Equipment)",
@@ -77,12 +77,12 @@ export const featuresData: FeatureItem[] = [
   },
   {
     id: "hydration-tracking",
-    name: "Precision Hydration Tracking",
+    name: "Hydration Tracking with 1-Tap Presets",
     category: "Hydration & Nutrition",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Monitor daily water intake with fast 1-tap presets (250ml cup, 500ml bottle, 750ml shaker). Visual circular completion rings keep you accountable throughout the day.",
+      "Log daily water intake with 1-tap presets (250ml cup, 500ml bottle, 750ml shaker). Visual circular completion rings show daily hydration progress at a glance.",
     highlights: [
       "Dynamic circular hydration gauge with percentage completion",
       "Quick-add volume shortcuts (+250ml, +500ml, +750ml)",
@@ -97,7 +97,7 @@ export const featuresData: FeatureItem[] = [
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Track daily calories, protein, carbohydrates, and healthy fats. High-contrast macro distribution bars clarify caloric intake against your personal goals.",
+      "Track daily calories, protein, carbohydrates, and healthy fats. High-contrast macro distribution bars show caloric intake against your personal targets.",
     highlights: [
       "Individual grams breakdown for protein, carbs, and fats",
       "Visual calorie budget gauge with surplus / deficit indication",
@@ -107,27 +107,27 @@ export const featuresData: FeatureItem[] = [
   },
   {
     id: "offline-drift-sqlite",
-    name: "100% Offline Local Drift Engine",
+    name: "Offline Local SQLite Storage",
     category: "Data & Sync",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Never lose a workout in an underground gym or offline basement. All records write immediately to an embedded Drift SQLite database with sub-millisecond execution.",
+      "Never lose a workout set in an underground gym or offline basement. All records write immediately to an embedded Drift SQLite database in under 5 milliseconds.",
     highlights: [
       "Zero network dependency during workout execution",
-      "Encrypted device-level storage with fast schema migrations",
+      "Local device-level storage with fast schema migrations",
       "Background persistence queue with zero memory leaks",
     ],
     screenshot: "/images/screenshots/progress.png",
   },
   {
     id: "supabase-cloud-sync",
-    name: "Supabase Cloud Synchronization",
+    name: "Private Supabase Cloud Sync",
     category: "Data & Sync",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Seamless two-way cloud synchronization to PostgreSQL. Multi-device access, automated conflict resolution, and strict Row Level Security (RLS) protection.",
+      "Two-way cloud synchronization to PostgreSQL. Multi-device access, automated conflict resolution, and strict Row Level Security (RLS) protection.",
     highlights: [
       "Row Level Security guarantees complete private access",
       "Auto-syncs pending offline records once connection returns",
@@ -137,12 +137,12 @@ export const featuresData: FeatureItem[] = [
   },
   {
     id: "guest-mode",
-    name: "Zero-Barrier Guest Mode",
+    name: "Immediate Guest Mode",
     category: "Personalization",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Start logging instantly without registering an email or password. Upgrade to a permanent cloud account whenever you choose with seamless automatic data migration.",
+      "Start logging instantly without registering an email or password. Upgrade to a permanent cloud account whenever you choose with automatic data migration.",
     highlights: [
       "No sign-up or credit card required to test the full app",
       "Private local device storage",

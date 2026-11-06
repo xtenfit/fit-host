@@ -29,6 +29,7 @@ describe('Fit Host Website Architecture & Integrity', () => {
       'src/components/marketing/ReleaseCard.tsx',
       'src/components/marketing/GuideCard.tsx',
       'src/components/marketing/AnnouncementBanner.tsx',
+      'src/components/marketing/MobileAppBanner.tsx',
       'src/components/releases/LatestReleaseBanner.tsx',
       'src/components/releases/PlatformDownloadCard.tsx',
       'src/components/releases/ReleaseNotes.tsx',
@@ -365,5 +366,27 @@ describe('Fit Host Website Architecture & Integrity', () => {
       const fullPath = path.join(websiteRoot, 'public/images/screenshots', screenshot);
       assert.ok(fs.existsSync(fullPath), `Screenshot must exist: ${screenshot}`);
     }
+  });
+
+  test('MobileAppBanner implements responsive smart mobile banner with zero CLS layout and dismiss memory', () => {
+    const bannerPath = path.join(websiteRoot, 'src/components/marketing/MobileAppBanner.tsx');
+    assert.ok(fs.existsSync(bannerPath), 'MobileAppBanner.tsx must exist');
+    const content = fs.readFileSync(bannerPath, 'utf-8');
+
+    // Must be a client component
+    assert.ok(content.includes('"use client"'), 'MobileAppBanner must be a client component');
+
+    // Zero-CLS fixed positioning
+    assert.ok(content.includes('fixed'), 'Must use fixed positioning to avoid layout shift (CLS)');
+    assert.ok(content.includes('bottom-'), 'Must be positioned at bottom of screen');
+    assert.ok(content.includes('sm:hidden'), 'Must hide on larger desktop viewports');
+
+    // Dismiss persistence
+    assert.ok(content.includes('localStorage'), 'Must persist dismissal in localStorage');
+    assert.ok(content.includes('handleDismiss'), 'Must have handleDismiss handler');
+
+    // Layout integration
+    const layoutContent = fs.readFileSync(path.join(websiteRoot, 'src/app/layout.tsx'), 'utf-8');
+    assert.ok(layoutContent.includes('<MobileAppBanner'), 'RootLayout must include MobileAppBanner');
   });
 });
