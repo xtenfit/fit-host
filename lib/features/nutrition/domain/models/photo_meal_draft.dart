@@ -18,7 +18,13 @@ class IngredientEstimate {
   double get protein => (proteinPer100g * estimatedGrams) / 100;
   double get carbs => (carbsPer100g * estimatedGrams) / 100;
   double get fats => (fatsPer100g * estimatedGrams) / 100;
-  double get calories => (caloriesPer100g * estimatedGrams) / 100;
+  double get calories {
+    final raw = (caloriesPer100g * estimatedGrams) / 100;
+    if (raw <= 0 && (protein > 0 || carbs > 0 || fats > 0)) {
+      return (protein * 4.0) + (carbs * 4.0) + (fats * 9.0);
+    }
+    return raw;
+  }
 
   IngredientEstimate copyWith({
     String? name,

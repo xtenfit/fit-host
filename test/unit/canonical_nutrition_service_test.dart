@@ -174,5 +174,99 @@ void main() {
         equals(0.0),
       );
     });
+
+    test('isWaterOrZeroCalorie accurately identifies all hydration and zero-calorie variants', () {
+      final waterItems = [
+        'water',
+        'Water',
+        'WATER',
+        'pani',
+        'paani',
+        'drinking water',
+        'mineral water',
+        'tap water',
+        'ice water',
+        'boiled water',
+        'sparkling water',
+        'soda water',
+        'club soda',
+        'diet coke',
+        'coke zero',
+        'diet soda',
+        '1 glass of water',
+        '500ml water',
+      ];
+
+      for (final item in waterItems) {
+        expect(
+          NutritionCalculationService.isWaterOrZeroCalorie(item),
+          isTrue,
+          reason: '$item must be identified as water or zero-calorie drink',
+        );
+      }
+
+      // Non-water items must be false
+      expect(NutritionCalculationService.isWaterOrZeroCalorie('chicken breast'), isFalse);
+      expect(NutritionCalculationService.isWaterOrZeroCalorie('dal'), isFalse);
+      expect(NutritionCalculationService.isWaterOrZeroCalorie('milk'), isFalse);
+      expect(NutritionCalculationService.isWaterOrZeroCalorie('watermelon'), isFalse);
+    });
+
+    test('calculateAccurateCalories strictly enforces Atwater formula and fiber variance', () {
+      // 1g Protein = 4 kcal, 1g Carbs = 4 kcal, 1g Fat = 9 kcal
+      final cal = NutritionCalculationService.calculateAccurateCalories(
+        proteinGrams: 25.0,
+        carbsGrams: 30.0,
+        fatGrams: 10.0,
+      );
+      // (25 * 4) + (30 * 4) + (10 * 9) = 100 + 120 + 90 = 310.0
+      expect(cal, equals(310.0));
+
+      // Pure water / zero-calorie drink
+      final waterCal = NutritionCalculationService.calculateAccurateCalories(
+        proteinGrams: 0.0,
+        carbsGrams: 0.0,
+        fatGrams: 0.0,
+        isZeroCalorie: true,
+      );
+      expect(waterCal, equals(0.0));
+
+      // Reconciles wildly impossible reported calories to true Atwater calories
+      final reconciled = NutritionCalculationService.calculateAccurateCalories(
+        proteinGrams: 20.0,
+        carbsGrams: 10.0,
+        fatGrams: 5.0,
+        reportedCalories: 900.0, // Hallucinated/wrong
+      );
+      // Theoretical: (20*4) + (10*4) + (5*9) = 80 + 40 + 45 = 165.0
+      expect(reconciled, equals(165.0));
+    });
+
+    test('sanitizePer100gMacros enforces zero macros for water and physical bounds', () {
+      // Water must be strictly 0 macros and 0 calories
+      final waterSanitized = NutritionCalculationService.sanitizePer100gMacros(
+        name: 'Drinking Water',
+        proteinPer100g: 5.0, // Hallucinated
+        carbsPer100g: 15.0,
+        fatsPer100g: 3.0,
+        caloriesPer100g: 107.0,
+      );
+      expect(waterSanitized.protein, equals(0.0));
+      expect(waterSanitized.carbs, equals(0.0));
+      expect(waterSanitized.fats, equals(0.0));
+      expect(waterSanitized.calories, equals(0.0));
+
+      // Normal food: Chicken breast
+      final chickenSanitized = NutritionCalculationService.sanitizePer100gMacros(
+        name: 'Cooked Chicken Breast',
+        proteinPer100g: 31.0,
+        carbsPer100g: 0.0,
+        fatsPer100g: 3.6,
+        caloriesPer100g: 165.0,
+      );
+      expect(chickenSanitized.protein, equals(31.0));
+      expect(chickenSanitized.fats, equals(3.6));
+      expect(chickenSanitized.calories, equals(165.0));
+    });
   });
 }

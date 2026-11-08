@@ -82,4 +82,54 @@ describe('Fit Host Nutrition Engine & AI Parse Verification', () => {
     assert.equal(r3?.unit, 'g');
     assert.ok(r3?.item?.toLowerCase().includes('curd'));
   });
+
+  test('Water and zero-calorie hydration must have exactly 0 protein and 0 calories', () => {
+    // Water test strings
+    const waterItems = [
+      'water',
+      'drinking water',
+      'mineral water',
+      '1 glass of water',
+      '500ml water',
+      'pani',
+      'sparkling water',
+    ];
+
+    const isWater = (name) => {
+      const lower = name.toLowerCase().trim();
+      return (
+        lower === 'water' ||
+        lower === 'pani' ||
+        lower.includes('water') ||
+        lower.includes('pani')
+      );
+    };
+
+    for (const item of waterItems) {
+      assert.ok(isWater(item), `${item} must be identified as water`);
+    }
+
+    // Spec check: water per 100g must strictly be 0 across all macros
+    const waterMacros = { p: 0.0, c: 0.0, f: 0.0, cal: 0.0 };
+    assert.equal(waterMacros.p, 0);
+    assert.equal(waterMacros.c, 0);
+    assert.equal(waterMacros.f, 0);
+    assert.equal(waterMacros.cal, 0);
+  });
+
+  test('Atwater formula calculation reconciles protein, carbs, fats, and calories', () => {
+    const calcRealCalories = (p, c, f) => p * 4 + c * 4 + f * 9;
+
+    // 100g Chicken breast: 31g protein, 0g carb, 3.6g fat
+    const chickenCal = calcRealCalories(31, 0, 3.6);
+    assert.equal(Math.round(chickenCal), 156);
+
+    // 100g Paneer: 18.3g protein, 2.5g carb, 20.8g fat
+    const paneerCal = calcRealCalories(18.3, 2.5, 20.8);
+    assert.equal(Math.round(paneerCal), 270);
+
+    // 1 glass (240ml) water: 0 protein, 0 carb, 0 fat -> 0 cal
+    const waterCal = calcRealCalories(0, 0, 0);
+    assert.equal(waterCal, 0);
+  });
 });

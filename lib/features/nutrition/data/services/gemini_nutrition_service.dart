@@ -9,6 +9,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/models/photo_meal_draft.dart';
+import '../../domain/services/nutrition_calculation_service.dart';
 
 class GeminiNutritionService {
   final Dio _dio;
@@ -26,10 +27,14 @@ class GeminiNutritionService {
       (dotenv.isInitialized ? dotenv.env['GEMINI_API_KEY'] : null);
 
   static const String _prompt =
-      'Analyze this meal photo. Identify each visible ingredient separately. '
-      'For each ingredient, estimate the quantity in grams and provide per-100g: '
-      'protein, carbohydrates, fats (in grams), and calories (kcal). '
-      'Return ONLY valid JSON in this exact schema, no prose, no markdown: '
+      'Analyze this meal photo. Identify each visible ingredient separately.\n'
+      'CRITICAL NUTRITIONAL ACCURACY RULES:\n'
+      '1. WATER & HYDRATION: Water (plain water, tap water, mineral water, ice, sparkling water) has EXACTLY 0 protein, 0 carbohydrates, 0 fats, and 0 calories. NEVER report non-zero macros or calories for water.\n'
+      '2. NON-CALORIC ITEMS: Black coffee, unsweetened tea, and diet sodas have 0-2 calories and 0g protein.\n'
+      '3. REAL CALORIES: For all other foods, calories must accurately equal the physical Atwater formula: (4 * protein) + (4 * carbs) + (9 * fats) kcal per 100g.\n'
+      '4. MACRO BOUNDS: For 100g of any ingredient, (protein + carbs + fats) cannot exceed 100g. Calories per 100g cannot exceed 900 kcal.\n'
+      '5. REALISTIC PORTIONS: Estimate accurate portion weights in grams (for liquids, 1ml ≈ 1g; 1 glass/cup ≈ 240g).\n'
+      'Return ONLY valid JSON in this exact schema, no prose, no markdown:\n'
       '{\n'
       '  "meal_name": "string",\n'
       '  "confidence": 0.0-1.0,\n'
@@ -117,14 +122,22 @@ class GeminiNutritionService {
             final f = (item['fatsPer100g'] as num?)?.toDouble() ?? 0.0;
             final cal = (item['caloriesPer100g'] as num?)?.toDouble() ?? 0.0;
 
+            final sanitized = NutritionCalculationService.sanitizePer100gMacros(
+              name: name,
+              proteinPer100g: p,
+              carbsPer100g: c,
+              fatsPer100g: f,
+              caloriesPer100g: cal,
+            );
+
             ingredients.add(
               IngredientEstimate(
                 name: name,
                 estimatedGrams: double.parse(grams.toStringAsFixed(1)),
-                proteinPer100g: double.parse(p.toStringAsFixed(1)),
-                carbsPer100g: double.parse(c.toStringAsFixed(1)),
-                fatsPer100g: double.parse(f.toStringAsFixed(1)),
-                caloriesPer100g: double.parse(cal.toStringAsFixed(1)),
+                proteinPer100g: sanitized.protein,
+                carbsPer100g: sanitized.carbs,
+                fatsPer100g: sanitized.fats,
+                caloriesPer100g: sanitized.calories,
               ),
             );
           }
@@ -154,11 +167,14 @@ class GeminiNutritionService {
         final url =
             'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey';
         textPrompt =
-            'Parse this meal text description: "$query". '
-            'Identify each ingredient separately. '
-            'For each ingredient, estimate the quantity in grams and provide per-100g: '
-            'protein, carbohydrates, fats (in grams), and calories (kcal). '
-            'Return ONLY valid JSON in this exact schema, no prose, no markdown: '
+            'Parse this meal text description: "$query".\n'
+            'CRITICAL NUTRITIONAL ACCURACY RULES:\n'
+            '1. WATER & HYDRATION: Water (plain water, tap water, mineral water, ice, sparkling water) has EXACTLY 0 protein, 0 carbohydrates, 0 fats, and 0 calories. NEVER report non-zero macros or calories for water.\n'
+            '2. NON-CALORIC ITEMS: Black coffee, unsweetened tea, and diet sodas have 0-2 calories and 0g protein.\n'
+            '3. REAL CALORIES: For all other foods, calories must accurately equal the physical Atwater formula: (4 * protein) + (4 * carbs) + (9 * fats) kcal per 100g.\n'
+            '4. MACRO BOUNDS: For 100g of any ingredient, (protein + carbs + fats) cannot exceed 100g. Calories per 100g cannot exceed 900 kcal.\n'
+            '5. REALISTIC PORTIONS: Estimate accurate portion weights in grams (for liquids, 1ml ≈ 1g; 1 glass/cup ≈ 240g).\n'
+            'Return ONLY valid JSON in this exact schema, no prose, no markdown:\n'
             '{\n'
             '  "meal_name": "string",\n'
             '  "confidence": 0.0-1.0,\n'
@@ -253,154 +269,97 @@ class GeminiNutritionService {
   /// Rule-based parser for common dietary phrases when offline
   PhotoMealDraft _parseTextFallback(String query) {
     const knowledgeBase = <String, Map<String, double>>{
-      'roti': {
-        'p': 7.8,
-        'c': 46.0,
-        'f': 1.5,
-        'cal': 230.0,
-        'defaultPortion': 35.0,
-      },
-      'chapati': {
-        'p': 7.8,
-        'c': 46.0,
-        'f': 1.5,
-        'cal': 230.0,
-        'defaultPortion': 35.0,
-      },
-      'paratha': {
-        'p': 6.5,
-        'c': 42.0,
-        'f': 12.0,
-        'cal': 302.0,
-        'defaultPortion': 65.0,
-      },
-      'dal': {
-        'p': 5.5,
-        'c': 14.5,
-        'f': 2.8,
-        'cal': 105.0,
-        'defaultPortion': 180.0,
-      },
-      'curd': {
-        'p': 3.5,
-        'c': 4.4,
-        'f': 4.1,
-        'cal': 68.0,
-        'defaultPortion': 150.0,
-      },
-      'dahi': {
-        'p': 3.5,
-        'c': 4.4,
-        'f': 4.1,
-        'cal': 68.0,
-        'defaultPortion': 150.0,
-      },
-      'milk': {
-        'p': 3.2,
-        'c': 4.8,
-        'f': 3.5,
-        'cal': 64.0,
-        'defaultPortion': 250.0,
-      },
-      'banana': {
-        'p': 1.1,
-        'c': 22.8,
-        'f': 0.3,
-        'cal': 89.0,
-        'defaultPortion': 118.0,
-      },
-      'apple': {
-        'p': 0.3,
-        'c': 13.8,
-        'f': 0.2,
-        'cal': 52.0,
-        'defaultPortion': 182.0,
-      },
-      'egg': {
-        'p': 12.6,
-        'c': 0.7,
-        'f': 9.9,
-        'cal': 143.0,
-        'defaultPortion': 50.0,
-      },
-      'rice': {
-        'p': 2.7,
-        'c': 28.2,
-        'f': 0.3,
-        'cal': 130.0,
-        'defaultPortion': 150.0,
-      },
-      'paneer': {
-        'p': 18.3,
-        'c': 2.5,
-        'f': 20.8,
-        'cal': 265.0,
-        'defaultPortion': 100.0,
-      },
-      'chicken': {
-        'p': 31.0,
-        'c': 0.0,
-        'f': 3.6,
-        'cal': 165.0,
-        'defaultPortion': 120.0,
-      },
-      'oats': {
-        'p': 13.5,
-        'c': 68.0,
-        'f': 6.5,
-        'cal': 389.0,
-        'defaultPortion': 40.0,
-      },
-      'maaza': {
-        'p': 0.1,
-        'c': 13.5,
-        'f': 0.1,
-        'cal': 54.0,
-        'defaultPortion': 250.0,
-      },
-      'maja': {
-        'p': 0.1,
-        'c': 13.5,
-        'f': 0.1,
-        'cal': 54.0,
-        'defaultPortion': 250.0,
-      },
-      'juice': {
-        'p': 0.5,
-        'c': 11.5,
-        'f': 0.2,
-        'cal': 50.0,
-        'defaultPortion': 240.0,
-      },
-      'tea': {
-        'p': 0.5,
-        'c': 4.0,
-        'f': 0.8,
-        'cal': 25.0,
-        'defaultPortion': 150.0,
-      },
-      'coffee': {
-        'p': 0.8,
-        'c': 5.0,
-        'f': 1.0,
-        'cal': 32.0,
-        'defaultPortion': 150.0,
-      },
-      'ghee': {
-        'p': 0.0,
-        'c': 0.0,
-        'f': 99.5,
-        'cal': 900.0,
-        'defaultPortion': 15.0,
-      },
-      'butter': {
-        'p': 0.9,
-        'c': 0.1,
-        'f': 81.0,
-        'cal': 717.0,
-        'defaultPortion': 15.0,
-      },
+      // Zero-calorie & Hydration
+      'water': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 250.0},
+      'pani': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 250.0},
+      'paani': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 250.0},
+      'mineral water': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 500.0},
+      'sparkling water': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'soda water': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'club soda': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'diet coke': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'coke zero': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'diet soda': {'p': 0.0, 'c': 0.0, 'f': 0.0, 'cal': 0.0, 'defaultPortion': 330.0},
+      'black coffee': {'p': 0.1, 'c': 0.2, 'f': 0.0, 'cal': 2.0, 'defaultPortion': 150.0},
+      'espresso': {'p': 0.1, 'c': 0.2, 'f': 0.0, 'cal': 2.0, 'defaultPortion': 30.0},
+      'americano': {'p': 0.1, 'c': 0.2, 'f': 0.0, 'cal': 2.0, 'defaultPortion': 200.0},
+      'green tea': {'p': 0.0, 'c': 0.2, 'f': 0.0, 'cal': 1.0, 'defaultPortion': 150.0},
+      'black tea': {'p': 0.1, 'c': 0.3, 'f': 0.0, 'cal': 2.0, 'defaultPortion': 150.0},
+      'lemon water': {'p': 0.1, 'c': 1.2, 'f': 0.0, 'cal': 5.0, 'defaultPortion': 240.0},
+      'coconut water': {'p': 0.7, 'c': 3.7, 'f': 0.2, 'cal': 19.0, 'defaultPortion': 240.0},
+
+      // High Protein Staples
+      'whey protein': {'p': 76.0, 'c': 6.0, 'f': 3.0, 'cal': 355.0, 'defaultPortion': 33.0},
+      'protein powder': {'p': 75.0, 'c': 6.0, 'f': 3.0, 'cal': 351.0, 'defaultPortion': 33.0},
+      'protein shake': {'p': 10.0, 'c': 4.0, 'f': 1.5, 'cal': 69.0, 'defaultPortion': 300.0},
+      'egg white': {'p': 10.9, 'c': 0.7, 'f': 0.2, 'cal': 52.0, 'defaultPortion': 33.0},
+      'boiled egg': {'p': 12.6, 'c': 0.7, 'f': 9.9, 'cal': 143.0, 'defaultPortion': 50.0},
+      'egg': {'p': 12.6, 'c': 0.7, 'f': 9.9, 'cal': 143.0, 'defaultPortion': 50.0},
+      'chicken breast': {'p': 31.0, 'c': 0.0, 'f': 3.6, 'cal': 165.0, 'defaultPortion': 150.0},
+      'chicken': {'p': 27.0, 'c': 0.0, 'f': 7.0, 'cal': 171.0, 'defaultPortion': 150.0},
+      'paneer': {'p': 18.3, 'c': 2.5, 'f': 20.8, 'cal': 265.0, 'defaultPortion': 100.0},
+      'tofu': {'p': 8.0, 'c': 1.9, 'f': 4.8, 'cal': 76.0, 'defaultPortion': 100.0},
+      'soya chunks': {'p': 52.0, 'c': 33.0, 'f': 0.5, 'cal': 345.0, 'defaultPortion': 50.0},
+      'soy chunks': {'p': 52.0, 'c': 33.0, 'f': 0.5, 'cal': 345.0, 'defaultPortion': 50.0},
+      'nutrela': {'p': 52.0, 'c': 33.0, 'f': 0.5, 'cal': 345.0, 'defaultPortion': 50.0},
+      'fish': {'p': 22.0, 'c': 0.0, 'f': 6.0, 'cal': 142.0, 'defaultPortion': 150.0},
+      'salmon': {'p': 20.0, 'c': 0.0, 'f': 13.0, 'cal': 208.0, 'defaultPortion': 150.0},
+      'tuna': {'p': 28.0, 'c': 0.0, 'f': 1.0, 'cal': 130.0, 'defaultPortion': 120.0},
+
+      // Dairy & Plant Milks
+      'greek yogurt': {'p': 10.0, 'c': 3.6, 'f': 0.4, 'cal': 59.0, 'defaultPortion': 170.0},
+      'curd': {'p': 3.5, 'c': 4.4, 'f': 4.1, 'cal': 68.0, 'defaultPortion': 150.0},
+      'dahi': {'p': 3.5, 'c': 4.4, 'f': 4.1, 'cal': 68.0, 'defaultPortion': 150.0},
+      'milk': {'p': 3.2, 'c': 4.8, 'f': 3.5, 'cal': 64.0, 'defaultPortion': 250.0},
+
+      // Grains, Breads & Staples
+      'roti': {'p': 7.8, 'c': 46.0, 'f': 1.5, 'cal': 230.0, 'defaultPortion': 35.0},
+      'chapati': {'p': 7.8, 'c': 46.0, 'f': 1.5, 'cal': 230.0, 'defaultPortion': 35.0},
+      'paratha': {'p': 6.5, 'c': 42.0, 'f': 12.0, 'cal': 302.0, 'defaultPortion': 65.0},
+      'dal': {'p': 5.5, 'c': 14.5, 'f': 2.8, 'cal': 105.0, 'defaultPortion': 180.0},
+      'daal': {'p': 5.5, 'c': 14.5, 'f': 2.8, 'cal': 105.0, 'defaultPortion': 180.0},
+      'rice': {'p': 2.7, 'c': 28.2, 'f': 0.3, 'cal': 130.0, 'defaultPortion': 150.0},
+      'brown rice': {'p': 2.6, 'c': 25.6, 'f': 0.9, 'cal': 123.0, 'defaultPortion': 150.0},
+      'oats': {'p': 13.5, 'c': 68.0, 'f': 6.5, 'cal': 389.0, 'defaultPortion': 40.0},
+      'bread': {'p': 9.0, 'c': 49.0, 'f': 3.2, 'cal': 265.0, 'defaultPortion': 35.0},
+      'brown bread': {'p': 9.5, 'c': 46.0, 'f': 3.0, 'cal': 250.0, 'defaultPortion': 35.0},
+      'idli': {'p': 6.0, 'c': 28.0, 'f': 0.5, 'cal': 140.0, 'defaultPortion': 60.0},
+      'dosa': {'p': 5.0, 'c': 32.0, 'f': 6.0, 'cal': 202.0, 'defaultPortion': 80.0},
+      'sambar': {'p': 3.2, 'c': 8.5, 'f': 1.8, 'cal': 63.0, 'defaultPortion': 180.0},
+      'chole': {'p': 8.9, 'c': 27.4, 'f': 2.6, 'cal': 164.0, 'defaultPortion': 180.0},
+      'rajma': {'p': 8.7, 'c': 22.8, 'f': 0.8, 'cal': 127.0, 'defaultPortion': 180.0},
+      'khichdi': {'p': 4.5, 'c': 20.0, 'f': 3.5, 'cal': 130.0, 'defaultPortion': 200.0},
+      'poha': {'p': 3.5, 'c': 28.0, 'f': 5.0, 'cal': 171.0, 'defaultPortion': 150.0},
+      'upma': {'p': 4.0, 'c': 23.0, 'f': 6.0, 'cal': 162.0, 'defaultPortion': 150.0},
+      'biryani': {'p': 8.0, 'c': 24.0, 'f': 7.0, 'cal': 191.0, 'defaultPortion': 250.0},
+
+      // Fruits & Vegetables
+      'banana': {'p': 1.1, 'c': 22.8, 'f': 0.3, 'cal': 89.0, 'defaultPortion': 118.0},
+      'apple': {'p': 0.3, 'c': 13.8, 'f': 0.2, 'cal': 52.0, 'defaultPortion': 182.0},
+      'orange': {'p': 0.9, 'c': 11.8, 'f': 0.1, 'cal': 47.0, 'defaultPortion': 130.0},
+      'mango': {'p': 0.8, 'c': 15.0, 'f': 0.4, 'cal': 60.0, 'defaultPortion': 150.0},
+      'cucumber': {'p': 0.7, 'c': 3.6, 'f': 0.1, 'cal': 15.0, 'defaultPortion': 100.0},
+      'tomato': {'p': 0.9, 'c': 3.9, 'f': 0.2, 'cal': 18.0, 'defaultPortion': 100.0},
+      'salad': {'p': 1.2, 'c': 3.5, 'f': 0.2, 'cal': 20.0, 'defaultPortion': 150.0},
+
+      // Beverages with Calories
+      'tea': {'p': 0.5, 'c': 4.0, 'f': 0.8, 'cal': 25.0, 'defaultPortion': 150.0},
+      'coffee': {'p': 0.8, 'c': 5.0, 'f': 1.0, 'cal': 32.0, 'defaultPortion': 150.0},
+      'juice': {'p': 0.5, 'c': 11.5, 'f': 0.2, 'cal': 50.0, 'defaultPortion': 240.0},
+      'maaza': {'p': 0.1, 'c': 13.5, 'f': 0.1, 'cal': 54.0, 'defaultPortion': 250.0},
+      'maja': {'p': 0.1, 'c': 13.5, 'f': 0.1, 'cal': 54.0, 'defaultPortion': 250.0},
+
+      // Fats & Nuts
+      'ghee': {'p': 0.0, 'c': 0.0, 'f': 99.5, 'cal': 896.0, 'defaultPortion': 15.0},
+      'butter': {'p': 0.9, 'c': 0.1, 'f': 81.0, 'cal': 717.0, 'defaultPortion': 15.0},
+      'oil': {'p': 0.0, 'c': 0.0, 'f': 100.0, 'cal': 884.0, 'defaultPortion': 15.0},
+      'peanut butter': {'p': 25.0, 'c': 20.0, 'f': 50.0, 'cal': 588.0, 'defaultPortion': 32.0},
+      'almonds': {'p': 21.0, 'c': 22.0, 'f': 50.0, 'cal': 579.0, 'defaultPortion': 28.0},
+      'walnuts': {'p': 15.0, 'c': 14.0, 'f': 65.0, 'cal': 654.0, 'defaultPortion': 28.0},
     };
+
+    final sortedKeys = knowledgeBase.keys.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
 
     final segments = query
         .split(RegExp(r',|\band\b|\+|\&', caseSensitive: false))
@@ -449,11 +408,15 @@ class GeminiNutritionService {
         unit = explicitUnitMatch.group(2)!.toLowerCase();
       }
 
+      final isWater = NutritionCalculationService.isWaterOrZeroCalorie(foodName);
+
       String? matchedKey;
-      for (final key in knowledgeBase.keys) {
-        if (foodName.contains(key)) {
-          matchedKey = key;
-          break;
+      if (!isWater) {
+        for (final key in sortedKeys) {
+          if (foodName.contains(key)) {
+            matchedKey = key;
+            break;
+          }
         }
       }
 
@@ -480,12 +443,38 @@ class GeminiNutritionService {
       }
 
       double grams = 100.0;
-      double p = 5.0;
-      double c = 15.0;
-      double f = 3.0;
-      double cal = 107.0;
+      double p = 0.0;
+      double c = 0.0;
+      double f = 0.0;
+      double cal = 0.0;
 
-      if (matchedKey != null) {
+      if (isWater) {
+        p = 0.0;
+        c = 0.0;
+        f = 0.0;
+        cal = 0.0;
+        if (unit == 'l' ||
+            unit == 'litre' ||
+            unit == 'litres' ||
+            unit == 'liter' ||
+            unit == 'liters') {
+          grams = count * 1000.0;
+        } else if (unit == 'ml' ||
+            unit == 'millilitre' ||
+            unit == 'millilitres' ||
+            unit == 'milliliter' ||
+            unit == 'milliliters') {
+          grams = count;
+        } else if (unit == 'glass' || unit == 'cup') {
+          grams = count * 240.0;
+        } else if (unit == 'bottle') {
+          grams = count * 500.0;
+        } else if (unit == 'g' || unit == 'gram' || unit == 'grams') {
+          grams = count;
+        } else {
+          grams = count * 250.0;
+        }
+      } else if (matchedKey != null) {
         final info = knowledgeBase[matchedKey]!;
         p = info['p']!;
         c = info['c']!;
@@ -520,45 +509,85 @@ class GeminiNutritionService {
           grams = count * info['defaultPortion']!;
         }
       } else {
-        if (unit == 'l' ||
+        // Unknown food fallback: check if beverage or solid food
+        final isBeverage = unit == 'ml' ||
+            unit == 'l' ||
             unit == 'litre' ||
             unit == 'litres' ||
             unit == 'liter' ||
-            unit == 'liters') {
-          grams = count * 1000.0 * density;
-        } else if (unit == 'ml' ||
-            unit == 'millilitre' ||
-            unit == 'millilitres' ||
-            unit == 'milliliter' ||
-            unit == 'milliliters') {
-          grams = count;
-        } else if (unit == 'kg' || unit == 'kilogram' || unit == 'kilograms') {
-          grams = count * 1000.0;
-        } else if (unit == 'g' || unit == 'gram' || unit == 'grams') {
-          grams = count;
-        } else if (unit == 'glass' || unit == 'cup') {
-          grams = count * 240.0;
-        } else if (unit == 'bowl' || unit == 'katori') {
-          grams = count * 180.0;
+            unit == 'liters' ||
+            unit == 'glass' ||
+            unit == 'cup' ||
+            foodName.contains('drink') ||
+            foodName.contains('beverage') ||
+            foodName.contains('sip') ||
+            foodName.contains('shake') ||
+            foodName.contains('tea') ||
+            foodName.contains('coffee');
+
+        if (isBeverage) {
+          p = 0.2;
+          c = 5.0;
+          f = 0.2;
+          cal = 22.6; // (0.2*4 + 5.0*4 + 0.2*9)
+          if (unit == 'l' ||
+              unit == 'litre' ||
+              unit == 'litres' ||
+              unit == 'liter' ||
+              unit == 'liters') {
+            grams = count * 1000.0 * density;
+          } else if (unit == 'ml' ||
+              unit == 'millilitre' ||
+              unit == 'millilitres' ||
+              unit == 'milliliter' ||
+              unit == 'milliliters') {
+            grams = count;
+          } else if (unit == 'glass' || unit == 'cup') {
+            grams = count * 240.0;
+          } else {
+            grams = count * 200.0;
+          }
         } else {
-          final gramMatch = RegExp(
-            r'(\d+)\s*(g|grams|ml)\b',
-            caseSensitive: false,
-          ).firstMatch(seg);
-          if (gramMatch != null) {
-            grams = double.tryParse(gramMatch.group(1) ?? '') ?? 100.0;
+          p = 3.0;
+          c = 15.0;
+          f = 3.0;
+          cal = 99.0; // (3*4 + 15*4 + 3*9)
+          if (unit == 'kg' || unit == 'kilogram' || unit == 'kilograms') {
+            grams = count * 1000.0;
+          } else if (unit == 'g' || unit == 'gram' || unit == 'grams') {
+            grams = count;
+          } else if (unit == 'bowl' || unit == 'katori') {
+            grams = count * 180.0;
+          } else {
+            final gramMatch = RegExp(
+              r'(\d+)\s*(g|grams|ml)\b',
+              caseSensitive: false,
+            ).firstMatch(seg);
+            if (gramMatch != null) {
+              grams = double.tryParse(gramMatch.group(1) ?? '') ?? 100.0;
+            } else {
+              grams = count * 100.0;
+            }
           }
         }
       }
+
+      final sanitized = NutritionCalculationService.sanitizePer100gMacros(
+        name: foodName,
+        proteinPer100g: p,
+        carbsPer100g: c,
+        fatsPer100g: f,
+        caloriesPer100g: cal,
+      );
 
       ingredients.add(
         IngredientEstimate(
           name: seg.substring(0, 1).toUpperCase() + seg.substring(1),
           estimatedGrams: double.parse(grams.toStringAsFixed(1)),
-          proteinPer100g: double.parse(p.toStringAsFixed(1)),
-          carbsPer100g: double.parse(c.toStringAsFixed(1)),
-          fatsPer100g: double.parse(f.toStringAsFixed(1)),
-          caloriesPer100g: double.parse(cal.toStringAsFixed(1)),
+          proteinPer100g: sanitized.protein,
+          carbsPer100g: sanitized.carbs,
+          fatsPer100g: sanitized.fats,
+          caloriesPer100g: sanitized.calories,
         ),
       );
     }
@@ -611,19 +640,31 @@ class GeminiNutritionService {
             final ingredients = <IngredientEstimate>[];
             for (final item in rawIngredients) {
               if (item is Map<String, dynamic>) {
+                final name = (item['name'] as String?)?.trim() ?? 'Ingredient';
+                final grams =
+                    (item['estimatedGrams'] as num?)?.toDouble() ?? 100.0;
+                final p = (item['proteinPer100g'] as num?)?.toDouble() ?? 0.0;
+                final c = (item['carbsPer100g'] as num?)?.toDouble() ?? 0.0;
+                final f = (item['fatsPer100g'] as num?)?.toDouble() ?? 0.0;
+                final cal = (item['caloriesPer100g'] as num?)?.toDouble() ?? 0.0;
+
+                final sanitized =
+                    NutritionCalculationService.sanitizePer100gMacros(
+                      name: name,
+                      proteinPer100g: p,
+                      carbsPer100g: c,
+                      fatsPer100g: f,
+                      caloriesPer100g: cal,
+                    );
+
                 ingredients.add(
                   IngredientEstimate(
-                    name: (item['name'] as String?)?.trim() ?? 'Ingredient',
-                    estimatedGrams:
-                        (item['estimatedGrams'] as num?)?.toDouble() ?? 100.0,
-                    proteinPer100g:
-                        (item['proteinPer100g'] as num?)?.toDouble() ?? 0.0,
-                    carbsPer100g:
-                        (item['carbsPer100g'] as num?)?.toDouble() ?? 0.0,
-                    fatsPer100g:
-                        (item['fatsPer100g'] as num?)?.toDouble() ?? 0.0,
-                    caloriesPer100g:
-                        (item['caloriesPer100g'] as num?)?.toDouble() ?? 0.0,
+                    name: name,
+                    estimatedGrams: double.parse(grams.toStringAsFixed(1)),
+                    proteinPer100g: sanitized.protein,
+                    carbsPer100g: sanitized.carbs,
+                    fatsPer100g: sanitized.fats,
+                    caloriesPer100g: sanitized.calories,
                   ),
                 );
               }
@@ -863,39 +904,34 @@ class GeminiNutritionService {
           double f = (item['fats_per_100g'] as num?)?.toDouble() ?? 0.0;
           double cal = (item['calories_per_100g'] as num?)?.toDouble() ?? 0.0;
 
-          // TASK 13 SANITY & SAFETY CHECKS:
           // 1. Grams must be strictly positive
           if (grams <= 0) grams = 50.0;
 
-          // 2. Each macro must be non-negative
-          if (p < 0) p = 0.0;
-          if (c < 0) c = 0.0;
-          if (f < 0) f = 0.0;
-          if (cal < 0) cal = 0.0;
-
-          // 3. Calories per 100g must not exceed pure fat (900 kcal / 100g)
+          // 2. Calories per 100g warning check
           if (cal > 900.0) {
             debugPrint(
               '[GeminiNutritionService] Sanity warning: $name has suspicious $cal kcal/100g, clamping to 900.0',
             );
-            cal = 900.0;
             confidence = (confidence * 0.7).clamp(0.0, 1.0);
           }
 
-          // Macro plausibility check: pure fat gives max 900 kcal, pure protein/carb 400 kcal
-          final theoreticalMax = (p * 4) + (c * 4) + (f * 9);
-          if (cal <= 0 && theoreticalMax > 0) {
-            cal = theoreticalMax;
-          }
+          // 3. Full accurate macro and calorie sanitization
+          final sanitized = NutritionCalculationService.sanitizePer100gMacros(
+            name: name,
+            proteinPer100g: p,
+            carbsPer100g: c,
+            fatsPer100g: f,
+            caloriesPer100g: cal,
+          );
 
           ingredients.add(
             IngredientEstimate(
               name: name,
               estimatedGrams: double.parse(grams.toStringAsFixed(1)),
-              proteinPer100g: double.parse(p.toStringAsFixed(1)),
-              carbsPer100g: double.parse(c.toStringAsFixed(1)),
-              fatsPer100g: double.parse(f.toStringAsFixed(1)),
-              caloriesPer100g: double.parse(cal.toStringAsFixed(1)),
+              proteinPer100g: sanitized.protein,
+              carbsPer100g: sanitized.carbs,
+              fatsPer100g: sanitized.fats,
+              caloriesPer100g: sanitized.calories,
             ),
           );
         }

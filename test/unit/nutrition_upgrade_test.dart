@@ -154,5 +154,117 @@ void main() {
         ); // Clamped confidence penalty applied
       },
     );
+
+    test('GeminiNutritionService correctly parses water with 0 protein and 0 calories', () async {
+      final service = GeminiNutritionService();
+
+      // Test 1: Single glass of water
+      final draft1 = await service.analyzeMealText('1 glass of water');
+      expect(draft1.estimatedIngredients.length, equals(1));
+      final water1 = draft1.estimatedIngredients.first;
+      expect(water1.name.toLowerCase(), contains('water'));
+      expect(water1.estimatedGrams, equals(240.0));
+      expect(water1.proteinPer100g, equals(0.0));
+      expect(water1.carbsPer100g, equals(0.0));
+      expect(water1.fatsPer100g, equals(0.0));
+      expect(water1.caloriesPer100g, equals(0.0));
+      expect(water1.protein, equals(0.0));
+      expect(water1.calories, equals(0.0));
+      expect(draft1.totalProtein, equals(0.0));
+      expect(draft1.totalCalories, equals(0.0));
+
+      // Test 2: 500ml water
+      final draft2 = await service.analyzeMealText('500ml water');
+      expect(draft2.estimatedIngredients.length, equals(1));
+      final water2 = draft2.estimatedIngredients.first;
+      expect(water2.estimatedGrams, equals(500.0));
+      expect(water2.proteinPer100g, equals(0.0));
+      expect(water2.caloriesPer100g, equals(0.0));
+
+      // Test 3: Pani / Paani
+      final draft3 = await service.analyzeMealText('1 glass pani');
+      expect(draft3.estimatedIngredients.first.proteinPer100g, equals(0.0));
+      expect(draft3.estimatedIngredients.first.caloriesPer100g, equals(0.0));
+    });
+
+    test('GeminiNutritionService meal with rotis, dal, and water calculates accurate calories without protein in water', () async {
+      final service = GeminiNutritionService();
+      final draft = await service.analyzeMealText('Two rotis, one bowl of dal, and 1 glass of water');
+
+      expect(draft.estimatedIngredients.length, equals(3));
+
+      // Rotis: 70g (2 * 35g)
+      final rotis = draft.estimatedIngredients[0];
+      expect(rotis.name.toLowerCase(), contains('roti'));
+      expect(rotis.estimatedGrams, equals(70.0));
+      expect(rotis.proteinPer100g, equals(7.8));
+      expect(rotis.protein, closeTo(5.46, 0.01));
+
+      // Dal: 180g
+      final dal = draft.estimatedIngredients[1];
+      expect(dal.name.toLowerCase(), contains('dal'));
+      expect(dal.estimatedGrams, equals(180.0));
+      expect(dal.proteinPer100g, equals(5.5));
+      expect(dal.protein, closeTo(9.9, 0.01));
+
+      // Water: 240g
+      final water = draft.estimatedIngredients[2];
+      expect(water.name.toLowerCase(), contains('water'));
+      expect(water.estimatedGrams, equals(240.0));
+      expect(water.proteinPer100g, equals(0.0));
+      expect(water.caloriesPer100g, equals(0.0));
+      expect(water.protein, equals(0.0));
+      expect(water.calories, equals(0.0));
+
+      // Total Protein strictly equals roti protein + dal protein (water adds 0!)
+      expect(draft.totalProtein, closeTo(rotis.protein + dal.protein, 0.01));
+      expect(draft.totalCalories, closeTo(rotis.calories + dal.calories, 0.01));
+    });
+
+    test('parseGeminiResponse sanitizes hallucinated macros for water to 0.0', () {
+      final service = GeminiNutritionService();
+      const hallucinatedJson = '''
+      {
+        "meal_name": "Meal with Water",
+        "confidence": 0.90,
+        "ingredients": [
+          {
+            "name": "Glass of Water",
+            "estimated_grams": 250.0,
+            "protein_per_100g": 4.5,
+            "carbs_per_100g": 10.0,
+            "fats_per_100g": 2.0,
+            "calories_per_100g": 80.0
+          },
+          {
+            "name": "Grilled Chicken",
+            "estimated_grams": 150.0,
+            "protein_per_100g": 31.0,
+            "carbs_per_100g": 0.0,
+            "fats_per_100g": 3.6,
+            "calories_per_100g": 165.0
+          }
+        ]
+      }
+      ''';
+
+      final draft = service.parseGeminiResponse(hallucinatedJson);
+      expect(draft.estimatedIngredients.length, equals(2));
+
+      // Water was sanitized to 0
+      final water = draft.estimatedIngredients[0];
+      expect(water.proteinPer100g, equals(0.0));
+      expect(water.carbsPer100g, equals(0.0));
+      expect(water.fatsPer100g, equals(0.0));
+      expect(water.caloriesPer100g, equals(0.0));
+      expect(water.protein, equals(0.0));
+      expect(water.calories, equals(0.0));
+
+      // Chicken preserved
+      final chicken = draft.estimatedIngredients[1];
+      expect(chicken.proteinPer100g, equals(31.0));
+      expect(chicken.caloriesPer100g, equals(165.0));
+      expect(chicken.protein, closeTo(46.5, 0.01));
+    });
   });
 }

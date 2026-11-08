@@ -209,6 +209,137 @@ class NutritionCalculationService {
     );
   }
 
+  /// Checks whether an ingredient or drink name represents pure water or zero-calorie hydration/drinks.
+  static bool isWaterOrZeroCalorie(String name) {
+    final lower = name.toLowerCase().trim();
+    if (lower.isEmpty) return false;
+
+    // Direct matches
+    if (lower == 'water' ||
+        lower == 'pani' ||
+        lower == 'paani' ||
+        lower == 'aqua' ||
+        lower == 'h2o' ||
+        lower == 'plain water' ||
+        lower.contains('drinking water') ||
+        lower.contains('mineral water') ||
+        lower.contains('tap water') ||
+        lower.contains('ice water') ||
+        lower.contains('boiled water') ||
+        lower.contains('warm water') ||
+        lower.contains('cold water') ||
+        lower.contains('sparkling water') ||
+        lower.contains('soda water') ||
+        lower.contains('club soda') ||
+        lower.contains('diet coke') ||
+        lower.contains('coke zero') ||
+        lower.contains('diet pepsi') ||
+        lower.contains('diet soda') ||
+        lower.contains('zero calorie') ||
+        lower.contains('zero sugar')) {
+      return true;
+    }
+
+    final tokens = lower.split(RegExp(r'[\s,_\-\/\(\)]+'));
+    return tokens.contains('water') ||
+        tokens.contains('pani') ||
+        tokens.contains('paani');
+  }
+
+  /// Calculates accurate physiological calories using 4-4-9 Atwater factors:
+  /// Protein: 4 kcal/g, Carbohydrates: 4 kcal/g, Fats: 9 kcal/g.
+  /// Reconciles reported calories against physical macronutrient boundaries.
+  static double calculateAccurateCalories({
+    required double proteinGrams,
+    required double carbsGrams,
+    required double fatGrams,
+    double? reportedCalories,
+    bool isZeroCalorie = false,
+  }) {
+    if (isZeroCalorie) return 0.0;
+
+    final p = proteinGrams < 0 ? 0.0 : proteinGrams;
+    final c = carbsGrams < 0 ? 0.0 : carbsGrams;
+    final f = fatGrams < 0 ? 0.0 : fatGrams;
+
+    if (p == 0.0 && c == 0.0 && f == 0.0) {
+      return 0.0;
+    }
+
+    final atwater = (p * 4.0) + (c * 4.0) + (f * 9.0);
+    final theoreticalMin =
+        (p * 4.0) + (f * 9.0); // If all carbs were non-digestible fiber
+
+    if (reportedCalories == null || reportedCalories <= 0) {
+      return double.parse(atwater.toStringAsFixed(1));
+    }
+
+    // Allow minor dietary fiber variation (up to ~15% below theoretical max),
+    // but reconcile if physically impossible (e.g. > atwater * 1.15 + 5 or < theoreticalMin * 0.8 - 5)
+    if (reportedCalories > (atwater * 1.15 + 5.0) ||
+        reportedCalories < (theoreticalMin * 0.8 - 5.0)) {
+      return double.parse(atwater.toStringAsFixed(1));
+    }
+
+    return double.parse(reportedCalories.toStringAsFixed(1));
+  }
+
+  /// Sanitizes per-100g nutritional facts:
+  /// - Enforces 0 macros and 0 calories for water and zero-calorie items
+  /// - Clamps negative values to 0
+  /// - Ensures sum of macros per 100g does not exceed 100g
+  /// - Enforces 900 kcal/100g upper bound
+  /// - Calculates accurate calories using Atwater formula when missing or aberrant
+  static ({
+    double protein,
+    double carbs,
+    double fats,
+    double calories,
+  }) sanitizePer100gMacros({
+    required String name,
+    required double proteinPer100g,
+    required double carbsPer100g,
+    required double fatsPer100g,
+    required double caloriesPer100g,
+  }) {
+    if (isWaterOrZeroCalorie(name)) {
+      return (protein: 0.0, carbs: 0.0, fats: 0.0, calories: 0.0);
+    }
+
+    double p = proteinPer100g < 0 ? 0.0 : proteinPer100g;
+    double c = carbsPer100g < 0 ? 0.0 : carbsPer100g;
+    double f = fatsPer100g < 0 ? 0.0 : fatsPer100g;
+    double cal = caloriesPer100g < 0 ? 0.0 : caloriesPer100g;
+
+    // Physical constraint: protein + carbs + fat cannot exceed 100g per 100g
+    final macroSum = p + c + f;
+    if (macroSum > 100.0) {
+      final factor = 98.0 / macroSum;
+      p = double.parse((p * factor).toStringAsFixed(1));
+      c = double.parse((c * factor).toStringAsFixed(1));
+      f = double.parse((f * factor).toStringAsFixed(1));
+    }
+
+    // Enforce 900 kcal/100g pure fat upper bound
+    if (cal > 900.0) {
+      cal = 900.0;
+    }
+
+    cal = calculateAccurateCalories(
+      proteinGrams: p,
+      carbsGrams: c,
+      fatGrams: f,
+      reportedCalories: cal,
+    );
+
+    return (
+      protein: double.parse(p.toStringAsFixed(1)),
+      carbs: double.parse(c.toStringAsFixed(1)),
+      fats: double.parse(f.toStringAsFixed(1)),
+      calories: double.parse(cal.toStringAsFixed(1)),
+    );
+  }
+
   /// Calculates nutritional values for a specified quantity in grams.
   ///
   /// Formula: $(per100g * quantityGrams) / 100.0$

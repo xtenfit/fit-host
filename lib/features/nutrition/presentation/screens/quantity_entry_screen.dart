@@ -9,6 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/food_item.dart';
 import '../../domain/models/meal_entry.dart';
 import '../../domain/models/photo_meal_draft.dart';
+import '../../domain/services/nutrition_calculation_service.dart';
 import '../controllers/nutrition_controller.dart';
 
 class QuantityEntryScreen extends ConsumerStatefulWidget {
@@ -142,7 +143,16 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
   double get _computedProtein => (_proteinPer100g * _quantityGrams) / 100;
   double get _computedCarbs => (_carbsPer100g * _quantityGrams) / 100;
   double get _computedFats => (_fatsPer100g * _quantityGrams) / 100;
-  double get _computedCalories => (_caloriesPer100g * _quantityGrams) / 100;
+  double get _computedCalories {
+    final raw = (_caloriesPer100g * _quantityGrams) / 100;
+    if (raw <= 0 &&
+        (_computedProtein > 0 || _computedCarbs > 0 || _computedFats > 0)) {
+      return (_computedProtein * 4.0) +
+          (_computedCarbs * 4.0) +
+          (_computedFats * 9.0);
+    }
+    return raw;
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -237,22 +247,31 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
           ElevatedButton(
             onPressed: () {
               if (nameCtrl.text.trim().isNotEmpty) {
+                final rawName = nameCtrl.text.trim();
                 final g = double.tryParse(gramsCtrl.text) ?? 50.0;
                 final p = double.tryParse(pCtrl.text) ?? 0.0;
                 final c = double.tryParse(cCtrl.text) ?? 0.0;
                 final f = double.tryParse(fCtrl.text) ?? 0.0;
-                final cal =
-                    double.tryParse(calCtrl.text) ??
-                    ((p * 4) + (c * 4) + (f * 9));
-                setState(() {
-                  _ingredients.add(
-                    IngredientEstimate(
-                      name: nameCtrl.text.trim(),
-                      estimatedGrams: g,
+                final cal = double.tryParse(calCtrl.text) ?? 0.0;
+
+                final sanitized =
+                    NutritionCalculationService.sanitizePer100gMacros(
+                      name: rawName,
                       proteinPer100g: p,
                       carbsPer100g: c,
                       fatsPer100g: f,
                       caloriesPer100g: cal,
+                    );
+
+                setState(() {
+                  _ingredients.add(
+                    IngredientEstimate(
+                      name: rawName,
+                      estimatedGrams: g,
+                      proteinPer100g: sanitized.protein,
+                      carbsPer100g: sanitized.carbs,
+                      fatsPer100g: sanitized.fats,
+                      caloriesPer100g: sanitized.calories,
                     ),
                   );
                   _quantityGrams = _ingredients.fold(
@@ -343,12 +362,19 @@ class _QuantityEntryScreenState extends ConsumerState<QuantityEntryScreen> {
       presets = widget.food!.servingPresets;
     } else if (widget.photoDraft != null && widget.photoDraft!.totalGrams > 0) {
       final draftG = widget.photoDraft!.totalGrams;
+      final isWater = NutritionCalculationService.isWaterOrZeroCalorie(foodName);
       presets = [
         ServingPreset(label: '${draftG.toInt()}g (detected)', grams: draftG),
-        const ServingPreset(label: '100g', grams: 100),
-        const ServingPreset(label: '1 cup (240g)', grams: 240),
-        if (draftG >= 500)
-          const ServingPreset(label: '1 litre (1000g)', grams: 1000),
+        if (isWater) ...[
+          const ServingPreset(label: '1 glass (240ml)', grams: 240),
+          const ServingPreset(label: '1 bottle (500ml)', grams: 500),
+          const ServingPreset(label: '1 litre (1000ml)', grams: 1000),
+        ] else ...[
+          const ServingPreset(label: '100g', grams: 100),
+          const ServingPreset(label: '1 cup (240g)', grams: 240),
+          if (draftG >= 500)
+            const ServingPreset(label: '1 litre (1000g)', grams: 1000),
+        ],
       ];
     } else {
       presets = const [
