@@ -8,7 +8,7 @@ import { getAllGuides, GuideArticle } from "@/lib/data/guides";
 export const metadata: Metadata = {
   title: "Guides & Tutorials — Master Fit Host Mobile Features",
   description:
-    "Explore in-depth setup tutorials and educational guides for Fit Host: workout logging, guest mode, macro tracking, cloud synchronization, and troubleshooting.",
+    "Explore in-depth setup tutorials and educational guides for Fit Host: workout logging, account setup, macro tracking, cloud synchronization, and troubleshooting.",
 };
 
 const categories = [

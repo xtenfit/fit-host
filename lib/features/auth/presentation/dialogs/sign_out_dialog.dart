@@ -28,11 +28,11 @@ class _SignOutDialogState extends ConsumerState<SignOutDialog> {
       if (mounted) {
         setState(() => _isSigningOut = false);
         Navigator.of(context).pop(true);
-        context.go('/home');
+        context.go('/auth-decision');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Signed out. You are now using Fit Host in Guest mode with local data storage.',
+              'Signed out successfully. Please sign in to access your account.',
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -85,7 +85,7 @@ class _SignOutDialogState extends ConsumerState<SignOutDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'You will return to guest mode. Your local fitness workouts, nutrition logs, and steps stored on this device will be preserved.',
+            'You will be signed out of your Fit Host account. Please sign in or register to access your workouts, nutrition logs, and synchronized fitness data.',
             style: TextStyle(
               fontSize: 13,
               height: 1.45,

@@ -39,7 +39,7 @@ void main() {
     );
 
     test(
-      'Condition 1: New guest user who chose continue as guest is routed to /setup-wizard',
+      'Condition 1: Unauthenticated user is always routed to /auth-decision',
       () async {
         final service = StartupGateService();
         await service.setAuthDecisionMade(true);
@@ -50,12 +50,12 @@ void main() {
           userId: null,
         );
 
-        expect(route, equals('/setup-wizard'));
+        expect(route, equals('/auth-decision'));
       },
     );
 
     test(
-      'Returning guest who completed onboarding routes directly to /home',
+      'Unauthenticated user cannot bypass auth even with completed flags',
       () async {
         final service = StartupGateService();
         await service.setFirstLaunchCompleted(true);
@@ -68,7 +68,7 @@ void main() {
           userId: null,
         );
 
-        expect(route, equals('/home'));
+        expect(route, equals('/auth-decision'));
       },
     );
 

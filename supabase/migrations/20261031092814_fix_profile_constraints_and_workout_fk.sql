@@ -30,3 +30,4 @@ ALTER TABLE public.profiles ADD CONSTRAINT profiles_gender_check
 
 -- 2. Drop rigid foreign key from workout_exercises to exercises catalog
 ALTER TABLE public.workout_exercises DROP CONSTRAINT IF EXISTS workout_exercises_exercise_id_fkey;
+

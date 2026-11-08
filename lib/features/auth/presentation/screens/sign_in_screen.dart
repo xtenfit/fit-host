@@ -542,26 +542,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-
-                      // Continue as Guest
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            ref.read(authProvider.notifier).setManualGuest();
-                            context.go('/home');
-                          },
-                          child: Text(
-                            'Continue in Guest Mode (Local Storage)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? AppColors.darkTextTertiary
-                                  : AppColors.lightTextTertiary,
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),

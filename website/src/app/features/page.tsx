@@ -11,7 +11,7 @@ import { getAllFeatures } from "@/lib/data/features";
 export const metadata: Metadata = {
   title: "Features — Workouts, Hydration, Nutrition & Secure Sync",
   description:
-    "Explore Fit Host's verified mobile features: fast fitness tracking with secure cloud sync, hydration tracking, macro nutrition management, and guest mode with local data storage.",
+    "Explore Fit Host's verified mobile features: fast fitness tracking with secure cloud sync, hydration tracking, macro nutrition management, and encrypted user accounts with offline resilience.",
 };
 
 export default function FeaturesPage() {

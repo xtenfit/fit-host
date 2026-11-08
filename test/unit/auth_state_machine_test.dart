@@ -7,18 +7,19 @@ void main() {
   group('Part 2: AuthStateMachine Lifecycle & Offline Grace Tests', () {
     late ProviderContainer container;
 
-    setUp(() {
+    setUp(() async {
       container = ProviderContainer();
+      await container.read(authStateMachineProvider.future);
     });
 
     tearDown(() {
       container.dispose();
     });
 
-    test('Initial state defaults to guest status', () async {
+    test('Initial state defaults to unauthenticated status', () async {
       final state = await container.read(authStateMachineProvider.future);
-      expect(state.status, equals(AuthStatus.guest));
-      expect(state.isGuest, isTrue);
+      expect(state.status, equals(AuthStatus.unauthenticated));
+      expect(state.isGuest, isFalse);
       expect(state.isAuthenticated, isFalse);
     });
 
@@ -94,7 +95,7 @@ void main() {
       },
     );
 
-    test('Explicit sign out transitions through signedOut to guest', () async {
+    test('Explicit sign out transitions to signedOut', () async {
       final notifier = container.read(authStateMachineProvider.notifier);
 
       final mockUser = User(
@@ -115,8 +116,8 @@ void main() {
       await notifier.signOut();
 
       final state = container.read(authStateMachineProvider).value!;
-      expect(state.status, equals(AuthStatus.guest));
-      expect(state.isGuest, isTrue);
+      expect(state.status, equals(AuthStatus.signedOut));
+      expect(state.isGuest, isFalse);
       expect(state.isAuthenticated, isFalse);
     });
 

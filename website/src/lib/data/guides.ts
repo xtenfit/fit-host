@@ -24,7 +24,7 @@ export const guidesData: GuideArticle[] = [
     slug: "getting-started",
     title: "Getting Started with Fit Host",
     summary:
-      "A complete walkthrough of installing Fit Host, setting up your profile, and logging your first session either as a guest or with a cloud account.",
+      "A complete walkthrough of installing Fit Host, signing in with your account, setting up your profile, and logging your first session.",
     category: "Getting Started",
     updatedDate: "October 19, 2026",
     readTime: "4 min read",
@@ -39,10 +39,10 @@ export const guidesData: GuideArticle[] = [
       },
       {
         stepNumber: 2,
-        title: "Choose Guest Mode or Sign Up",
+        title: "Sign In with Google or Email",
         description:
-          "You can tap 'Continue as Guest' to start logging instantly without entering any personal info. Or tap 'Create Account' using your email or Google OAuth to enable continuous cloud backup.",
-        tip: "Guest data stays securely on your phone. You can always create an account later and merge your history.",
+          "Sign in with One-Tap Google OAuth or fast 6-digit email OTP. Fit Host requires an authenticated account to guarantee continuous cloud backup and biometric privacy.",
+        tip: "Your account includes encrypted cloud sync so you can switch phones without losing your workout records.",
       },
       {
         stepNumber: 3,
@@ -58,17 +58,17 @@ export const guidesData: GuideArticle[] = [
       },
     ],
     keyTakeaways: [
-      "No account required to start tracking.",
-      "All logs save locally to your device first.",
-      "Cloud backup can be activated at any time.",
+      "Secure account required for automatic cloud backup.",
+      "All logs save locally first with offline grace.",
+      "Cloud sync automatically backs up your progress.",
     ],
-    relatedGuideSlugs: ["guest-mode-vs-account", "logging-workouts"],
+    relatedGuideSlugs: ["secure-account-and-cloud-sync", "logging-workouts"],
   },
   {
-    slug: "guest-mode-vs-account",
-    title: "Guest Mode vs. Cloud Account: Which Should You Choose?",
+    slug: "secure-account-and-cloud-sync",
+    title: "Secure Accounts & Cloud Sync: Why Login is Required",
     summary:
-      "Understand the differences between local-only guest storage and Supabase cloud synchronization, and how account linking seamlessly preserves your history.",
+      "Learn why Fit Host requires an authenticated account to protect your training records, ensure continuous cloud backup, and provide privacy.",
     category: "Getting Started",
     updatedDate: "October 18, 2026",
     readTime: "3 min read",
@@ -77,27 +77,27 @@ export const guidesData: GuideArticle[] = [
     steps: [
       {
         stepNumber: 1,
-        title: "Understanding Guest Mode",
+        title: "Why Accounts are Required",
         description:
-          "Guest mode writes directly to the embedded Drift SQLite database on your device. It requires zero network connectivity and zero credentials. However, if you uninstall the app or clear device storage, local data cannot be restored.",
+          "Fit Host requires every user to log in with an account to prevent catastrophic data loss if your phone is replaced, dropped, or reset. Every record is protected by PostgreSQL Row Level Security (RLS).",
       },
       {
         stepNumber: 2,
-        title: "Understanding Cloud Accounts",
+        title: "Encrypted Cloud Backup",
         description:
-          "When you register with email/password or Google OAuth, Fit Host assigns you an authenticated Supabase UUID protected by PostgreSQL Row Level Security (RLS). All workouts, hydration logs, and profile metrics are backed up to the cloud in real-time.",
+          "When you sign in using Email or Google OAuth, Fit Host assigns you an authenticated Supabase UUID. All workouts, hydration logs, and nutrition metrics back up to the cloud in real-time.",
       },
       {
         stepNumber: 3,
-        title: "Upgrading from Guest to Cloud Account",
+        title: "Seamless Offline Logging",
         description:
-          "If you start as a guest and decide to sign up later, Fit Host automatically checks your local Drift database and migrates all existing records to your new cloud account so you never lose a set.",
+          "Fit Host still retains full offline capabilities: even with no cellular service or internet, you can log workouts and meals locally. The moment your connection recovers, changes sync automatically.",
       },
     ],
     keyTakeaways: [
-      "Guest mode is 100% private and offline-contained.",
-      "Cloud accounts provide multi-device sync and disaster recovery.",
-      "Automatic data migration guarantees zero data loss upon upgrading.",
+      "Account login is mandatory for all users to prevent data loss.",
+      "All data is protected by Supabase Row Level Security (RLS).",
+      "Full offline capability remains available for authenticated accounts.",
     ],
     relatedGuideSlugs: ["getting-started", "cloud-sync-architecture"],
   },
@@ -259,7 +259,7 @@ export const guidesData: GuideArticle[] = [
       "PostgreSQL RLS ensures total privacy and isolation.",
       "Automatic background queue synchronizes when connection returns.",
     ],
-    relatedGuideSlugs: ["troubleshooting-sync", "guest-mode-vs-account"],
+    relatedGuideSlugs: ["troubleshooting-sync", "secure-account-and-cloud-sync"],
   },
   {
     slug: "troubleshooting-sync",
@@ -282,7 +282,7 @@ export const guidesData: GuideArticle[] = [
         stepNumber: 2,
         title: "Verify Your Authentication State",
         description:
-          "If you are using Guest Mode, your data is stored locally and does not sync to the cloud. Go to Profile to check if you are signed in. If your session expired, sign in again to resume synchronization.",
+          "Check Profile to confirm your session is active. If your session expired or you changed your password, sign in again to resume synchronization.",
       },
       {
         stepNumber: 3,
@@ -298,7 +298,7 @@ export const guidesData: GuideArticle[] = [
       },
     ],
     keyTakeaways: [
-      "Guest mode does not sync to cloud—create an account to enable backup.",
+      "Sign in with your verified account to enable cloud backup and multi-device sync.",
       "Swipe down to force a manual sync pass at any time.",
       "Data is never deleted locally if a cloud sync attempt fails.",
     ],

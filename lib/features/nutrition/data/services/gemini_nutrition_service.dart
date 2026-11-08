@@ -296,7 +296,7 @@ class GeminiNutritionService {
       'boiled egg': {'p': 12.6, 'c': 0.7, 'f': 9.9, 'cal': 143.0, 'defaultPortion': 50.0},
       'egg': {'p': 12.6, 'c': 0.7, 'f': 9.9, 'cal': 143.0, 'defaultPortion': 50.0},
       'chicken breast': {'p': 31.0, 'c': 0.0, 'f': 3.6, 'cal': 165.0, 'defaultPortion': 150.0},
-      'chicken': {'p': 27.0, 'c': 0.0, 'f': 7.0, 'cal': 171.0, 'defaultPortion': 150.0},
+      'chicken': {'p': 31.0, 'c': 0.0, 'f': 3.6, 'cal': 165.0, 'defaultPortion': 150.0},
       'paneer': {'p': 18.3, 'c': 2.5, 'f': 20.8, 'cal': 265.0, 'defaultPortion': 100.0},
       'tofu': {'p': 8.0, 'c': 1.9, 'f': 4.8, 'cal': 76.0, 'defaultPortion': 100.0},
       'soya chunks': {'p': 52.0, 'c': 33.0, 'f': 0.5, 'cal': 345.0, 'defaultPortion': 50.0},

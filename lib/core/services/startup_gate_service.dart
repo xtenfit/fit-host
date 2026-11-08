@@ -354,23 +354,8 @@ class StartupGateService {
       return '/setup-wizard';
     }
 
-    // 2. Unauthenticated / Guest Flow (Condition 1 & 1st screen: Auth Screen)
-    final guestDone = await isGuestOnboardingCompleted();
-    if (guestDone || isProfileSetupCompleted) {
-      if (isProfileSetupCompleted && !guestDone) {
-        await setGuestOnboardingCompleted(true);
-      }
-      return '/home';
-    }
-
-    // If guest chose "Continue as Guest" (auth decision made) and is a new guest user:
-    final authDecisionDone = await isAuthDecisionMade();
-    if (authDecisionDone) {
-      // Condition 1: Always launch wizard screen for new guest user
-      return '/setup-wizard';
-    }
-
-    // Fresh user: 1st show Auth Screen!
+    // 2. Unauthenticated Flow: Authentication is mandatory.
+    // Guest mode is completely removed. Every user must log in or sign up.
     return '/auth-decision';
   }
 }

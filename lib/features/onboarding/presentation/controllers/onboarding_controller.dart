@@ -449,8 +449,8 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     _autoSave();
   }
 
-  Future<void> completeOnboarding({required bool isGuest}) async {
-    state = state.copyWith(isCompleted: true, isGuest: isGuest);
+  Future<void> completeOnboarding({bool isGuest = false}) async {
+    state = state.copyWith(isCompleted: true, isGuest: false);
     await _repository.completeOnboarding(state);
 
     // Synchronize into UserProfile
@@ -476,7 +476,7 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
       await ref
           .read(userProfileProvider.notifier)
           .saveSuggestedPlan(
-            name: isGuest ? 'Guest Athlete' : 'Athlete',
+            name: 'Athlete',
             age: state.age,
             gender: state.gender ?? 'male',
             heightCm: state.heightCm,
@@ -510,15 +510,13 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     try {
       final gate = ref.read(startupGateServiceProvider);
       await gate.setFirstLaunchCompleted(true);
-      if (isGuest) {
-        await gate.setAuthDecisionMade(true);
-      }
+      await gate.setAuthDecisionMade(true);
     } catch (_) {}
 
     AnalyticsService.instance
         .track(
           AnalyticsEvents.onboardingCompleted,
-          properties: {'is_guest': isGuest},
+          properties: {'is_guest': false},
         )
         .ignore();
   }

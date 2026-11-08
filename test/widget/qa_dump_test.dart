@@ -36,7 +36,7 @@ void main() {
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
-          authStatusProvider.overrideWithValue(AuthStatus.guest),
+          authStatusProvider.overrideWithValue(AuthStatus.authenticated),
         ],
         child: const MaterialApp(home: Scaffold(body: StepsScreen())),
       ),
@@ -49,7 +49,6 @@ void main() {
     expect(find.text('Active Time'), findsOneWidget);
     expect(find.text('Calories'), findsOneWidget);
     expect(find.text('7-Day Movement Trend'), findsOneWidget);
-    expect(find.text('Today Only'), findsOneWidget);
 
     debugPrint('=== STEPS SCREEN WIDGET TREE VERIFIED ===');
     db.close().ignore();
@@ -64,7 +63,7 @@ void main() {
         ProviderScope(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            authStatusProvider.overrideWithValue(AuthStatus.authenticated),
           ],
           child: const MaterialApp(home: CalendarScreen()),
         ),

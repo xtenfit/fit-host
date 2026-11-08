@@ -15,6 +15,33 @@ export interface ReleaseUpdate {
 
 export const releasesData: ReleaseUpdate[] = [
   {
+    slug: "v2-2-0-mandatory-account-auth-and-nutrition-accuracy",
+    version: "v2.2.0",
+    title: "Mandatory Secure Accounts, Accurate Meal Calculations & Water Zero-Macros",
+    releaseDate: "November 8, 2026",
+    summary:
+      "A security and precision overhaul requiring authenticated accounts for all users to guarantee permanent cloud backup and biometric privacy, while upgrading AI nutrition estimation to use exact physical Atwater formulas with zero-macro enforcement for water and non-caloric drinks.",
+    status: "published",
+    categories: ["Features", "Fixes", "Improvements", "Architecture"],
+    newFeatures: [
+      "Strict Account Authentication: Guest mode is completely removed; every user signs in via One-Tap Google OAuth or email OTP to ensure zero data loss.",
+      "Atwater Nutrition Precision: Real-time calorie computation using exact 4P + 4C + 9F formula with realistic fiber bounds.",
+      "Hydration Zero-Macro Enforcement: Pure water (drinking water, mineral water, ice, sparkling water) and black coffee/tea strictly report 0 kcal and 0g macros.",
+      "Expanded 648-Item Food Library: Verified nutrition catalog expanded with regional staples, hydration volume presets, and high-protein foods.",
+    ],
+    improvements: [
+      "Immediate data adoption: Silently migrates any existing legacy device records into the user's verified account on login.",
+      "Removed all locked guest dialogs and banners, unlocking 7-day movement trends and multi-week volume charts for all users.",
+      "Enhanced auth guard with automatic redirect to login for unauthenticated requests.",
+    ],
+    bugFixes: [
+      "Fixed bug where unlisted hydration (e.g. water) defaulted to 12g protein and 256 kcal.",
+      "Eliminated guest mode bypasses and race conditions during app startup.",
+    ],
+    knownIssues: [],
+    platformNotes: "Compatible with Android 8.0+ and iOS 14.0+. Supabase RLS enforced on all tables.",
+  },
+  {
     slug: "v1-3-0-animated-onboarding-exercise-gifs",
     version: "v1.3.0",
     title: "Premium Animated Onboarding Wizard, 1,324+ Exercise GIFs & Anatomical Targeting",
@@ -62,7 +89,7 @@ export const releasesData: ReleaseUpdate[] = [
       "Google One-Tap and OAuth login with seamless native callback support (io.supabase.fithost://login-callback).",
       "Email OTP 6-digit verification code workflow for passwordless account confirmation.",
       "Biometric app lock support with local device keychain integration.",
-      "Guest-to-Authenticated account migration: Workouts logged as guest merge into your permanent cloud account upon sign-in.",
+      "Legacy data adoption: Workouts and logs merge automatically into your verified cloud account upon sign-in.",
     ],
     improvements: [
       "Optimized memory footprint when loading 30-day workout history charts.",
@@ -74,7 +101,7 @@ export const releasesData: ReleaseUpdate[] = [
       "Resolved RenderFlex overflow in Alarm and Reminder sound selection screen.",
       "Fixed overlapping text in Nutrition macro breakdown on smaller Android screens.",
       "Corrected workout completion summary to accurately aggregate multiple exercises and sets.",
-      "Prevented race condition in local SQLite cache when switching between guest and authenticated modes.",
+      "Prevented race condition in local SQLite cache during account session transitions.",
     ],
     knownIssues: [
       "Pedometer step count on some Samsung devices requires disabling battery optimization for continuous background tracking.",
@@ -113,16 +140,15 @@ export const releasesData: ReleaseUpdate[] = [
     platformNotes: "Compatible with Android and iOS. Built with Flutter 3.24+.",
   },
   {
-    slug: "v1-9-0-offline-foundation-guest-mode",
+    slug: "v1-9-0-offline-foundation-local-drift",
     version: "v1.9.0",
-    title: "Fast Local Drift SQLite Engine & Guest Mode",
+    title: "Fast Local Drift SQLite Engine & Offline Foundation",
     releaseDate: "August 20, 2026",
     summary:
-      "Introduced zero-barrier onboarding with Guest Mode and an embedded Drift SQLite database allowing instant local usage without an account.",
+      "Introduced an embedded Drift SQLite database allowing instant local persistence and zero-network workout execution.",
     status: "published",
     categories: ["Features", "Architecture"],
     newFeatures: [
-      "Guest Mode: Use the full workout logger immediately without creating an account.",
       "Embedded Drift SQLite database engine for local persistence.",
       "Custom notification reminder service for daily workouts and hydration prompts.",
     ],
@@ -134,7 +160,7 @@ export const releasesData: ReleaseUpdate[] = [
       "Fixed notification icon tinting on Android 13+ themed icons.",
     ],
     knownIssues: [
-      "Guest mode data is saved only on the local device until account creation.",
+      "Cloud sync requires account authentication.",
     ],
     platformNotes: "Initial release of the new local database schema v1.",
   },

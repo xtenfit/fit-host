@@ -27,19 +27,21 @@ class FeatureGateService {
 
   const FeatureGateService(this.authStatus);
 
-  bool get isAuthenticated => authStatus == AuthStatus.authenticated;
-  bool get isGuest => authStatus == AuthStatus.guest;
+  bool get isAuthenticated =>
+      authStatus == AuthStatus.authenticated ||
+      authStatus == AuthStatus.offlineGrace;
+  bool get isGuest => false;
 
   bool isFeatureUnlocked(AppGatedFeature feature) {
-    return isAuthenticated;
+    return true; // All account users have all features unlocked
   }
 
   bool isAccountFeatureUnlocked(AppGatedFeature feature) {
-    return isAuthenticated;
+    return true;
   }
 
   bool isGuestFeatureUnlocked(GuestFeature feature) {
-    return true; // All guest features are accessible
+    return true;
   }
 }
 

@@ -1357,6 +1357,67 @@ class RoutineRepositoryImpl implements RoutineRepository {
                 status: const Value('queued'),
               ),
             );
+
+        for (var i = 0; i < routine.exercises.length; i++) {
+          final re = routine.exercises[i];
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-re-${re.id}',
+                  userId: Value(userId),
+                  entityType: 'routine_exercises',
+                  entityId: re.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': re.id,
+                    'routine_id': routine.id,
+                    'exercise_id': re.exerciseId,
+                    'order_index': i,
+                    'notes': re.notes,
+                    'rest_seconds': re.restSeconds,
+                    'superset_id': re.supersetId,
+                    'created_at': now.toIso8601String(),
+                    'updated_at': now.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: const Value('queued'),
+                ),
+              );
+
+          for (var sIdx = 0; sIdx < re.sets.length; sIdx++) {
+            final rs = re.sets[sIdx];
+            await db
+                .into(db.syncQueue)
+                .insertOnConflictUpdate(
+                  SyncQueueCompanion.insert(
+                    id: 'sync-rs-${rs.id}',
+                    userId: Value(userId),
+                    entityType: 'routine_sets',
+                    entityId: rs.id,
+                    operation: 'upsert',
+                    payload: jsonEncode({
+                      'id': rs.id,
+                      'routine_exercise_id': re.id,
+                      'set_number': sIdx + 1,
+                      'set_type': rs.setType,
+                      'target_reps': rs.targetReps,
+                      'target_weight_kg': rs.targetWeightKg,
+                      'duration_seconds': rs.targetDurationSeconds,
+                      'distance_meters': rs.targetDistanceMeters,
+                      'tempo': rs.tempo,
+                      'rpe': rs.rpe,
+                      'created_at': now.toIso8601String(),
+                      'updated_at': now.toIso8601String(),
+                    }),
+                    createdAt: now,
+                    clientTimestamp: Value(now),
+                    status: const Value('queued'),
+                  ),
+                );
+          }
+        }
       }
     });
   }

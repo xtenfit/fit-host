@@ -180,11 +180,11 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
     }
   }
 
-  Future<void> complete({bool isGuest = true}) async {
+  Future<void> complete({bool isGuest = false}) async {
     final cur = state.value ?? const PremiumWizardState();
     final finalDraft = cur.draft.copyWith(
       isCompleted: true,
-      isGuest: isGuest,
+      isGuest: false,
       currentStep: 17,
     );
 
@@ -215,7 +215,7 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
       await ref
           .read(userProfileProvider.notifier)
           .saveSuggestedPlan(
-            name: isGuest ? 'Guest Athlete' : 'Athlete',
+            name: 'Athlete',
             age: finalDraft.age,
             gender: finalDraft.gender ?? 'male',
             heightCm: finalDraft.heightCm,
@@ -231,9 +231,7 @@ class PremiumWizardController extends AsyncNotifier<PremiumWizardState> {
     try {
       final gate = ref.read(startupGateServiceProvider);
       await gate.setFirstLaunchCompleted(true);
-      if (isGuest) {
-        await gate.setAuthDecisionMade(true);
-      }
+      await gate.setAuthDecisionMade(true);
     } catch (_) {}
 
     state = AsyncData(

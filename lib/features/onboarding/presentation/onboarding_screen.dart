@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/services/startup_gate_service.dart';
-import '../../../../core/services/supabase_service.dart';
 import '../domain/models/onboarding_models.dart';
 import 'controllers/onboarding_controller.dart';
 import 'widgets/plan_summary_reveal_card.dart';
@@ -170,9 +169,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (state.currentStep == 1) {
       return WelcomeStep(
         onStart: () => notifier.nextStep(),
-        onContinueAsGuest: () {
-          notifier.nextStep();
-        },
       );
     }
 
@@ -675,8 +671,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           PrimaryButton(
             text: 'Finish Setup',
             onPressed: () async {
-              final isAuthenticated = ref.read(authProvider).isAuthenticated;
-              await notifier.completeOnboarding(isGuest: !isAuthenticated);
+              await notifier.completeOnboarding(isGuest: false);
               await ref
                   .read(startupGateServiceProvider)
                   .setFirstLaunchCompleted(true);

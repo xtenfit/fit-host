@@ -837,6 +837,180 @@ class GuestAccountClaimService {
                 ),
               );
         }
+
+        for (final we in guestExercises) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-we-${we.id}',
+                  userId: Value(newUid),
+                  entityType: 'workout_exercises',
+                  entityId: we.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': we.id,
+                    'workout_id': we.workoutId,
+                    'exercise_id': we.exerciseId,
+                    'user_id': newUid,
+                    'order_index': we.orderIndex,
+                    'notes': we.notes,
+                    'created_at': we.createdAt.toIso8601String(),
+                    'updated_at': we.updatedAt.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
+
+        for (final s in guestSets) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-ws-${s.id}',
+                  userId: Value(newUid),
+                  entityType: 'workout_sets',
+                  entityId: s.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': s.id,
+                    'workout_exercise_id': s.workoutExerciseId,
+                    'user_id': newUid,
+                    'set_number': s.setNumber,
+                    'reps': s.reps,
+                    'weight_kg': s.weightKg,
+                    'is_completed': s.isCompleted,
+                    'rest_seconds': s.restSeconds,
+                    'set_type': s.setType,
+                    'updated_at': now.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
+
+        for (final h in guestHydration) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-hydration-${h.id}',
+                  userId: Value(newUid),
+                  entityType: 'hydration_logs',
+                  entityId: h.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': h.id,
+                    'user_id': newUid,
+                    'log_date': h.logDate.toIso8601String().substring(0, 10),
+                    'water_glasses': h.waterGlasses,
+                    'target_glasses': h.targetGlasses,
+                    'updated_at': h.updatedAt.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
+
+        for (final s in guestSteps) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-steps-${s.id}',
+                  userId: Value(newUid),
+                  entityType: 'step_daily_logs',
+                  entityId: s.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': s.id,
+                    'user_id': newUid,
+                    'step_date': s.stepDate.toIso8601String().substring(0, 10),
+                    'steps': s.steps,
+                    'target_steps': s.targetSteps,
+                    'distance_meters': s.distanceMeters,
+                    'active_calories': s.activeCalories,
+                    'updated_at': s.updatedAt.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
+
+        for (final d in guestDiary) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-diary-${d.id}',
+                  userId: Value(newUid),
+                  entityType: 'daily_diary_entries',
+                  entityId: d.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': d.id,
+                    'user_id': newUid,
+                    'title': d.title,
+                    'content': d.content,
+                    'category': d.category,
+                    'mood': d.mood,
+                    'entry_date': d.entryDate.toIso8601String(),
+                    'voice_memo_path': d.voiceMemoPath,
+                    'voice_memo_duration_seconds': d.voiceMemoDurationSeconds,
+                    'created_at': d.createdAt.toIso8601String(),
+                    'updated_at': d.updatedAt.toIso8601String(),
+                    'is_deleted': d.isDeleted,
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
+
+        for (final m in guestMeasurements) {
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-measurement-${m.id}',
+                  userId: Value(newUid),
+                  entityType: 'body_measurements',
+                  entityId: m.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': m.id,
+                    'user_id': newUid,
+                    'measured_at': m.measuredAt.toIso8601String(),
+                    'weight_kg': m.weightKg,
+                    'body_fat_percentage': m.bodyFatPercentage,
+                    'waist_cm': m.waistCm,
+                    'chest_cm': m.chestCm,
+                    'hips_cm': m.hipsCm,
+                    'arms_cm': m.armsCm,
+                    'thighs_cm': m.thighsCm,
+                    'calves_cm': m.calvesCm,
+                    'neck_cm': m.neckCm,
+                    'shoulders_cm': m.shouldersCm,
+                    'notes': m.notes,
+                    'created_at': m.createdAt.toIso8601String(),
+                    'updated_at': m.updatedAt.toIso8601String(),
+                  }),
+                  createdAt: now,
+                  clientTimestamp: Value(now),
+                  status: Value(directUploadSucceeded ? 'synced' : 'queued'),
+                ),
+              );
+        }
       });
 
       // Always sync current profile into Supabase for this new account

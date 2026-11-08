@@ -237,11 +237,11 @@ class SyncCoordinator {
   }
 
   AuthStatus _getEffectiveAuth() {
-    if (ref == null) return AuthStatus.guest;
+    if (ref == null) return AuthStatus.unauthenticated;
     try {
       return ref!.read(authProvider).status;
     } catch (_) {
-      return AuthStatus.guest;
+      return AuthStatus.unauthenticated;
     }
   }
 

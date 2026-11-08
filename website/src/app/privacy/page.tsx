@@ -30,7 +30,7 @@ export default function PrivacyPage() {
       <div className="p-4 rounded-xl bg-brand-surface border border-brand-border text-xs text-zinc-300 flex items-start gap-3">
         <Shield className="h-5 w-5 text-brand-green shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong>Summary of Our Commitment:</strong> Fit Host is engineered around privacy-first principles. We do not sell your personal biometrics or workout data to advertisers, health insurers, or data brokers. Data remains stored locally on your device in Guest Mode, and encrypts via Supabase Row Level Security when you choose to synchronize to the cloud.
+          <strong>Summary of Our Commitment:</strong> Fit Host is engineered around privacy-first principles. We do not sell your personal biometrics or workout data to advertisers, health insurers, or data brokers. All accounts are protected by Supabase Row Level Security with encrypted local caching for seamless offline workouts.
         </p>
       </div>
 
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             1. Information We Collect
           </h2>
           <p>
-            The data Fit Host processes depends entirely on whether you utilize Guest Mode or register an Authenticated Account:
+            Fit Host requires an Authenticated Account to use the application and sync your training and nutrition records securely:
           </p>
           <ul className="list-disc pl-5 space-y-2">
             <li>
@@ -66,9 +66,6 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong>Device Permissions:</strong> Notification and exact alarm permissions for scheduled workout reminders and hydration nudges; camera permission exclusively for barcode scanning; storage/photo library access solely when explicitly selecting progress photos.
-            </li>
-            <li>
-              <strong>Guest Data:</strong> In Guest Mode, all data is written strictly to an isolated local SQLite database on your device and is never transmitted to our cloud servers without your explicit consent.
             </li>
           </ul>
         </section>

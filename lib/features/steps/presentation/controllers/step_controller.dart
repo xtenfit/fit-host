@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/data/steps_repository.dart';
-import '../../../../core/services/supabase_service.dart';
 import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import '../../data/step_service.dart';
 import '../../data/step_permission_service.dart';
@@ -34,7 +33,7 @@ class StepState {
     this.strideLengthCm = 72.6,
     this.isRunningStride = false,
     this.history = const [],
-    this.isGuest = true,
+    this.isGuest = false,
     this.permissionState = StepPermissionState.unknown,
     this.isInitialized = false,
     this.dataSource = StepDataSource.hardwareSensor,
@@ -88,8 +87,6 @@ class StepController extends Notifier<StepState> {
 
   @override
   StepState build() {
-    final auth = ref.watch(authProvider);
-    final isGuest = auth.isGuest;
     final profile = ref.watch(userProfileProvider);
 
     final height = profile.heightCm;
@@ -99,10 +96,10 @@ class StepController extends Notifier<StepState> {
     final initial = StepState(
       targetSteps: goal,
       strideLengthCm: initialStride,
-      isGuest: isGuest,
+      isGuest: false,
     );
 
-    Future.microtask(() => _init(height: height, goal: goal, isGuest: isGuest));
+    Future.microtask(() => _init(height: height, goal: goal, isGuest: false));
     return initial;
   }
 

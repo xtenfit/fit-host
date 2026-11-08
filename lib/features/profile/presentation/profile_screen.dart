@@ -191,9 +191,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          authState.isAuthenticated
-                              ? (authState.email ?? 'Cloud Synced Profile')
-                              : 'Guest • ${profile.age}y • ${profile.heightCm.toInt()}cm • ${profile.weightKg.toInt()}kg',
+                          authState.email ?? 'Cloud Synced Profile',
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark
@@ -209,26 +207,22 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  // Status Pill ('Guest' in guest mode)
+                  // Status Pill
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: authState.isAuthenticated
-                          ? AppColors.electricCyan.withValues(alpha: 0.15)
-                          : AppColors.limeGreen.withValues(alpha: 0.15),
+                      color: AppColors.electricCyan.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(
-                      authState.isAuthenticated ? 'Pro Athlete Cloud' : 'Guest',
+                    child: const Text(
+                      'Pro Athlete Cloud',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: authState.isAuthenticated
-                            ? AppColors.electricCyan
-                            : AppColors.limeGreen,
+                        color: AppColors.electricCyan,
                       ),
                     ),
                   ),

@@ -119,7 +119,7 @@ export default async function DownloadPage() {
               </div>
               <h3 className="text-base font-bold text-white">Launch &amp; Start Training</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Tap <strong className="text-zinc-200">Install</strong>, then tap <strong className="text-zinc-200">Open</strong>. Fit Host will launch with full local Drift SQLite storage and guest mode ready immediately.
+                Tap <strong className="text-zinc-200">Install</strong>, then tap <strong className="text-zinc-200">Open</strong>. Fit Host will launch with secure account authentication, encrypted cloud sync, and offline logging ready immediately.
               </p>
             </div>
           </div>

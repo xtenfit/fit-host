@@ -103,7 +103,7 @@ void main() {
         ProviderScope(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            authStatusProvider.overrideWithValue(AuthStatus.authenticated),
             connectivityProvider.overrideWith(
               (ref) => Stream.value(ConnectivityStatus.online),
             ),
@@ -153,7 +153,7 @@ void main() {
         ProviderScope(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            authStatusProvider.overrideWithValue(AuthStatus.authenticated),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,
@@ -198,7 +198,7 @@ void main() {
         ProviderScope(
           overrides: [
             databaseProvider.overrideWithValue(db),
-            authStatusProvider.overrideWithValue(AuthStatus.guest),
+            authStatusProvider.overrideWithValue(AuthStatus.authenticated),
           ],
           child: MaterialApp(
             theme: AppTheme.darkTheme,

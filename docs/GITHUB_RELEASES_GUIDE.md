@@ -67,7 +67,7 @@ Before publishing:
   ```bash
   adb install -r FitHost-Android-v2.2.0.apk
   ```
-- Verify Guest Mode, Drift SQLite database tables, and Supabase cloud sync authentication.
+- Verify user authentication (Email OTP & Google OAuth), Drift SQLite local cache, and Supabase cloud sync.
 
 ### Step 5: Draft Structured Release Notes
 The website automatically parses structured markdown headings. Format your release notes following this exact schema:
@@ -76,7 +76,7 @@ The website automatically parses structured markdown headings. Format your relea
 ## What's New
 - Dual-layer Drift SQLite and Supabase cloud synchronization.
 - New high-contrast AMOLED dark theme with #C6FF00 neon accents.
-- Fast guest mode with zero-friction onboarding.
+- Mandatory user authentication with encrypted cloud backup.
 
 ## Improvements
 - 40% reduction in database cold-boot query latency.

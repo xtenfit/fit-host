@@ -240,7 +240,7 @@ class CloudStepsRepository implements StepsRepository {
       try {
         await supabase!
             .from('step_daily_logs')
-            .upsert(payload, onConflict: 'user_id, step_date');
+            .upsert(payload, onConflict: 'user_id,step_date');
         return;
       } catch (e) {
         debugPrint('[CloudStepsRepository] Cloud steps write failed: $e');

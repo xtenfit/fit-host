@@ -57,6 +57,9 @@ node_modules/
 .gemini/
 .agent/
 .agents/
+.claude/
+agent/
+skills-lock.json
 .gsd/
 scratch/
 bug- screenshot/

@@ -104,7 +104,7 @@ export default function AccountDeletionPage() {
               <strong>Immediate Deletion:</strong> All database records tied to your authenticated <code className="text-brand-green font-mono text-xs">user_id</code> are purged immediately through PostgreSQL foreign key cascade rules.
             </li>
             <li>
-              <strong>Guest Mode Users:</strong> If you use Fit Host in Guest Mode, your data is stored strictly in your local device SQLite/Drift database. Uninstalling the mobile app or clearing app storage instantly and completely destroys all local data.
+              <strong>Local Storage Purge:</strong> When you delete your account from inside the app, all local device SQLite records are wiped simultaneously with your cloud records.
             </li>
             <li>
               <strong>Operational Logs:</strong> Standard web server edge logs (e.g., anonymized IP addresses and request status codes) are retained for a maximum of 30 days for infrastructure DDoS mitigation and network security, after which they are automatically purged.

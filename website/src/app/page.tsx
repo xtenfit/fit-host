@@ -62,10 +62,10 @@ const coreBenefits = [
   },
   {
     icon: Zap,
-    title: "Immediate Guest Mode",
+    title: "Secure Account & Cloud Backup",
     description:
-      "Download and start tracking right away without entering an email or password. Upgrade to cloud backup whenever you want without losing previous workouts.",
-    badge: "Instant Onboarding",
+      "Every user logs in securely via Google One-Tap or email OTP. Your workouts, nutrition logs, and PRs are backed up to the cloud and protected by Row Level Security.",
+    badge: "Cloud Protected",
   },
   {
     icon: Droplets,
@@ -94,8 +94,8 @@ const faqs = [
     a: "Yes. Fit Host stores all workouts, hydration logs, and settings in an embedded Drift SQLite database directly on your device. You can track full sessions with zero cell service, and data syncs securely to the cloud whenever you reconnect.",
   },
   {
-    q: "Do I have to create an account to test or use Fit Host?",
-    a: "No. Fit Host offers a complete Guest Mode with local data storage. You can log exercises, track water, and explore all 10 workout disciplines immediately without creating an account. When you choose to sign in, your saved guest records migrate to your cloud account.",
+    q: "Do I have to create an account to use Fit Host?",
+    a: "Yes. Fit Host requires every user to create a free authenticated account (via Email OTP or Google One-Tap). This ensures your training history, macronutrient logs, personal records, and biometrics are permanently backed up, protected with PostgreSQL Row Level Security (RLS), and accessible across all your devices.",
   },
   {
     q: "How does cloud sync protect my personal health data?",
@@ -436,8 +436,8 @@ export default async function HomePage() {
             },
             {
               step: "02",
-              title: "Choose Guest or Account",
-              desc: "Test immediately in Guest Mode or register with email OTP / Google OAuth for cloud backup.",
+              title: "Sign In & Personalize",
+              desc: "Sign in with one-tap Google or email OTP, then complete your personalized training profile.",
             },
             {
               step: "03",
@@ -541,7 +541,7 @@ export default async function HomePage() {
               Frequently Asked Questions
             </h2>
             <p className="text-sm text-zinc-400">
-              Clear answers regarding mobile installation, guest mode with local data storage, privacy, and account synchronization.
+              Clear answers regarding mobile installation, secure account authentication, privacy, and cloud synchronization.
             </p>
           </div>
 

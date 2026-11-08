@@ -110,19 +110,42 @@ final appRouter = GoRouter(
         path == '/auth' ||
         path == '/auth/sign-in' ||
         path == '/auth/sign-up' ||
-        path == '/auth/verify-email';
+        path == '/auth/verify-email' ||
+        path == '/auth/reset-password' ||
+        path == '/auth/update-password';
+    final isStartupScreen = path == '/' || path == '/startup-gate';
+
+    bool isAuthenticated = false;
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null && session.user.id.isNotEmpty) {
+        isAuthenticated = true;
+      }
+    } catch (_) {}
 
     if (isAuthScreen) {
-      try {
-        final session = Supabase.instance.client.auth.currentSession;
-        if (session != null) {
-          debugPrint(
-            '[AppRouter] Active session detected -> redirecting from $path to /home',
-          );
-          return '/home';
-        }
-      } catch (_) {}
+      if (isAuthenticated) {
+        debugPrint(
+          '[AppRouter] Active session detected -> redirecting from $path to /home',
+        );
+        return '/home';
+      }
+      return null;
     }
+
+    // Startup screens handle their own initial navigation via StartupGateNotifier
+    if (isStartupScreen) {
+      return null;
+    }
+
+    // Every user is required to have an account. No guest mode allowed.
+    if (!isAuthenticated) {
+      debugPrint(
+        '[AppRouter] Unauthenticated access to $path -> redirecting to /auth-decision',
+      );
+      return '/auth-decision';
+    }
+
     return null;
   },
   routes: [

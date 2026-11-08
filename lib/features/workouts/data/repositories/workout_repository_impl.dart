@@ -396,6 +396,72 @@ class WorkoutRepositoryImpl implements WorkoutRepository {
               status: const Value('queued'),
             ),
           );
+
+      for (var i = 0; i < workout.exercises.length; i++) {
+        final we = workout.exercises[i];
+        await db
+            .into(db.syncQueue)
+            .insertOnConflictUpdate(
+              SyncQueueCompanion.insert(
+                id: 'sync-we-${we.id}',
+                userId: Value(userId),
+                entityType: 'workout_exercises',
+                entityId: we.id,
+                operation: 'upsert',
+                payload: jsonEncode({
+                  'id': we.id,
+                  'workout_id': workout.id,
+                  'user_id': userId,
+                  'exercise_id': we.exerciseId,
+                  'order_index': i,
+                  'notes': we.notes,
+                  'superset_id': we.supersetId,
+                  'is_skipped': we.isSkipped,
+                  'updated_at': nowUtc.toIso8601String(),
+                }),
+                createdAt: nowUtc,
+                clientTimestamp: Value(nowUtc),
+                status: const Value('queued'),
+              ),
+            );
+
+        for (var sIdx = 0; sIdx < we.sets.length; sIdx++) {
+          final s = we.sets[sIdx];
+          await db
+              .into(db.syncQueue)
+              .insertOnConflictUpdate(
+                SyncQueueCompanion.insert(
+                  id: 'sync-ws-${s.id}',
+                  userId: Value(userId),
+                  entityType: 'workout_sets',
+                  entityId: s.id,
+                  operation: 'upsert',
+                  payload: jsonEncode({
+                    'id': s.id,
+                    'workout_exercise_id': we.id,
+                    'user_id': userId,
+                    'set_number': sIdx + 1,
+                    'reps': s.reps,
+                    'weight_kg': s.weightKg,
+                    'is_completed': s.isCompleted,
+                    'rest_seconds': s.restSeconds,
+                    'set_type': s.type,
+                    'target_reps': s.targetReps,
+                    'target_weight_kg': s.targetWeightKg,
+                    'duration_seconds': s.durationSeconds,
+                    'distance_meters': s.distanceMeters,
+                    'tempo': s.tempo,
+                    'rpe': s.rpe,
+                    'is_skipped': s.isSkipped,
+                    'updated_at': nowUtc.toIso8601String(),
+                  }),
+                  createdAt: nowUtc,
+                  clientTimestamp: Value(nowUtc),
+                  status: const Value('queued'),
+                ),
+              );
+        }
+      }
     });
   }
 

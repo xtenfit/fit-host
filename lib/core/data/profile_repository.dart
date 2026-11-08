@@ -133,14 +133,6 @@ class CloudProfileRepository implements UserProfileRepository {
       }
     }
 
-    // If default profile image is used, do not make a sync queue outbox log
-    if (ProfileAvatarService.isDefaultProfileImage(profile.avatarId)) {
-      debugPrint(
-        '[CloudProfileRepository] Default profile image used: skipping syncQueue outbox log.',
-      );
-      return;
-    }
-
     await db
         .into(db.syncQueue)
         .insertOnConflictUpdate(

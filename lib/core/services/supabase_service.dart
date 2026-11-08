@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -138,7 +137,7 @@ String formatAuthError(dynamic e) {
 
 enum AuthStatus {
   initialLoading,
-  guest,
+  unauthenticated,
   signedOut,
   emailVerificationRequired,
   authenticating,
@@ -159,7 +158,7 @@ class AuthState {
   final bool otpSent;
 
   const AuthState({
-    this.status = AuthStatus.guest,
+    this.status = AuthStatus.unauthenticated,
     User? supabaseUser,
     User? user,
     this.email,
@@ -169,7 +168,7 @@ class AuthState {
     this.otpSent = false,
   }) : supabaseUser = user ?? supabaseUser;
 
-  bool get isGuest => status == AuthStatus.guest;
+  bool get isGuest => false;
   bool get isAuthenticated =>
       status == AuthStatus.authenticated || status == AuthStatus.offlineGrace;
   bool get isOfflineGrace => status == AuthStatus.offlineGrace;
@@ -201,7 +200,7 @@ class AuthState {
           ? AuthStatus.authenticating
           : (status ??
                 (this.status == AuthStatus.authenticating
-                    ? AuthStatus.guest
+                    ? AuthStatus.unauthenticated
                     : this.status)),
       supabaseUser: supabaseUser ?? this.supabaseUser,
       email: email ?? this.email,
@@ -214,8 +213,6 @@ class AuthState {
 }
 
 class AuthService extends Notifier<AuthState> {
-  static const String guestModeKey = 'fit_host_guest_mode';
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
   bool _isSupabaseInitialized = false;
   StreamSubscription? _authSub;
 
@@ -223,11 +220,11 @@ class AuthService extends Notifier<AuthState> {
   AuthState build() {
     try {
       if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
-        return const AuthState(status: AuthStatus.guest);
+        return const AuthState(status: AuthStatus.unauthenticated);
       }
       final binding = WidgetsBinding.instance;
       if (binding.runtimeType.toString().contains('Test')) {
-        return const AuthState(status: AuthStatus.guest);
+        return const AuthState(status: AuthStatus.unauthenticated);
       }
     } catch (_) {}
     _initSupabaseAndLoadUser();
@@ -235,11 +232,6 @@ class AuthService extends Notifier<AuthState> {
   }
 
   Future<void> _initSupabaseAndLoadUser() async {
-    String? guestFlag;
-    try {
-      guestFlag = await _storage.read(key: guestModeKey);
-    } catch (_) {}
-
     try {
       // If accessing client succeeds without throwing, Supabase is initialized
       final client = Supabase.instance.client;
@@ -279,21 +271,12 @@ class AuthService extends Notifier<AuthState> {
                 currentUser.email?.split('@').first,
             avatarUrl: currentUser.userMetadata?['avatar_url'] as String?,
           );
-          _storage.write(key: guestModeKey, value: 'false').ignore();
           RouterAuthNotifier.instance.notifyAuthChanged();
           _attachAuthListener(client);
           return;
         }
 
-        // 2. If explicitly guest mode
-        if (guestFlag == 'true') {
-          if (!ref.mounted) return;
-          state = const AuthState(status: AuthStatus.guest);
-          _attachAuthListener(client);
-          return;
-        }
-
-        // 3. Attach listener for subsequent state transitions
+        // 2. Attach listener for subsequent state transitions
         _attachAuthListener(client);
       } catch (e) {
         debugPrint('[AuthService] Auth restoration notice: $e');
@@ -301,7 +284,7 @@ class AuthService extends Notifier<AuthState> {
     }
 
     if (!ref.mounted) return;
-    state = const AuthState(status: AuthStatus.guest);
+    state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   void _attachAuthListener(SupabaseClient client) {
@@ -343,7 +326,6 @@ class AuthService extends Notifier<AuthState> {
           RouterAuthNotifier.instance.notifyAuthChanged();
         } else if (session != null) {
           final u = session.user;
-          _storage.write(key: guestModeKey, value: 'false').ignore();
           final displayName =
               u.userMetadata?['name'] as String? ??
               u.userMetadata?['full_name'] as String? ??
@@ -359,7 +341,7 @@ class AuthService extends Notifier<AuthState> {
           );
           RouterAuthNotifier.instance.notifyAuthChanged();
 
-          // If local user profile name is default guest/athlete, sync with Google display name
+          // If local user profile name is default athlete, sync with Google display name
           try {
             if (displayName != null && displayName.isNotEmpty) {
               final profile = ref.read(userProfileProvider);
@@ -374,7 +356,7 @@ class AuthService extends Notifier<AuthState> {
             }
           } catch (_) {}
         } else if (data.event == AuthChangeEvent.signedOut) {
-          state = const AuthState(status: AuthStatus.guest);
+          state = const AuthState(status: AuthStatus.signedOut);
           RouterAuthNotifier.instance.notifyAuthChanged();
         }
       },
@@ -405,13 +387,6 @@ class AuthService extends Notifier<AuthState> {
       debugPrint('[AuthService] claimLocalData failure: $e');
       rethrow;
     }
-  }
-
-  Future<void> continueAsGuest() async {
-    try {
-      await _storage.write(key: guestModeKey, value: 'true');
-    } catch (_) {}
-    state = const AuthState(status: AuthStatus.guest);
   }
 
   Future<bool> sendEmailOtp(String email) async {
@@ -447,7 +422,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg.isNotEmpty
             ? msg
@@ -504,7 +479,7 @@ class AuthService extends Notifier<AuthState> {
         : state.email;
     if (targetEmail == null || targetEmail.isEmpty) {
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage:
             'Email session expired. Please enter your email address again.',
@@ -567,7 +542,6 @@ class AuthService extends Notifier<AuthState> {
           );
           if (userRes.user != null) {
             final u = userRes.user!;
-            await _storage.write(key: guestModeKey, value: 'false');
             state = AuthState(
               status: AuthStatus.authenticated,
               supabaseUser: u,
@@ -588,7 +562,6 @@ class AuthService extends Notifier<AuthState> {
       }
 
       if (res?.user != null) {
-        await _storage.write(key: guestModeKey, value: 'false');
         state = AuthState(
           status: AuthStatus.authenticated,
           supabaseUser: res!.user,
@@ -609,7 +582,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg.isNotEmpty
             ? msg
@@ -689,7 +662,6 @@ class AuthService extends Notifier<AuthState> {
       );
       if (res.user != null) {
         if (res.session != null) {
-          await _storage.write(key: guestModeKey, value: 'false');
           state = AuthState(
             status: AuthStatus.authenticated,
             supabaseUser: res.user,
@@ -702,7 +674,7 @@ class AuthService extends Notifier<AuthState> {
         } else {
           // Awaiting email confirmation
           state = state.copyWith(
-            status: AuthStatus.guest,
+            status: AuthStatus.signedOut,
             email: trimmed,
             clearError: true,
           );
@@ -713,7 +685,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg,
       );
@@ -739,7 +711,6 @@ class AuthService extends Notifier<AuthState> {
         password: password,
       );
       if (res.user != null) {
-        await _storage.write(key: guestModeKey, value: 'false');
         state = AuthState(
           status: AuthStatus.authenticated,
           supabaseUser: res.user,
@@ -755,7 +726,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg,
       );
@@ -778,7 +749,7 @@ class AuthService extends Notifier<AuthState> {
         redirectTo: kIsWeb ? null : 'io.supabase.fithost://login-callback',
       );
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         email: trimmed,
         clearError: true,
@@ -786,7 +757,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg,
       );
@@ -805,7 +776,7 @@ class AuthService extends Notifier<AuthState> {
 
     if (newPassword.length < 6) {
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: 'Password must be at least 6 characters.',
       );
@@ -839,7 +810,6 @@ class AuthService extends Notifier<AuthState> {
       );
 
       if (updateRes.user != null) {
-        await _storage.write(key: guestModeKey, value: 'false');
         state = state.copyWith(
           status: AuthStatus.authenticated,
           supabaseUser: updateRes.user,
@@ -853,7 +823,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg.isNotEmpty
             ? msg
@@ -890,8 +860,7 @@ class AuthService extends Notifier<AuthState> {
         debugPrint('[AuthService] delete_user RPC call note: $e');
       }
       await Supabase.instance.client.auth.signOut();
-      await _storage.write(key: guestModeKey, value: 'true');
-      state = const AuthState(status: AuthStatus.guest);
+      state = const AuthState(status: AuthStatus.signedOut);
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
@@ -936,7 +905,6 @@ class AuthService extends Notifier<AuthState> {
 
               if (res.session != null && res.user != null) {
                 final u = res.user!;
-                await _storage.write(key: guestModeKey, value: 'false');
                 final displayName =
                     u.userMetadata?['name'] as String? ??
                     u.userMetadata?['full_name'] as String? ??
@@ -996,7 +964,7 @@ class AuthService extends Notifier<AuthState> {
             }
 
             state = state.copyWith(
-              status: AuthStatus.guest,
+              status: AuthStatus.signedOut,
               isLoading: false,
               errorMessage: friendlyMsg,
             );
@@ -1020,7 +988,7 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       final msg = formatAuthError(e);
       state = state.copyWith(
-        status: AuthStatus.guest,
+        status: AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg.isNotEmpty ? msg : 'Google Sign-In failed.',
       );
@@ -1079,7 +1047,7 @@ class AuthService extends Notifier<AuthState> {
       state = state.copyWith(
         status: state.status == AuthStatus.authenticated
             ? AuthStatus.authenticated
-            : AuthStatus.guest,
+            : AuthStatus.signedOut,
         isLoading: false,
         email: trimmed,
         otpSent: true,
@@ -1091,7 +1059,7 @@ class AuthService extends Notifier<AuthState> {
       state = state.copyWith(
         status: state.status == AuthStatus.authenticated
             ? AuthStatus.authenticated
-            : AuthStatus.guest,
+            : AuthStatus.signedOut,
         isLoading: false,
         errorMessage: msg.isNotEmpty
             ? msg
@@ -1140,10 +1108,6 @@ class AuthService extends Notifier<AuthState> {
     );
   }
 
-  void setManualGuest() {
-    state = const AuthState(status: AuthStatus.guest);
-  }
-
   void setManualOfflineGrace() {
     state = AuthState(
       status: AuthStatus.offlineGrace,
@@ -1152,10 +1116,13 @@ class AuthService extends Notifier<AuthState> {
     );
   }
 
+  void setManualSignedOut() {
+    state = const AuthState(status: AuthStatus.signedOut);
+  }
+
   /// Initiates token refresh with strict offlineGrace and signedOut transitions:
   /// - Network failure (e.g. SocketException) -> AuthStatus.offlineGrace, KEEP cached user.
   /// - Revoked/invalid token (AuthException 401/403) -> AuthStatus.signedOut.
-  /// - Never auto-downgrades authenticated -> guest on network failure.
   Future<void> refreshSession({
     Future<void> Function()? customRefreshAction,
   }) async {
@@ -1235,7 +1202,7 @@ class AuthService extends Notifier<AuthState> {
     }
   }
 
-  Future<void> signOutToGuest() async {
+  Future<void> signOut() async {
     final priorUserId = state.user?.id;
     try {
       if (_isSupabaseInitialized) {
@@ -1244,9 +1211,6 @@ class AuthService extends Notifier<AuthState> {
     } catch (e) {
       debugPrint('[AuthService] Sign out notice: $e');
     }
-    try {
-      await _storage.write(key: guestModeKey, value: 'true');
-    } catch (_) {}
     if (priorUserId != null && priorUserId != 'guest') {
       try {
         await ref.read(databaseProvider).clearAccountCache(priorUserId);
@@ -1254,10 +1218,11 @@ class AuthService extends Notifier<AuthState> {
         debugPrint('[AuthService] Clear account cache notice: $e');
       }
     }
-    state = const AuthState(status: AuthStatus.guest);
+    state = const AuthState(status: AuthStatus.signedOut);
+    RouterAuthNotifier.instance.notifyAuthChanged();
   }
 
-  Future<void> signOut() => signOutToGuest();
+  Future<void> signOutToGuest() => signOut();
 
   void resetOtpState() {
     state = state.copyWith(otpSent: false, clearError: true);

@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 enum AuthStatus {
-  guest,
+  unauthenticated,
   authenticating,
   authenticated,
   tokenRefreshing,
@@ -23,7 +22,7 @@ class AuthState {
   final bool otpSent;
 
   const AuthState({
-    this.status = AuthStatus.guest,
+    this.status = AuthStatus.unauthenticated,
     this.user,
     this.email,
     this.displayName,
@@ -32,7 +31,7 @@ class AuthState {
     this.otpSent = false,
   });
 
-  bool get isGuest => status == AuthStatus.guest;
+  bool get isGuest => false;
   bool get isAuthenticated =>
       status == AuthStatus.authenticated || status == AuthStatus.offlineGrace;
   bool get isOfflineGrace => status == AuthStatus.offlineGrace;
@@ -62,26 +61,17 @@ class AuthState {
 }
 
 extension AuthStateAsyncValueX on AsyncValue<AuthState> {
-  AuthStatus get status => value?.status ?? AuthStatus.guest;
+  AuthStatus get status => value?.status ?? AuthStatus.unauthenticated;
   User? get user => value?.user;
-  bool get isGuest => status == AuthStatus.guest;
+  bool get isGuest => false;
   bool get isAuthenticated =>
       status == AuthStatus.authenticated || status == AuthStatus.offlineGrace;
   bool get isOfflineGrace => status == AuthStatus.offlineGrace;
 }
 
 class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
-  static const String guestModeKey = 'fit_host_guest_mode';
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-
   @override
   Future<AuthState> build() async {
-    // Check if user explicitly persisted guest mode
-    String? guestFlag;
-    try {
-      guestFlag = await _storage.read(key: guestModeKey);
-    } catch (_) {}
-
     // Check existing Supabase session
     User? currentUser;
     try {
@@ -90,8 +80,8 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
       }
     } catch (_) {}
 
-    if (guestFlag == 'true' || currentUser == null) {
-      return const AuthState(status: AuthStatus.guest);
+    if (currentUser == null) {
+      return const AuthState(status: AuthStatus.unauthenticated);
     }
 
     return AuthState(
@@ -112,10 +102,6 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
 
   /// Sets state to authenticated
   Future<void> setAuthenticated(User user) async {
-    try {
-      await _storage.write(key: guestModeKey, value: 'false');
-    } catch (_) {}
-
     state = AsyncData(
       AuthState(
         status: AuthStatus.authenticated,
@@ -129,12 +115,12 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
   }
 
   /// Initiates token refresh. If refresh fails due to network outage,
-  /// enters `offlineGrace` instead of downgrading to `guest`.
+  /// enters `offlineGrace` instead of signing out.
   Future<void> refreshToken({
     required Future<bool> Function() refreshAction,
   }) async {
     final current = state.value ?? const AuthState();
-    if (current.status == AuthStatus.guest) return;
+    if (!current.isAuthenticated) return;
 
     state = AsyncData(current.copyWith(status: AuthStatus.tokenRefreshing));
 
@@ -143,7 +129,7 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
       if (success) {
         state = AsyncData(current.copyWith(status: AuthStatus.authenticated));
       } else {
-        // Network or offline failure: enter offlineGrace, never downgrade to guest!
+        // Network or offline failure: enter offlineGrace, never sign out while offline!
         state = AsyncData(current.copyWith(status: AuthStatus.offlineGrace));
       }
     } on SocketException catch (_) {
@@ -204,19 +190,7 @@ class AuthStateMachineNotifier extends AsyncNotifier<AuthState> {
       await Supabase.instance.client.auth.signOut();
     } catch (_) {}
 
-    try {
-      await _storage.write(key: guestModeKey, value: 'true');
-    } catch (_) {}
-
-    state = const AsyncData(AuthState(status: AuthStatus.guest));
-  }
-
-  /// Explicitly choose guest mode
-  Future<void> continueAsGuest() async {
-    try {
-      await _storage.write(key: guestModeKey, value: 'true');
-    } catch (_) {}
-    state = const AsyncData(AuthState(status: AuthStatus.guest));
+    state = const AsyncData(AuthState(status: AuthStatus.signedOut));
   }
 }
 

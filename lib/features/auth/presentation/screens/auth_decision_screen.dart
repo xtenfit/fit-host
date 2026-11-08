@@ -4,10 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:fit_host/core/theme/app_colors.dart';
-import 'package:fit_host/core/services/startup_gate_service.dart';
 import 'package:fit_host/core/services/supabase_service.dart';
 import '../helpers/auth_navigation_helper.dart';
-import '../../../profile/presentation/controllers/user_profile_controller.dart';
 import '../widgets/google_sign_in_button.dart';
 
 class AuthDecisionScreen extends ConsumerStatefulWidget {
@@ -51,58 +49,6 @@ class _AuthDecisionScreenState extends ConsumerState<AuthDecisionScreen> {
         ref,
         auth.user!.id,
       );
-    }
-  }
-
-  Future<void> _handleContinueAsGuest() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).brightness == Brightness.dark
-            ? AppColors.darkSurface
-            : Colors.white,
-        title: const Text(
-          'Continue as Guest?',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-        content: const Text(
-          'Your workouts and nutrition data will be saved locally on this device. You can link or create a cloud account anytime in Profile to sync across devices.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.limeGreen,
-              foregroundColor: Colors.black,
-            ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Continue as Guest',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isNavigating = true);
-      await ref.read(startupGateServiceProvider).setAuthDecisionMade(true);
-      final profile = ref.read(userProfileProvider);
-      final guestDone = await ref
-          .read(startupGateServiceProvider)
-          .isGuestOnboardingCompleted();
-      if (mounted) {
-        if (profile.isProfileSetupCompleted || guestDone) {
-          context.go('/home');
-        } else {
-          // Condition 1: Always launch wizard screen for new guest user
-          context.go('/setup-wizard');
-        }
-      }
     }
   }
 
@@ -306,21 +252,29 @@ class _AuthDecisionScreenState extends ConsumerState<AuthDecisionScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
-
-                  // Action 3: Continue as Guest (Text Link)
-                  TextButton(
-                    onPressed: _handleContinueAsGuest,
-                    child: Text(
-                      'Continue as Guest',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.verified_user_outlined,
+                        size: 15,
                         color: isDark
-                            ? AppColors.darkTextSecondary
-                            : AppColors.lightTextSecondary,
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
                       ),
-                    ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Account required to ensure encrypted backup & sync',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.darkTextTertiary
+                              : AppColors.lightTextTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                 ],

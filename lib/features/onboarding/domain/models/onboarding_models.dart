@@ -137,7 +137,7 @@ class OnboardingState {
     this.motivations = const ['improve_health'],
     this.isGenderBranch = false,
     this.isCompleted = false,
-    this.isGuest = true,
+    this.isGuest = false,
   });
 
   // Height and weight conversion helpers
@@ -469,7 +469,7 @@ class OnboardingState {
           const ['improve_health'],
       isGenderBranch: json['isGenderBranch'] as bool? ?? false,
       isCompleted: json['isCompleted'] as bool? ?? false,
-      isGuest: json['isGuest'] as bool? ?? true,
+      isGuest: json['isGuest'] as bool? ?? false,
     );
   }
 

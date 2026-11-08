@@ -13,7 +13,7 @@
 **Fit Host** is a fitness and wellness ecosystem designed to bridge local device performance with cloud-backed reliability. Engineered with Flutter and Riverpod for mobile, Supabase and PostgreSQL for cloud state and identity, and Next.js 16 on Vercel for public discovery and web administration, Fit Host delivers a high-performance experience without forcing users to register before experiencing value.
 
 ### Core Architecture Pillars:
-1. **Guest-First & Hybrid Online Persistence**: Users can launch the app immediately in Guest Mode with zero friction. All workouts, meals, hydration, and settings persist locally to encrypted Drift SQLite. Upon authenticating via Supabase (Email/Password, 6-digit OTP, or Google OAuth), an atomic data claim worker seamlessly migrates all guest assets to the cloud.
+1. **Mandatory Secure Accounts & Cloud Persistence**: Every user is required to authenticate via Supabase (Email/Password, 6-digit OTP, or Google OAuth). All workouts, meals, hydration, and settings persist locally to encrypted Drift SQLite with automatic, real-time two-way cloud sync protected by Row Level Security (RLS). Guest mode is completely removed to guarantee permanent biometric protection and zero data loss.
 2. **Unified Exercise & Routines Engine**: A catalog of 1,324+ curated, deduplicated exercises (derived from CC-BY-SA and public domain sources) mapped to primary/secondary muscle groups, equipment, and gender-inclusive anatomical models. Includes a workout engine with supersets, target RPE, rest timers, and progressive overload calculations.
 3. **Multi-Source Health Intelligence**: Dual-pipeline step counting (Hardware Pedometer fallback + HealthKit / Health Connect), intelligent nutrition tracking (ICMR-NIN Indian food database, USDA FoodData Central API, OpenFoodFacts barcode scanner, and Gemini AI natural language meal parsing), and 2-way Google Calendar synchronization.
 4. **Resilient System Alarms & Reminders**: Native exact alarms (`SCHEDULE_EXACT_ALARM`) that ring through lock screens and app termination, with custom device audio selection, wake-locks, and smart snoozing.
@@ -100,17 +100,17 @@ sequenceDiagram
             Supabase-->>Outbox: 200 OK (server_updated_at)
             Outbox->>SQLite: Mark Outbox item as PROCESSED
             Outbox->>SQLite: Update local syncStatus = 'synced'
-        else Offline or Guest Mode
+        else Offline Grace Mode
             Outbox->>Outbox: Retain in Outbox with Exponential Backoff
         end
     end
 ```
 
-### Guest-to-Account Migration Lifecycle
-When a user begins as a guest, their records in Drift are tagged with `user_id = 'guest'`. When they register or sign in via Supabase:
-1. `GuestAccountClaimService.claimGuestData(newUserId)` triggers an atomic transaction.
+### Legacy Data Adoption Lifecycle
+When a user from an earlier app release signs in, any existing local records in Drift tagged with `user_id = 'guest'` are automatically adopted:
+1. `GuestAccountClaimService.claimGuestDataLocallyFast(newUserId)` triggers an atomic transaction.
 2. Local Drift records across `workouts`, `workout_exercises`, `workout_sets`, `food_items`, `meal_logs`, `water_logs`, `sleep_logs`, `reminders`, `diary_entries`, `body_measurements`, and `progress_photos` are updated from `guest` to `newUserId`.
-3. Outbox worker enqueues all unclaimed records to push them to the cloud.
+3. Outbox worker enqueues all adopted records to push them to the cloud.
 4. Remote Supabase records for that user are fetched and merged locally using timestamp arbitration (`updated_at > server_updated_at`).
 
 ---

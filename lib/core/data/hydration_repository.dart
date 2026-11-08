@@ -185,7 +185,9 @@ class CloudHydrationRepository implements HydrationRepository {
 
     if (supabase != null) {
       try {
-        await supabase!.from('hydration_logs').upsert(payload);
+        await supabase!
+            .from('hydration_logs')
+            .upsert(payload, onConflict: 'user_id,log_date');
         return;
       } catch (e) {
         debugPrint('[CloudHydrationRepository] Cloud write error: $e');

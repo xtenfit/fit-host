@@ -119,9 +119,11 @@ String? resolveConflictTarget(String table) {
     case 'progression_settings':
       return 'user_id';
     case 'nutrition_logs':
-      return 'user_id, log_date';
+      return 'user_id,log_date';
     case 'step_daily_logs':
-      return 'user_id, step_date';
+      return 'user_id,step_date';
+    case 'hydration_logs':
+      return 'user_id,log_date';
     case 'reminder_schedules':
     case 'reminders':
       return 'id';
@@ -138,7 +140,6 @@ String? resolveConflictTarget(String table) {
     case 'calendar_events':
     case 'exercise_submissions':
     case 'notification_inbox':
-    case 'hydration_logs':
     case 'daily_diary_entries':
     case 'calorie_adjustments':
       return 'id';
@@ -172,6 +173,22 @@ Map<String, dynamic> sanitizeOutboxPayload(
   if (table == 'profiles') {
     payload['id'] = userId;
     payload['user_id'] = userId;
+
+    // Sanitize non-positive values to prevent constraint checks on fresh/draft profiles
+    if (payload['age'] != null && (payload['age'] as num) <= 0) {
+      payload['age'] = null;
+    }
+    if (payload['height_cm'] != null && (payload['height_cm'] as num) <= 0) {
+      payload['height_cm'] = null;
+    }
+    if (payload['weight_kg'] != null && (payload['weight_kg'] as num) <= 0) {
+      payload['weight_kg'] = null;
+    }
+    if (payload['gender'] == null ||
+        (payload['gender'] is String && (payload['gender'] as String).trim().isEmpty)) {
+      payload['gender'] = 'other';
+    }
+
     if (payload['email'] == null ||
         (payload['email'] as String).trim().isEmpty) {
       try {

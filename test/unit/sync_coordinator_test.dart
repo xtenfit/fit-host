@@ -31,10 +31,10 @@ void main() {
         isFalse,
       );
 
-      // auth=guest -> no drain
+      // auth=unauthenticated -> no drain
       expect(
         coordinator.canSync(
-          authStatus: AuthStatus.guest,
+          authStatus: AuthStatus.unauthenticated,
           connectivityStatus: ConnectivityStatus.online,
         ),
         isFalse,
@@ -126,7 +126,7 @@ void main() {
           );
 
       final processed = await coordinator.drain(
-        overrideAuth: AuthStatus.guest,
+        overrideAuth: AuthStatus.unauthenticated,
         overrideConnectivity: ConnectivityStatus.online,
       );
 

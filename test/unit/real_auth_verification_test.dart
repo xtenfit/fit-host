@@ -19,12 +19,12 @@ void main() {
     });
 
     test(
-      'Initial state defaults to guest status with no mock athlete user',
+      'Initial state defaults to unauthenticated status with no mock athlete user',
       () {
         final authState = container.read(authProvider);
-        expect(authState.status, equals(AuthStatus.guest));
+        expect(authState.status, equals(AuthStatus.unauthenticated));
         expect(authState.isAuthenticated, isFalse);
-        expect(authState.isGuest, isTrue);
+        expect(authState.isGuest, isFalse);
         expect(authState.user, isNull);
         expect(authState.email, isNull);
       },
@@ -42,9 +42,10 @@ void main() {
         expect(result, isFalse);
 
         final state = container.read(authProvider);
-        // User must remain guest (not silently authenticated)
-        expect(state.status, equals(AuthStatus.guest));
+        // User must remain signedOut (not silently authenticated)
+        expect(state.status, equals(AuthStatus.signedOut));
         expect(state.isAuthenticated, isFalse);
+        expect(state.isGuest, isFalse);
         expect(state.user, isNull);
         expect(state.email, isNot(equals('athlete.google@fit-host.app')));
         expect(state.displayName, isNot(equals('Google Athlete')));
@@ -70,7 +71,8 @@ void main() {
 
         final state = container.read(authProvider);
         expect(state.isAuthenticated, isFalse);
-        expect(state.status, equals(AuthStatus.guest));
+        expect(state.status, equals(AuthStatus.signedOut));
+        expect(state.isGuest, isFalse);
         expect(state.user, isNull);
       },
     );
@@ -91,7 +93,8 @@ void main() {
 
         final state = container.read(authProvider);
         expect(state.isAuthenticated, isFalse);
-        expect(state.status, equals(AuthStatus.guest));
+        expect(state.status, equals(AuthStatus.signedOut));
+        expect(state.isGuest, isFalse);
         expect(state.user, isNull);
       },
     );
@@ -109,7 +112,8 @@ void main() {
 
         final state = container.read(authProvider);
         expect(state.isAuthenticated, isFalse);
-        expect(state.status, equals(AuthStatus.guest));
+        expect(state.status, equals(AuthStatus.signedOut));
+        expect(state.isGuest, isFalse);
         expect(state.user, isNull);
         expect(state.errorMessage, isNotNull);
       },

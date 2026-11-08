@@ -88,8 +88,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/guides/guest-mode-vs-account" className="hover:text-brand-green transition-colors">
-                  Guest Mode vs Account
+                <Link href="/guides/secure-account-and-cloud-sync" className="hover:text-brand-green transition-colors">
+                  Secure Account & Cloud Sync
                 </Link>
               </li>
               <li>

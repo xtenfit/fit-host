@@ -64,21 +64,10 @@ class SyncStatusNotifier extends Notifier<SyncStatusState> {
   }
 
   SyncStatusState _computeState() {
-    final auth = ref.read(authProvider);
     final connectivity =
         ref.read(connectivityProvider).value ?? ConnectivityStatus.online;
     final pendingCount = ref.read(pendingSyncCountProvider).value ?? 0;
     final failedCount = ref.read(failedSyncCountProvider).value ?? 0;
-
-    if (auth.isGuest) {
-      return const SyncStatusState(
-        label: 'Guest Mode (Stored on Device)',
-        compactLabel: 'Guest Mode',
-        icon: Icons.phone_android_rounded,
-        color: AppColors.limeGreen,
-        isOffline: false,
-      );
-    }
 
     if (connectivity == ConnectivityStatus.offline) {
       return SyncStatusState(
@@ -193,7 +182,7 @@ class OfflineSyncBanner extends ConsumerWidget {
     final isOffline = connectivity == ConnectivityStatus.offline;
     final auth = ref.watch(authProvider);
 
-    if (auth.isGuest || (!isOffline && !auth.isOfflineGrace)) {
+    if (!isOffline && !auth.isOfflineGrace) {
       return const SizedBox.shrink();
     }
 

@@ -59,11 +59,11 @@ void main() {
         expect(resolveConflictTarget('routines'), equals('id'));
         expect(
           resolveConflictTarget('nutrition_logs'),
-          equals('user_id, log_date'),
+          equals('user_id,log_date'),
         );
         expect(
           resolveConflictTarget('step_daily_logs'),
-          equals('user_id, step_date'),
+          equals('user_id,step_date'),
         );
         expect(resolveConflictTarget('reminder_schedules'), equals('id'));
       },

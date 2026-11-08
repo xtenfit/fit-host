@@ -56,11 +56,11 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
       if (mounted) {
         setState(() => _isDeleting = false);
         Navigator.of(context).pop(true);
-        context.go('/home');
+        context.go('/auth-decision');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Account successfully deleted. You have returned to Guest mode.',
+              'Account successfully deleted. Please register or sign in to continue.',
             ),
             behavior: SnackBarBehavior.floating,
           ),

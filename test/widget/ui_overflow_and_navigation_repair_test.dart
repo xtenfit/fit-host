@@ -72,7 +72,7 @@ void main() {
           ProviderScope(
             overrides: [
               databaseProvider.overrideWithValue(db),
-              authStatusProvider.overrideWithValue(AuthStatus.guest),
+              authStatusProvider.overrideWithValue(AuthStatus.authenticated),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -111,7 +111,7 @@ void main() {
           ProviderScope(
             overrides: [
               databaseProvider.overrideWithValue(db),
-              authStatusProvider.overrideWithValue(AuthStatus.guest),
+              authStatusProvider.overrideWithValue(AuthStatus.authenticated),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -152,7 +152,7 @@ void main() {
           ProviderScope(
             overrides: [
               databaseProvider.overrideWithValue(db),
-              authStatusProvider.overrideWithValue(AuthStatus.guest),
+              authStatusProvider.overrideWithValue(AuthStatus.authenticated),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -227,7 +227,7 @@ void main() {
           ProviderScope(
             overrides: [
               databaseProvider.overrideWithValue(db),
-              authStatusProvider.overrideWithValue(AuthStatus.guest),
+              authStatusProvider.overrideWithValue(AuthStatus.authenticated),
             ],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
@@ -292,7 +292,7 @@ void main() {
           ProviderScope(
             overrides: [
               databaseProvider.overrideWithValue(db),
-              authStatusProvider.overrideWithValue(AuthStatus.guest),
+              authStatusProvider.overrideWithValue(AuthStatus.authenticated),
               bodyMeasurementsStreamProvider.overrideWith(
                 (ref) => Stream.value([latestMeasurement, baselineMeasurement]),
               ),

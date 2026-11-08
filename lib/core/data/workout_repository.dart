@@ -184,10 +184,14 @@ class CloudWorkoutRepository implements WorkoutRepository {
             });
           }
         }
-        // Direct cloud sync succeeded; clean up any queued item for this workout
+        // Direct cloud sync succeeded; clean up any queued item for this workout and its children
+        final exerciseIds = workout.exercises.map((e) => e.id).toList();
+        final setIds =
+            workout.exercises.expand((e) => e.sets.map((s) => s.id)).toList();
+        final allIds = [workout.id, ...exerciseIds, ...setIds];
         await (db.delete(
           db.syncQueue,
-        )..where((t) => t.entityId.equals(workout.id))).go();
+        )..where((t) => t.entityId.isIn(allIds))).go();
         return;
       } catch (e) {
         debugPrint(
@@ -196,7 +200,7 @@ class CloudWorkoutRepository implements WorkoutRepository {
       }
     }
 
-    // Fallback: enqueue mutation in sync_queue with explicit user_id
+    // Fallback: enqueue mutation in sync_queue with explicit user_id for workout and all children
     await outboxWorker.enqueueMutation(
       userId: userId,
       entityType: 'workouts',
@@ -204,6 +208,54 @@ class CloudWorkoutRepository implements WorkoutRepository {
       operation: 'INSERT',
       payload: workoutPayload,
     );
+
+    for (final ex in workout.exercises) {
+      await outboxWorker.enqueueMutation(
+        userId: userId,
+        entityType: 'workout_exercises',
+        entityId: ex.id,
+        operation: 'INSERT',
+        payload: {
+          'id': ex.id,
+          'workout_id': workout.id,
+          'user_id': userId,
+          'exercise_id': ex.exerciseId,
+          'order_index': ex.orderIndex,
+          'notes': ex.notes,
+          'superset_id': ex.supersetId,
+          'is_skipped': ex.isSkipped,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      );
+
+      for (final s in ex.sets) {
+        await outboxWorker.enqueueMutation(
+          userId: userId,
+          entityType: 'workout_sets',
+          entityId: s.id,
+          operation: 'INSERT',
+          payload: {
+            'id': s.id,
+            'workout_exercise_id': ex.id,
+            'user_id': userId,
+            'set_number': s.setNumber,
+            'reps': s.reps,
+            'weight_kg': s.weightKg,
+            'is_completed': s.isCompleted,
+            'rest_seconds': s.restSeconds,
+            'set_type': s.type,
+            'target_reps': s.targetReps,
+            'target_weight_kg': s.targetWeightKg,
+            'duration_seconds': s.durationSeconds,
+            'distance_meters': s.distanceMeters,
+            'tempo': s.tempo,
+            'rpe': s.rpe,
+            'is_skipped': s.isSkipped,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          },
+        );
+      }
+    }
   }
 
   @override

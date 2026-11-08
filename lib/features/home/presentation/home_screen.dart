@@ -14,7 +14,6 @@ import 'widgets/home_quick_tools.dart';
 import 'widgets/home_step_card.dart';
 import 'widgets/home_diet_diary_card.dart';
 import 'widgets/home_activity_card.dart';
-import 'widgets/guest_upgrade_banner.dart';
 import 'widgets/setup_reminder_banner.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -48,9 +47,6 @@ class HomeScreen extends ConsumerWidget {
 
               // 1a. Wizard Incomplete Reminder Banner
               SetupReminderBanner(isDark: isDark),
-
-              // 1b. Non-blocking Guest -> Account Upgrade Banner
-              GuestUpgradeBanner(isDark: isDark),
 
               // 2. Today's Workout Glassmorphic Hero Carousel
               HomeTodayWorkoutHero(isDark: isDark),

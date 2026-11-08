@@ -51,9 +51,9 @@ const troubleshootingGuides = [
   },
   {
     icon: ShieldCheck,
-    title: "Migrating from Guest Mode",
-    desc: "If you started as a guest, your records are safely kept in your local Drift database. When you register an account, your historical records automatically migrate to your cloud profile.",
-    link: "/guides/guest-mode-vs-account",
+    title: "Secure Cloud Sync Architecture",
+    desc: "All accounts are backed up in real time to encrypted PostgreSQL using Supabase Row Level Security (RLS) with resilient local offline caching.",
+    link: "/guides/cloud-sync-architecture",
   },
 ];
 

@@ -344,7 +344,7 @@ class CloudNutritionRepository implements NutritionRepository {
         try {
           await supabase!
               .from('nutrition_logs')
-              .upsert(payload, onConflict: 'user_id, log_date');
+              .upsert(payload, onConflict: 'user_id,log_date');
           remoteWriteSucceeded = true;
         } catch (e) {
           debugPrint(

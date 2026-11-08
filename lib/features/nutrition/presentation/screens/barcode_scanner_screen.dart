@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../../../core/auth/auth_state_machine.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/repositories/food_repository_impl.dart';
 import '../../domain/models/food_item.dart';
@@ -176,46 +175,6 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isGuest = ref.watch(authStateMachineProvider).value?.isGuest ?? true;
-
-    if (isGuest) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Scan Barcode'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => context.pop(),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_outline_rounded, size: 48),
-                const SizedBox(height: 16),
-                const Text(
-                  'Barcode scanning requires an account.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'You can still search and log food locally as a guest.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () => context.push('/auth/sign-up'),
-                  child: const Text('Create free account'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
 
     return Scaffold(
       backgroundColor: Colors.black,

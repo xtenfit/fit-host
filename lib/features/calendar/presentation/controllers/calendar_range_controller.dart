@@ -103,9 +103,7 @@ class CalendarRangeNotifier extends Notifier<CalendarRangeState> {
     );
   }
 
-  void selectFilter(RangeFilter filter, {required bool isGuest}) {
-    // Deliverable D: Advanced Aggregation = ACCOUNT ONLY
-    // Guests see today + this week. Tapping Month or Custom shows a lock card.
+  void selectFilter(RangeFilter filter, {bool isGuest = false}) {
     if (isGuest &&
         (filter == RangeFilter.month || filter == RangeFilter.custom)) {
       state = state.copyWith(selectedFilter: filter, showLockCard: true);
@@ -115,7 +113,7 @@ class CalendarRangeNotifier extends Notifier<CalendarRangeState> {
     state = state.copyWith(selectedFilter: filter, showLockCard: false);
   }
 
-  void setCustomRange(DateTime start, DateTime end, {required bool isGuest}) {
+  void setCustomRange(DateTime start, DateTime end, {bool isGuest = false}) {
     if (isGuest) {
       state = state.copyWith(
         selectedFilter: RangeFilter.custom,

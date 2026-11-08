@@ -136,17 +136,17 @@ export const featuresData: FeatureItem[] = [
     screenshot: "/images/screenshots/home.png",
   },
   {
-    id: "guest-mode",
-    name: "Immediate Guest Mode",
+    id: "secure-accounts",
+    name: "Secure Account & Cloud Sync",
     category: "Personalization",
     status: "available",
     statusLabel: "Available Now",
     description:
-      "Start logging instantly without registering an email or password. Upgrade to a permanent cloud account whenever you choose with automatic data migration.",
+      "Every user logs in securely using email OTP or Google One-Tap. Continuous cloud backup, multi-device synchronization, and zero lost workouts.",
     highlights: [
-      "No sign-up or credit card required to test the full app",
-      "Private local device storage",
-      "1-click data merge when signing up later",
+      "Row Level Security (RLS) protects all biometrics and workout data",
+      "Seamless instant sync across all your phones and tablets",
+      "Encrypted local SQLite caching for seamless offline workouts",
     ],
     screenshot: "/images/screenshots/home.png",
   },

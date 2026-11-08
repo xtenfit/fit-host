@@ -184,46 +184,6 @@ class _PhotoMealScreenState extends ConsumerState<PhotoMealScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = ref.watch(authStateMachineProvider).value?.isGuest ?? true;
-    if (isGuest) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Snap Meal'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => context.pop(),
-          ),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.lock_outline_rounded, size: 48),
-                const SizedBox(height: 16),
-                const Text(
-                  'AI meal photos require an account.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Use Type / Search to log food locally as a guest.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () => context.push('/auth/sign-up'),
-                  child: const Text('Create free account'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 

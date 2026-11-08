@@ -43,16 +43,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   String _getSafeFallback() {
     try {
       final session = Supabase.instance.client.auth.currentSession;
-      if (session != null && session.user.id.isNotEmpty) {
-        return '/home';
-      }
-    } catch (_) {}
-
-    try {
-      final profile = ref.read(userProfileProvider);
-      if (profile.isProfileSetupCompleted) return '/home';
       final auth = ref.read(authProvider);
-      if (auth.isAuthenticated) return '/home';
+      if ((session != null && session.user.id.isNotEmpty) || auth.isAuthenticated) {
+        final profile = ref.read(userProfileProvider);
+        if (profile.isProfileSetupCompleted) return '/home';
+        return '/setup-wizard';
+      }
       if (auth.status == AuthStatus.initialLoading) return '/startup-gate';
       return '/auth-decision';
     } catch (_) {

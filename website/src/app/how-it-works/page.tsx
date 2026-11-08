@@ -19,7 +19,7 @@ import DownloadCTA from "@/components/marketing/DownloadCTA";
 export const metadata: Metadata = {
   title: "How It Works — The Fit Host Mobile Workflow",
   description:
-    "A visual, step-by-step walkthrough explaining how to install, use guest mode, log workouts, track nutrition, and synchronize data in the Fit Host mobile application.",
+    "A visual, step-by-step walkthrough explaining how to install, sign in, configure your profile, log workouts, track nutrition, and synchronize data in the Fit Host mobile application.",
 };
 
 const tutorialSteps = [
@@ -39,17 +39,17 @@ const tutorialSteps = [
   },
   {
     step: "02",
-    title: "Continue as Guest or Sign Up",
-    category: "Onboarding",
+    title: "Sign In or Create Account",
+    category: "Authentication",
     summary:
-      "Start logging instantly with complete privacy in Guest Mode. Or create a permanent cloud profile with Email OTP or Google OAuth for multi-device sync.",
+      "Sign in securely using One-Tap Google OAuth or passwordless 6-digit Email OTP. All your health metrics, workouts, and nutrition logs are continuously backed up.",
     points: [
-      "Guest Mode: Zero personal credentials required to start",
-      "Cloud Account: Protected by PostgreSQL Row Level Security (RLS)",
-      "Seamless migration: Guest logs merge automatically when you register later",
+      "Account required: Zero data loss with continuous cloud backup",
+      "End-to-End Privacy: Protected by PostgreSQL Row Level Security (RLS)",
+      "Multi-device sync: Seamless access across all your phones and tablets",
     ],
     screenshot: "/images/screenshots/diary.png",
-    screenshotCaption: "Choose guest mode for instant testing or sign up for continuous backup.",
+    screenshotCaption: "Sign in with Google or Email OTP for instant cloud synchronization.",
   },
   {
     step: "03",

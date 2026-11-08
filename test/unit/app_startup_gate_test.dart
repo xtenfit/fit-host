@@ -31,26 +31,24 @@ void main() {
     );
 
     test(
-      'Condition 1: new guest user who taps "Continue as Guest" always launches /setup-wizard',
+      'Condition 1: unauthenticated user without sign-in is strictly routed to /auth-decision',
       () async {
         final service = StartupGateService();
 
-        // Guest tapped "Continue as Guest"
         await service.setAuthDecisionMade(true);
 
         expect(await service.isAuthDecisionMade(), isTrue);
-        expect(await service.isGuestOnboardingCompleted(), isFalse);
 
         final route = await service.determineInitialRoute(
           isAuthenticated: false,
           isProfileSetupCompleted: false,
         );
-        expect(route, equals('/setup-wizard'));
+        expect(route, equals('/auth-decision'));
       },
     );
 
     test(
-      'Returning guest user who already completed wizard is routed to /home',
+      'Unauthenticated user cannot bypass auth even with legacy flags',
       () async {
         final service = StartupGateService();
 
@@ -61,7 +59,7 @@ void main() {
           isAuthenticated: false,
           isProfileSetupCompleted: true,
         );
-        expect(route, equals('/home'));
+        expect(route, equals('/auth-decision'));
       },
     );
 
@@ -101,20 +99,22 @@ void main() {
     );
 
     test(
-      'Condition 3: Wizard skip persists skip flag and allows guest to enter /home',
+      'Condition 3: Wizard skip persists skip flag and authenticated user enters /home',
       () async {
         final service = StartupGateService();
+        const userId = 'skip-wizard-athlete-1';
 
         expect(await service.hasSkippedWizard(), isFalse);
         await service.setWizardSkipped(true);
-        await service.setGuestOnboardingCompleted(true);
+        await service.setAccountOnboardingCompleted(userId, true);
 
         expect(await service.hasSkippedWizard(), isTrue);
-        expect(await service.isGuestOnboardingCompleted(), isTrue);
+        expect(await service.isAccountOnboardingCompleted(userId), isTrue);
 
         final route = await service.determineInitialRoute(
-          isAuthenticated: false,
+          isAuthenticated: true,
           isProfileSetupCompleted: false,
+          userId: userId,
         );
         expect(route, equals('/home'));
       },

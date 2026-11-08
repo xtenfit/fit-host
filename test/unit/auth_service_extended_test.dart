@@ -6,7 +6,7 @@ void main() {
   group('AuthStatus and AuthState Extended Lifecycle Tests', () {
     test('AuthStatus covers all required production authentication states', () {
       expect(AuthStatus.values, contains(AuthStatus.initialLoading));
-      expect(AuthStatus.values, contains(AuthStatus.guest));
+      expect(AuthStatus.values, contains(AuthStatus.unauthenticated));
       expect(AuthStatus.values, contains(AuthStatus.signedOut));
       expect(AuthStatus.values, contains(AuthStatus.emailVerificationRequired));
       expect(AuthStatus.values, contains(AuthStatus.authenticating));

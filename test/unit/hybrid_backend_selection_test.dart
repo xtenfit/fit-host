@@ -24,17 +24,17 @@ void main() {
     });
 
     test(
-      'Guest mode resolves to Local Drift-only repositories for all domains',
+      'Unauthenticated mode resolves to Local Drift-only repositories for all domains',
       () {
         final container = ProviderContainer(
           overrides: [databaseProvider.overrideWithValue(memoryDb)],
         );
         addTearDown(container.dispose);
 
-        // Verify default auth is guest
+        // Verify default auth is unauthenticated
         final authState = container.read(authProvider);
-        expect(authState.status, equals(AuthStatus.guest));
-        expect(authState.isGuest, isTrue);
+        expect(authState.status, equals(AuthStatus.unauthenticated));
+        expect(authState.isGuest, isFalse);
         expect(authState.isAuthenticated, isFalse);
 
         // Verify all factory providers resolve to Local* implementations
@@ -113,9 +113,9 @@ void main() {
           equals('user-auth-uuid-999'),
         );
 
-        // Sign out back to guest
-        container.read(authProvider.notifier).setManualGuest();
-        expect(container.read(authProvider).status, equals(AuthStatus.guest));
+        // Sign out back to signedOut
+        container.read(authProvider.notifier).setManualSignedOut();
+        expect(container.read(authProvider).status, equals(AuthStatus.signedOut));
 
         // Hot-swaps back to Local implementations seamlessly
         expect(

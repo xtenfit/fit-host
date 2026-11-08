@@ -328,16 +328,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ? Icons.cloud_done_rounded
                           : Icons.phone_android_rounded,
                       size: 20,
-                      color: authState.isAuthenticated
-                          ? AppColors.electricCyan
-                          : AppColors.limeGreen,
+                      color: AppColors.electricCyan,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        authState.isAuthenticated
-                            ? 'Account synced with Fit Host Cloud'
-                            : 'Guest Mode • Stored safely on this device',
+                        'Account synced with Fit Host Cloud',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

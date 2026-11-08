@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:fit_host/core/theme/app_colors.dart';
-import 'package:fit_host/core/services/supabase_service.dart';
-import 'package:fit_host/features/auth/presentation/dialogs/feature_upsell_sheet.dart';
 import 'package:fit_host/features/workouts/presentation/controllers/workout_providers.dart';
 import 'package:fit_host/features/steps/presentation/controllers/step_controller.dart';
 import 'package:fit_host/core/widgets/charts/volume_trend_chart.dart';
@@ -187,164 +185,18 @@ class ProgressScreen extends ConsumerWidget {
               // 14-Day Interactive Volume Progression Curve
               VolumeTrendChart(workouts: completed, days: 14, isDark: isDark),
               const SizedBox(height: 24),
-              // Advanced Progress Charts (>7d) - Gated for guests
-              Row(
+              // Advanced Progress Charts (30d)
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Multi-Week Trends (>7d)',
+                  Text(
+                    'Multi-Week Trends (30d)',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  if (ref.watch(authProvider).isGuest)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.lock_rounded,
-                            size: 12,
-                            color: Colors.amber,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Account Only',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.amber,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 12),
-
-              if (ref.watch(authProvider).isGuest)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      FeatureUpsellSheet.show(
-                        context,
-                        title: 'Advanced Progress Charts (>7d)',
-                        description:
-                            'Track multi-month volume progression, progressive overload curves, and personal records beyond 7 days with a free Fit Host account.',
-                        icon: Icons.insights_rounded,
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDark
-                              ? [
-                                  const Color(0xFF19251E),
-                                  const Color(0xFF141F28),
-                                ]
-                              : [
-                                  const Color(0xFFF0FDF4),
-                                  const Color(0xFFE8F6FE),
-                                ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.limeGreen.withValues(alpha: 0.3),
-                          width: 1.2,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.limeGreen.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.lock_outline_rounded,
-                                  color: AppColors.limeGreen,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  'Historical Analytics Locked',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Guests can view current 7-day logs. Create a free account to unlock multi-month progressive overload graphs, 1RM curves, and training frequency heatmaps.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              height: 1.4,
-                              color: isDark
-                                  ? AppColors.darkTextSecondary
-                                  : AppColors.lightTextSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              FeatureUpsellSheet.show(
-                                context,
-                                title: 'Advanced Progress Charts (>7d)',
-                                description:
-                                    'Track multi-month volume progression, progressive overload curves, and personal records beyond 7 days with a free Fit Host account.',
-                                icon: Icons.insights_rounded,
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.limeGreen,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            icon: const Icon(Icons.lock_open_rounded, size: 16),
-                            label: const Text(
-                              'Unlock Advanced Charts',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-              else
-                VolumeTrendChart(workouts: completed, days: 30, isDark: isDark),
+              VolumeTrendChart(workouts: completed, days: 30, isDark: isDark),
             ],
           );
         },

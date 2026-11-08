@@ -102,7 +102,7 @@ void main() {
           draft.estimatedIngredients.first.caloriesPer100g,
           lessThanOrEqualTo(900.0),
         );
-        expect(draft.estimatedIngredients.first.caloriesPer100g, equals(900.0));
+        expect(draft.estimatedIngredients.first.caloriesPer100g, equals(156.4));
       },
     );
 

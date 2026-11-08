@@ -3,12 +3,12 @@ import 'package:fit_host/core/widgets/primary_button.dart';
 
 class WelcomeStep extends StatelessWidget {
   final VoidCallback onStart;
-  final VoidCallback onContinueAsGuest;
+  final VoidCallback? onContinueAsGuest;
 
   const WelcomeStep({
     super.key,
     required this.onStart,
-    required this.onContinueAsGuest,
+    this.onContinueAsGuest,
   });
 
   @override
@@ -115,18 +115,20 @@ class WelcomeStep extends StatelessWidget {
           const SizedBox(height: 32),
 
           PrimaryButton(text: 'Start Personalization →', onPressed: onStart),
-          const SizedBox(height: 16),
-          TextButton(
-            onPressed: onContinueAsGuest,
-            child: const Text(
-              'Continue as Guest',
-              style: TextStyle(
-                color: Color(0xFF8FA396),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+          if (onContinueAsGuest != null) ...[
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: onContinueAsGuest,
+              child: const Text(
+                'Continue as Guest',
+                style: TextStyle(
+                  color: Color(0xFF8FA396),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 24),
         ],
       ),

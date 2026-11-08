@@ -308,9 +308,24 @@ class SyncOutboxWorker {
     }
 
     // Check for server conflict: server updated_at wins
-    final matchMap = <String, Object>{conflictTarget: item.entityId};
-    if (conflictTarget == 'id' && tableName != 'profiles') {
-      matchMap['user_id'] = item.userId;
+    final matchMap = <String, Object>{};
+    if (conflictTarget.contains(',')) {
+      final cols = conflictTarget.split(',').map((c) => c.trim()).toList();
+      for (final col in cols) {
+        if (sanitizedPayload.containsKey(col) && sanitizedPayload[col] != null) {
+          matchMap[col] = sanitizedPayload[col] as Object;
+        }
+      }
+      if (!matchMap.containsKey('user_id')) {
+        matchMap['user_id'] = item.userId;
+      }
+    } else if (conflictTarget == 'id') {
+      matchMap['id'] = item.entityId;
+      if (tableName != 'profiles') {
+        matchMap['user_id'] = item.userId;
+      }
+    } else {
+      matchMap[conflictTarget] = item.entityId;
     }
 
     try {
@@ -352,10 +367,12 @@ class SyncOutboxWorker {
       if ((e.code == '23505' ||
               e.message.contains('unique constraint') ||
               e.message.contains('duplicate key')) &&
-          (tableName == 'nutrition_logs' || tableName == 'step_daily_logs')) {
-        final uniqueDateCol = tableName == 'nutrition_logs'
-            ? 'log_date'
-            : 'step_date';
+          (tableName == 'nutrition_logs' ||
+              tableName == 'step_daily_logs' ||
+              tableName == 'hydration_logs')) {
+        final uniqueDateCol = tableName == 'step_daily_logs'
+            ? 'step_date'
+            : 'log_date';
         final dateVal = sanitizedPayload[uniqueDateCol];
         if (dateVal != null) {
           debugPrint(
